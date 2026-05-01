@@ -1,0 +1,123 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and balance information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "balance": { "type": "number", "description": "User's current wallet balance." },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "inviteCode": { "type": "string" },
+        "referredBy": { "type": "string" },
+        "language": { "type": "string", "enum": ["en", "ur"] },
+        "favorites": { "type": "array", "items": { "type": "string" } },
+        "lastBonusClaimed": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "balance", "role"]
+    },
+    "Game": {
+      "title": "Game",
+      "description": "Available games on the platform.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string" },
+        "active": { "type": "boolean" },
+        "minBet": { "type": "number" }
+      },
+      "required": ["name", "active"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Wallet deposits, withdrawals, and game wagers.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["deposit", "withdraw", "wager", "win", "referral"] },
+        "method": { "type": "string", "description": "EasyPaisa, JazzCash, Bank" },
+        "accountNumber": { "type": "string" },
+        "accountName": { "type": "string" },
+        "transactionId": { "type": "string", "description": "Proof of payment for deposits" },
+        "status": { "type": "string", "enum": ["pending", "completed", "failed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amount", "type", "status", "createdAt"]
+    },
+    "Banner": {
+      "title": "Banner",
+      "description": "Promotional banners and coupons.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "link": { "type": "string" },
+        "active": { "type": "boolean" },
+        "couponCode": { "type": "string" }
+      },
+      "required": ["imageUrl", "active"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System or user-specific alerts",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "type": { "type": "string", "enum": ["info", "success", "alert"] },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Referral": {
+      "title": "Referral",
+      "description": "Tracks successful invites",
+      "type": "object",
+      "properties": {
+        "referrerId": { "type": "string" },
+        "referredId": { "type": "string" },
+        "rewardAmount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Application users."
+    },
+    "/games/{gameId}": {
+      "schema": "Game",
+      "description": "Games configuration."
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Financial history."
+    },
+    "/banners/{bannerId}": {
+      "schema": "Banner",
+      "description": "Promotional horizontal banners."
+    },
+    "/notifications/{notifId}": {
+      "schema": "Notification",
+      "description": "User alerts"
+    },
+    "/referrals/{refId}": {
+      "schema": "Referral",
+      "description": "Referral tracking history"
+    },
+    "/system/config": {
+      "schema": "object",
+      "description": "Global system settings."
+    }
+  }
+}

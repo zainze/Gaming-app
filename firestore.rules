@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isAdmin() { 
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'zainzeb333@gmail.com'
+      );
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // --- Entity Validations ---
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'balance', 'role']) 
+        && data.uid == request.auth.uid 
+        && data.balance is number 
+        && data.role in ['user', 'admin'];
+    }
+
+    function isValidTransaction(data) {
+      return data.userId == request.auth.uid
+        && data.amount is number
+        && data.type in ['deposit', 'withdraw', 'wager', 'win', 'referral', 'bonus']
+        && data.status in ['pending', 'completed', 'cancelled']
+        && data.createdAt is string;
+    }
+
+    function isValidBanner(data) {
+      return data.keys().hasAll(['imageUrl', 'active'])
+        && data.imageUrl is string && data.imageUrl.size() <= 500
+        && data.active is bool;
+    }
+
+    // --- Collections ---
+
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(adminId) && !exists(/databases/$(database)/documents/system/admin_check);
+      allow update, delete: if false;
+    }
+
+    match /system/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    
+    match /system/admin_check {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && !exists(/databases/$(database)/documents/system/admin_check);
+      allow update, delete: if false;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && (
+        (incoming().role == 'user') || 
+        (!exists(/databases/$(database)/documents/system/admin_check)) ||
+        (get(/databases/$(database)/documents/system/admin_check).data.first_admin == request.auth.uid)
+      );
+      allow update: if (isOwner(userId) || isAdmin()) 
+        && (
+          (incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'balance', 'lastActive', 'withdrawDetails', 'language', 'favorites', 'referredBy', 'lastBonusClaimed']))
+          || isAdmin()
+        );
+    }
+
+    match /transactions/{txId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidTransaction(incoming());
+      allow update: if isAdmin(); 
+      allow delete: if false;
+    }
+
+    match /games/{gameId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /banners/{bannerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /notifications/{notifId} {
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isAdmin();
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid 
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if false;
+    }
+
+    match /referrals/{refId} {
+      allow read: if isSignedIn() && (resource.data.referrerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.referrerId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+  }
+}
