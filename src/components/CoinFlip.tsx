@@ -2,11 +2,13 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Coins, Trophy, RefreshCcw } from "lucide-react";
 
-export default function CoinFlip({ onWin, onBet, balance, minBet = 10 }: { 
+export default function CoinFlip({ onWin, onBet, balance, minBet = 10, winRate = 50, multiplier = 2 }: { 
   onWin: (amount: number) => void,
   onBet: (amount: number) => Promise<boolean>,
   balance: number,
-  minBet?: number
+  minBet?: number,
+  winRate?: number,
+  multiplier?: number
 }) {
   const [side, setSide] = useState<'heads' | 'tails' | null>(null);
   const [flipping, setFlipping] = useState(false);
@@ -23,14 +25,14 @@ export default function CoinFlip({ onWin, onBet, balance, minBet = 10 }: {
     setResult(null);
     
     setTimeout(() => {
-      const isHeads = Math.random() > 0.5;
-      const finalSide = isHeads ? 'heads' : 'tails';
+      const isWin = Math.random() < (winRate / 100);
+      const finalSide = isWin ? 'heads' : 'tails';
       setSide(finalSide);
       setFlipping(false);
       
       if (finalSide === 'heads') {
         setResult("YOU WON!");
-        onWin(bet * 2);
+        onWin(bet * multiplier);
       } else {
         setResult("TRY AGAIN");
       }

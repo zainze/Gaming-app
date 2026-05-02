@@ -15,11 +15,14 @@ import {
   ShieldCheck,
   Zap,
   UserPlus,
-  Settings2
+  Settings2,
+  Gamepad2,
+  Trophy
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { db } from "../lib/firebase";
 import { collection, query, where, onSnapshot, doc, updateDoc, increment, getDocs, orderBy, addDoc, limit, setDoc, getDoc } from "firebase/firestore";
+import { handleFirestoreError, OperationType } from "../lib/firestore-errors";
 import { formatCurrency } from "../lib/utils";
 
 type Transaction = {
@@ -35,7 +38,7 @@ type Transaction = {
   transactionId?: string;
 };
 
-type Tab = 'dashboard' | 'users' | 'requests' | 'ledger' | 'broadcast' | 'settings';
+type Tab = 'dashboard' | 'users' | 'requests' | 'ledger' | 'broadcast' | 'settings' | 'games';
 
 export default function AdminView() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -58,6 +61,7 @@ export default function AdminView() {
   const [notifBody, setNotifBody] = useState("");
 
   const [ledgerTxs, setLedgerTxs] = useState<Transaction[]>([]);
+  const [gamesList, setGamesList] = useState<any[]>([]);
 
   // System Settings State
   const [globalConfig, setGlobalConfig] = useState({
@@ -77,19 +81,33 @@ export default function AdminView() {
         pendingWd: txs.filter(t => t.type === 'withdraw').length,
         pendingDep: txs.filter(t => t.type === 'deposit').length
       }));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, "transactions");
     });
 
     // Ledger Listener
     const qLedger = query(collection(db, "transactions"), where("status", "==", "completed"), orderBy("createdAt", "desc"), limit(20));
     const unsubLedger = onSnapshot(qLedger, (snap) => {
       setLedgerTxs(snap.docs.map(d => ({ id: d.id, ...d.data() })) as Transaction[]);
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, "transactions");
     });
 
     const fetchCounts = async () => {
-      const uSnap = await getDocs(collection(db, "users"));
-      const txsSnap = await getDocs(query(collection(db, "transactions"), where("status", "==", "completed"), where("type", "==", "deposit")));
-      const totalDeps = txsSnap.docs.reduce((acc, d) => acc + (d.data().amount || 0), 0);
-      setStats(prev => ({ ...prev, totalUsers: uSnap.size, totalDeposits: totalDeps }));
+      try {
+        const uSnap = await getDocs(collection(db, "users")).catch(err => {
+          handleFirestoreError(err, OperationType.LIST, "users");
+          throw err;
+        });
+        const txsSnap = await getDocs(query(collection(db, "transactions"), where("status", "==", "completed"), where("type", "==", "deposit"))).catch(err => {
+          handleFirestoreError(err, OperationType.LIST, "transactions");
+          throw err;
+        });
+        const totalDeps = txsSnap.docs.reduce((acc, d) => acc + (d.data().amount || 0), 0);
+        setStats(prev => ({ ...prev, totalUsers: uSnap.size, totalDeposits: totalDeps }));
+      } catch (err) {
+        console.error(err);
+      }
     };
     fetchCounts();
 
@@ -98,23 +116,45 @@ export default function AdminView() {
       if (snap.exists()) {
         setGlobalConfig(snap.data() as any);
       }
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, "system/config");
+    });
+
+    const unsubGames = onSnapshot(collection(db, "games"), (snap) => {
+      setGamesList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, "games");
     });
 
     return () => {
       unsubPending();
       unsubLedger();
       unsubConfig();
+      unsubGames();
     };
   }, []);
 
   const updateConfig = async (key: string, value: any) => {
-    await setDoc(doc(db, "system", "config"), { [key]: value }, { merge: true });
+    await setDoc(doc(db, "system", "config"), { [key]: value }, { merge: true }).catch(err => {
+      handleFirestoreError(err, OperationType.WRITE, "system/config");
+      throw err;
+    });
+  };
+
+  const updateGameConfig = async (gameId: string, updates: any) => {
+    await setDoc(doc(db, "games", gameId), updates, { merge: true }).catch(err => {
+      handleFirestoreError(err, OperationType.WRITE, `games/${gameId}`);
+      throw err;
+    });
   };
 
   const searchUser = async () => {
     if (!searchEmail.trim()) return;
     const q = query(collection(db, "users"), where("email", "==", searchEmail.trim()), limit(1));
-    const snap = await getDocs(q);
+    const snap = await getDocs(q).catch(err => {
+      handleFirestoreError(err, OperationType.LIST, "users");
+      throw err;
+    });
     if (!snap.empty) {
       setFoundUser({ id: snap.docs[0].id, ...snap.docs[0].data() });
     } else {
@@ -169,6 +209,7 @@ export default function AdminView() {
     { id: 'requests', label: 'Requests', icon: Clock },
     { id: 'ledger', label: 'Ledger', icon: History },
     { id: 'broadcast', label: 'Broadcast', icon: Bell },
+    { id: 'games', label: 'Games', icon: Gamepad2 },
     { id: 'settings', label: 'Control', icon: Settings2 },
   ];
 
@@ -425,6 +466,111 @@ export default function AdminView() {
                   ))
                 )}
               </div>
+            </motion.div>
+          )}
+
+          {activeTab === 'games' && (
+            <motion.div key="games" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4 pb-20">
+              <div className="flex items-center justify-between px-1">
+                <p className="text-[10px] font-black uppercase text-neutral-500 tracking-widest">Game Management</p>
+                <div className="flex items-center gap-2">
+                   <span className="text-[8px] font-black uppercase text-neutral-500">{gamesList.length} Active Modules</span>
+                </div>
+              </div>
+
+              {gamesList.length === 0 ? (
+                <div className="bg-neutral-900 border border-neutral-800 p-12 rounded-3xl text-center">
+                  <Gamepad2 className="mx-auto text-neutral-800 mb-2" size={48} />
+                  <p className="text-neutral-500 font-black uppercase text-[10px]">No games discovered in registry</p>
+                  <button 
+                    onClick={async () => {
+                      const initialGames = [
+                        { id: 'spin', name: 'Spin Wheel', minBet: 10, winRate: 30, multiplier: 5 },
+                        { id: 'coin', name: 'Coin Flip', minBet: 10, winRate: 50, multiplier: 2 },
+                        { id: 'swipe', name: 'Swipe Master', minBet: 10, winRate: 40, multiplier: 3 },
+                        { id: 'chests', name: 'Lucky Chests', minBet: 10, winRate: 33, multiplier: 3 },
+                        { id: 'dice', name: 'Dice Pro', minBet: 10, winRate: 45, multiplier: 2 },
+                        { id: 'scratch', name: 'Gold Scratch', minBet: 10, winRate: 40, multiplier: 4 }
+                      ];
+                      for (const g of initialGames) {
+                        await setDoc(doc(db, "games", g.id), { ...g, active: true, createdAt: new Date().toISOString() });
+                      }
+                    }}
+                    className="mt-4 text-[10px] bg-orange-500 text-white px-4 py-2 rounded-xl font-black uppercase"
+                  >
+                    Bootstrap Registry
+                  </button>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {gamesList.map((game) => (
+                    <div key={game.id} className="bg-neutral-900 border border-neutral-800 rounded-3xl p-5 space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-500">
+                             <Gamepad2 size={20} />
+                          </div>
+                          <div>
+                            <h4 className="font-black uppercase italic tracking-tighter">{game.name || game.id}</h4>
+                            <p className="text-[8px] font-mono text-neutral-600">ID: {game.id}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${game.active ? 'bg-green-500' : 'bg-red-500'}`} />
+                          <span className="text-[8px] font-black uppercase text-neutral-500">{game.active ? 'Online' : 'Offline'}</span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-800/50">
+                        <div className="space-y-1.5">
+                          <label className="text-[8px] font-black uppercase text-neutral-600">Min Bet (RS)</label>
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="number" 
+                              value={game.minBet || 10}
+                              onChange={(e) => updateGameConfig(game.id, { minBet: Number(e.target.value) })}
+                              className="w-full bg-black/40 border border-neutral-800 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500" 
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[8px] font-black uppercase text-neutral-600">Win Probability (%)</label>
+                          <input 
+                            type="number" 
+                            value={game.winRate || 50}
+                            min="0"
+                            max="100"
+                            onChange={(e) => updateGameConfig(game.id, { winRate: Number(e.target.value) })}
+                            className="w-full bg-black/40 border border-neutral-800 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500" 
+                          />
+                        </div>
+                         <div className="space-y-1.5">
+                          <label className="text-[8px] font-black uppercase text-neutral-600">Payout Multiplier</label>
+                          <input 
+                            type="number" 
+                            step="0.1"
+                            value={game.multiplier || 2}
+                            onChange={(e) => updateGameConfig(game.id, { multiplier: Number(e.target.value) })}
+                            className="w-full bg-black/40 border border-neutral-800 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500" 
+                          />
+                        </div>
+                        <div className="flex items-end">
+                          <button 
+                            onClick={() => updateGameConfig(game.id, { active: !game.active })}
+                            className={`w-full py-2 rounded-xl font-black uppercase text-[10px] border transition-all ${
+                              game.active 
+                                ? 'bg-red-500/10 border-red-500/20 text-red-500' 
+                                : 'bg-green-500/10 border-green-500/20 text-green-500'
+                            }`}
+                          >
+                            {game.active ? 'Disable' : 'Enable'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           )}
 

@@ -2,11 +2,13 @@ import { useState, useRef } from "react";
 import { motion, useMotionValue, useTransform, AnimatePresence } from "motion/react";
 import { Coins, Target, Zap, AlertTriangle } from "lucide-react";
 
-export default function SwipeMaster({ onWin, onBet, userBalance, betAmount }: { 
+export default function SwipeMaster({ onWin, onBet, userBalance, betAmount, winRate = 40, multiplier = 3 }: { 
   onWin: (amount: number) => void, 
   onBet: (amount: number) => Promise<boolean>,
   userBalance: number,
-  betAmount: number 
+  betAmount: number,
+  winRate?: number,
+  multiplier?: number
 }) {
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'result'>('idle');
   const [result, setResult] = useState<{ multiplier: number; win: number } | null>(null);
@@ -23,21 +25,22 @@ export default function SwipeMaster({ onWin, onBet, userBalance, betAmount }: {
     const { x: xOffset, y: yOffset } = info.offset;
     const { x: xVelocity, y: yVelocity } = info.velocity;
     
-    // Check if it was a significant swipe (offset or velocity)
     if (Math.abs(xOffset) > swipeThreshold || Math.abs(xVelocity) > 500) {
-      // Logic: Swipe Right or Up is often positive in these games
-      const isWin = xOffset > swipeThreshold || yOffset < -swipeThreshold || xVelocity > 500 || yVelocity < -500;
+      const swipedCorrectly = xOffset > swipeThreshold || yOffset < -swipeThreshold || xVelocity > 500 || yVelocity < -500;
       
-      const multiplier = isWin ? (Math.random() > 0.8 ? 5 : 2) : 0;
+      // Luck check based on winRate
+      const luckCheck = Math.random() < (winRate / 100);
+      const isWin = swipedCorrectly && luckCheck;
       
-      setResult({ multiplier, win: betAmount * multiplier });
+      const sessionMultiplier = isWin ? multiplier : 0;
+      
+      setResult({ multiplier: sessionMultiplier, win: betAmount * sessionMultiplier });
       setGameState('result');
       
-      if (multiplier > 0) {
-        onWin(betAmount * multiplier);
+      if (sessionMultiplier > 0) {
+        onWin(betAmount * sessionMultiplier);
       }
     } else {
-      // Snap back if not swiped far enough
       x.set(0);
       y.set(0);
     }

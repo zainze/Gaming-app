@@ -4,7 +4,8 @@ import { auth, db } from "../lib/firebase";
 import { signOut } from "firebase/auth";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, query, where, onSnapshot, orderBy, updateDoc, doc, getDocs, limit, increment, addDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, updateDoc, doc, getDocs, limit, increment, addDoc, writeBatch, getDoc } from "firebase/firestore";
+import { handleFirestoreError, OperationType } from "../lib/firestore-errors";
 import PrivacyView from "./PrivacyView";
 
 type ActiveSection = 'main' | 'notifications' | 'privacy' | 'language' | 'favorites';
@@ -26,6 +27,8 @@ export default function ProfileView({ profile }: { profile: any }) {
     );
     const unsubscribe = onSnapshot(q, (snap) => {
       setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, "notifications");
     });
     return () => unsubscribe();
   }, [profile]);
@@ -52,56 +55,67 @@ export default function ProfileView({ profile }: { profile: any }) {
     if (!referralCode.trim() || profile?.referredBy) return;
     setRefStatus('loading');
     try {
-      // Find the user with this invite code
-      const q = query(collection(db, "users"), where("inviteCode", "==", referralCode.toUpperCase().trim()), limit(1));
-      const snap = await getDocs(q);
+      // 1. Find the UID for this invite code
+      const codeDoc = await getDoc(doc(db, "invite_codes", referralCode.toUpperCase().trim())).catch(err => {
+        handleFirestoreError(err, OperationType.GET, `invite_codes/${referralCode}`);
+        throw err;
+      });
       
-      if (snap.empty) {
+      if (!codeDoc.exists()) {
         setRefStatus('error');
         return;
       }
 
-      const referrer = snap.docs[0].data();
-      if (referrer.uid === profile.uid) {
+      const referrerId = codeDoc.data().uid;
+      if (referrerId === profile.uid) {
         setRefStatus('error');
         return;
       }
 
-      // 1. Mark current user as referred
-      await updateDoc(doc(db, "users", profile.uid), { 
-        referredBy: referrer.uid 
-      });
+      const batch = writeBatch(db);
+      
+      // 2. Mark current user as referred
+      const userRef = doc(db, "users", profile.uid);
+      batch.update(userRef, { referredBy: referrerId });
 
-      // 2. Add RS 50 to referrer balance
-      await updateDoc(doc(db, "users", referrer.uid), {
-        balance: increment(50)
-      });
+      // 3. Add RS 50 to referrer balance
+      const referrerRef = doc(db, "users", referrerId);
+      batch.update(referrerRef, { balance: increment(50) });
 
-      // 3. Create referral record
-      await addDoc(collection(db, "referrals"), {
-        referrerId: referrer.uid,
+      // 4. Create referral record (Deterministic ID)
+      const refId = `${profile.uid}_${referrerId}`;
+      const referralRef = doc(db, "referrals", refId);
+      batch.set(referralRef, {
+        referrerId: referrerId,
         referredId: profile.uid,
         rewardAmount: 50,
         createdAt: new Date().toISOString()
       });
 
-      // 4. Create transaction for referrer
-      await addDoc(collection(db, "transactions"), {
-        userId: referrer.uid,
+      // 5. Create transaction for referrer
+      const txRef = doc(collection(db, "transactions"));
+      batch.set(txRef, {
+        userId: referrerId,
         amount: 50,
         type: 'referral',
         status: 'completed',
         createdAt: new Date().toISOString()
       });
 
-      // 5. Create notification for referrer
-      await addDoc(collection(db, "notifications"), {
-        userId: referrer.uid,
+      // 6. Create notification for referrer
+      const notifRef = doc(collection(db, "notifications"));
+      batch.set(notifRef, {
+        userId: referrerId,
         title: "Referral Reward! 🎉",
         body: `Congratulations! ${profile.displayName} used your code. RS 50 added to balance.`,
         type: 'success',
         read: false,
         createdAt: new Date().toISOString()
+      });
+
+      await batch.commit().catch(err => {
+        handleFirestoreError(err, OperationType.WRITE, "referral_batch");
+        throw err;
       });
 
       setRefStatus('success');

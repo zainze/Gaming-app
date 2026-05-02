@@ -3,6 +3,7 @@ import { Plus, Minus, History, CreditCard, ArrowDownCircle, ArrowUpCircle, QrCod
 import React, { useState, useEffect } from "react";
 import { formatCurrency } from "../lib/utils";
 import { db, auth } from "../lib/firebase";
+import { handleFirestoreError, OperationType } from "../lib/firestore-errors";
 import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc } from "firebase/firestore";
 
 type Transaction = {
@@ -46,6 +47,8 @@ export default function WalletView({ profile }: { profile: any }) {
         ...doc.data()
       })) as Transaction[];
       setTransactions(txs);
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, "transactions");
     });
 
     return () => unsubscribe();
@@ -70,6 +73,9 @@ export default function WalletView({ profile }: { profile: any }) {
         transactionId,
         status: 'pending',
         createdAt: new Date().toISOString()
+      }).catch(err => {
+        handleFirestoreError(err, OperationType.WRITE, "transactions");
+        throw err;
       });
       setMessage({ type: 'success', text: 'Deposit request submitted!' });
       setAmount("");
@@ -108,12 +114,18 @@ export default function WalletView({ profile }: { profile: any }) {
         accountName,
         status: 'pending',
         createdAt: new Date().toISOString()
+      }).catch(err => {
+        handleFirestoreError(err, OperationType.WRITE, "transactions");
+        throw err;
       });
 
       // Deduct balance immediately to prevent double spending
       const userRef = doc(db, "users", profile.uid);
       await updateDoc(userRef, {
         balance: profile.balance - withdrawAmount
+      }).catch(err => {
+        handleFirestoreError(err, OperationType.WRITE, `users/${profile.uid}`);
+        throw err;
       });
 
       setMessage({ type: 'success', text: 'Withdrawal request submitted!' });

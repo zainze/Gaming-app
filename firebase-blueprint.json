@@ -30,7 +30,9 @@
         "description": { "type": "string" },
         "icon": { "type": "string" },
         "active": { "type": "boolean" },
-        "minBet": { "type": "number" }
+        "minBet": { "type": "number" },
+        "winRate": { "type": "number", "description": "Winning probability 0-100" },
+        "multiplier": { "type": "number", "description": "Payout multiplier" }
       },
       "required": ["name", "active"]
     },
@@ -87,6 +89,15 @@
         "referredId": { "type": "string" },
         "rewardAmount": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["referrerId", "referredId", "rewardAmount"]
+    },
+    "InviteCode": {
+      "title": "Invite Code Mapping",
+      "description": "Maps invite code to user ID",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" }
       }
     }
   },
@@ -114,6 +125,10 @@
     "/referrals/{refId}": {
       "schema": "Referral",
       "description": "Referral tracking history"
+    },
+    "/invite_codes/{code}": {
+      "schema": "InviteCode",
+      "description": "Invite code to UID mapping"
     },
     "/system/config": {
       "schema": "object",

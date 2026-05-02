@@ -7,9 +7,11 @@ interface LuckyChestsProps {
   onLoss: (amount: number) => void;
   minBet: number;
   balance: number;
+  winRate?: number;
+  multiplier?: number;
 }
 
-export const LuckyChests: React.FC<LuckyChestsProps> = ({ onWin, onLoss, minBet, balance }) => {
+export const LuckyChests: React.FC<LuckyChestsProps> = ({ onWin, onLoss, minBet, balance, winRate = 33, multiplier = 3 }) => {
   const [bet, setBet] = useState(minBet);
   const [playing, setPlaying] = useState(false);
   const [revealed, setRevealed] = useState<number | null>(null);
@@ -22,15 +24,27 @@ export const LuckyChests: React.FC<LuckyChestsProps> = ({ onWin, onLoss, minBet,
     if (balance < bet) return;
 
     setPlaying(true);
-    const winner = Math.floor(Math.random() * 3);
-    setWinningIndex(winner);
+    
+    // Win logic based on winRate
+    const isWin = Math.random() < (winRate / 100);
+    let staticWinner: number;
+    
+    if (isWin) {
+      staticWinner = index;
+    } else {
+      // Find a different index to be the winner
+      const otherIndices = chests.filter(i => i !== index);
+      staticWinner = otherIndices[Math.floor(Math.random() * otherIndices.length)];
+    }
+    
+    setWinningIndex(staticWinner);
 
     setTimeout(() => {
       setRevealed(index);
       setPlaying(false);
 
-      if (index === winner) {
-        onWin(bet * 2);
+      if (index === staticWinner) {
+        onWin(bet * multiplier);
       } else {
         onLoss(bet);
       }

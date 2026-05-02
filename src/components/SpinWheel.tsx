@@ -2,18 +2,21 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { RefreshCcw, Zap } from "lucide-react";
 
-export default function SpinWheel({ onWin, onBet, balance, minBet = 10 }: { 
+export default function SpinWheel({ onWin, onBet, balance, minBet = 10, winRate = 30, multiplier = 5 }: { 
   onWin: (amount: number) => void,
   onBet: (amount: number) => Promise<boolean>,
   balance: number,
-  minBet?: number
+  minBet?: number,
+  winRate?: number,
+  multiplier?: number
 }) {
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [result, setResult] = useState<string | null>(null);
   const BET_COST = minBet;
 
-  const segments = ["MISS", `RS${minBet}`, "MISS", `RS${minBet * 5}`, "MISS", `RS${minBet * 2}`, "MISS", `RS${minBet * 10}`];
+  const winSegments = [`RS${minBet}`, `RS${minBet * 2}`, `RS${minBet * 5}`, `RS${minBet * 10}`];
+  const segments = ["MISS", winSegments[0], "MISS", winSegments[2], "MISS", winSegments[1], "MISS", winSegments[3]];
 
   const spin = async () => {
     if (spinning || balance < BET_COST) return;
@@ -24,15 +27,32 @@ export default function SpinWheel({ onWin, onBet, balance, minBet = 10 }: {
     setSpinning(true);
     setResult(null);
 
+    const isWin = Math.random() < (winRate / 100);
+    const segmentWidth = 360 / segments.length;
+    
+    let targetSector: number;
+    if (isWin) {
+      // Pick one of the win sectors (1, 3, 5, 7)
+      const winSectors = [1, 3, 5, 7];
+      targetSector = winSectors[Math.floor(Math.random() * winSectors.length)];
+    } else {
+      // Pick one of the miss sectors (0, 2, 4, 6)
+      const missSectors = [0, 2, 4, 6];
+      targetSector = missSectors[Math.floor(Math.random() * missSectors.length)];
+    }
+
+    // Logic: sector 0 is at top? current logic says segments[segments.length - 1 - sector]
+    // Let's simplify: 
+    // targetRotation should end such that segments[targetSector] is under the needle
     const extraRots = 5 + Math.floor(Math.random() * 5);
-    const finalRot = rotation + extraRots * 360 + Math.floor(Math.random() * 360);
+    const targetBaseRotation = (segments.length - 1 - targetSector) * segmentWidth;
+    const finalRot = rotation + extraRots * 360 + targetBaseRotation + (Math.random() * (segmentWidth * 0.8) + (segmentWidth * 0.1));
     
     setRotation(finalRot);
 
     setTimeout(() => {
       setSpinning(false);
-      const sector = Math.floor(((finalRot % 360)) / (360 / segments.length));
-      // Index adjustment based on rotation logic
+      const sector = Math.floor(((finalRot % 360)) / segmentWidth);
       const win = segments[segments.length - 1 - sector];
       setResult(win === "MISS" ? "Better Luck Next Time" : `YOU WON ${win}!`);
       if (win !== "MISS") {

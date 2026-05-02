@@ -7,7 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from "react
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "./lib/firebase";
-import { doc, getDoc, setDoc, getDocFromServer, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, setDoc, getDocFromServer, onSnapshot, writeBatch } from "firebase/firestore";
+import { handleFirestoreError, OperationType } from "./lib/firestore-errors";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   Home, 
@@ -63,44 +64,64 @@ export default function App() {
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
         
-        unsubscribeProfile = onSnapshot(userDocRef, async (docSnap) => {
+        unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             setProfile(docSnap.data());
             setLoading(false);
           } else {
             // Profile creation logic
-            try {
-              const adminCheckRef = doc(db, "system", "admin_check");
-              const adminCheck = await getDoc(adminCheckRef);
-              
-              let role = "user";
-              if (!adminCheck.exists()) {
-                role = "admin";
-                await setDoc(adminCheckRef, { first_admin: firebaseUser.uid });
-                await setDoc(doc(db, "admins", firebaseUser.uid), { 
-                  email: firebaseUser.email,
-                  grantedAt: new Date().toISOString() 
+            (async () => {
+              try {
+                const adminCheckRef = doc(db, "system", "admin_check");
+                const adminCheck = await getDoc(adminCheckRef).catch(err => {
+                  handleFirestoreError(err, OperationType.GET, "system/admin_check");
+                  throw err;
                 });
-              }
+                
+                const batch = writeBatch(db);
+                let role = "user";
 
-              const newProfile = {
-                uid: firebaseUser.uid,
-                email: firebaseUser.email,
-                displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || "New User",
-                balance: 100,
-                role: role,
-                language: 'en',
-                favorites: [],
-                inviteCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
-                createdAt: new Date().toISOString()
-              };
-              
-              await setDoc(userDocRef, newProfile);
-            } catch (err) {
-              console.error("Profile creation error:", err);
-            }
+                if (!adminCheck.exists()) {
+                  role = "admin";
+                  batch.set(adminCheckRef, { first_admin: firebaseUser.uid });
+                  batch.set(doc(db, "admins", firebaseUser.uid), { 
+                    email: firebaseUser.email,
+                    grantedAt: new Date().toISOString() 
+                  });
+                } else if (adminCheck.data()?.first_admin === firebaseUser.uid) {
+                  role = "admin";
+                }
+
+                const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+                const newProfile = {
+                  uid: firebaseUser.uid,
+                  email: firebaseUser.email,
+                  displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || "New User",
+                  balance: 100,
+                  role: role,
+                  language: 'en',
+                  favorites: [],
+                  inviteCode: inviteCode,
+                  createdAt: new Date().toISOString()
+                };
+                
+                batch.set(userDocRef, newProfile);
+                batch.set(doc(db, "invite_codes", inviteCode), {
+                  uid: firebaseUser.uid
+                });
+
+                await batch.commit().catch(err => {
+                  handleFirestoreError(err, OperationType.WRITE, "profile_init_batch");
+                  throw err;
+                });
+              } catch (err) {
+                console.error("Profile creation error:", err);
+              }
+            })();
             // snapshot will trigger again after setDoc
           }
+        }, (err) => {
+          handleFirestoreError(err, OperationType.GET, `users/${firebaseUser.uid}`);
         });
       } else {
         setProfile(null);

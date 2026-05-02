@@ -54,35 +54,54 @@ service cloud.firestore {
     }
 
     match /system/{docId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if isAdmin();
     }
     
     match /system/admin_check {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow create: if isSignedIn() && !exists(/databases/$(database)/documents/system/admin_check);
       allow update, delete: if false;
     }
 
     match /users/{userId} {
-      allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow get: if isSignedIn();
       allow list: if isAdmin();
       allow create: if isOwner(userId) && (
         (incoming().role == 'user') || 
         (!exists(/databases/$(database)/documents/system/admin_check)) ||
         (get(/databases/$(database)/documents/system/admin_check).data.first_admin == request.auth.uid)
       );
-      allow update: if (isOwner(userId) || isAdmin()) 
-        && (
-          (incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'balance', 'lastActive', 'withdrawDetails', 'language', 'favorites', 'referredBy', 'lastBonusClaimed']))
-          || isAdmin()
-        );
+      // Owner can update their own doc
+      allow update: if isOwner(userId) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'balance', 'lastActive', 'withdrawDetails', 'language', 'favorites', 'referredBy', 'lastBonusClaimed'])
+      );
+      // Referred user (request.auth.uid) can increment referrer (userId) balance by 50
+      // provided they also create a referral record in the same batch
+      allow update: if isSignedIn() 
+        && incoming().diff(existing()).affectedKeys().hasOnly(['balance'])
+        && incoming().balance == (existing().balance + 50)
+        && existsAfter(/databases/$(database)/documents/referrals/$(request.auth.uid + '_' + userId));
+      
+      // Admin bypass
+      allow update: if isAdmin();
+    }
+
+    match /invite_codes/{code} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && incoming().uid == request.auth.uid;
+      allow update, delete: if false;
     }
 
     match /transactions/{txId} {
       allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
       allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isSignedIn() && isValidTransaction(incoming());
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        isValidTransaction(incoming()) || 
+        // Allow creating referral transaction if creating referral record
+        (incoming().type == 'referral' && incoming().amount == 50 && existsAfter(/databases/$(database)/documents/referrals/$(request.auth.uid + '_' + incoming().userId)))
+      );
       allow update: if isAdmin(); 
       allow delete: if false;
     }
@@ -100,16 +119,20 @@ service cloud.firestore {
     match /notifications/{notifId} {
       allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isAdmin();
+      allow create: if isSignedIn(); // Allow creating notification for referrer
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid 
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
       allow delete: if false;
     }
 
     match /referrals/{refId} {
-      allow read: if isSignedIn() && (resource.data.referrerId == request.auth.uid || isAdmin());
+      allow read: if isSignedIn() && (resource.data.referrerId == request.auth.uid || resource.data.referredId == request.auth.uid || isAdmin());
       allow list: if isSignedIn() && (resource.data.referrerId == request.auth.uid || isAdmin());
-      allow write: if isAdmin();
+      allow create: if isSignedIn() 
+        && incoming().referredId == request.auth.uid 
+        && incoming().rewardAmount == 50
+        && refId == (request.auth.uid + '_' + incoming().referrerId); // Deterministic ID to prevent double dipping
+      allow update, delete: if false;
     }
   }
 }

@@ -2,6 +2,7 @@ import { motion } from "motion/react";
 import { Gift, TrendingUp, Users, Zap, ExternalLink, Timer, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, onSnapshot, doc, updateDoc, increment, addDoc, getDoc } from "firebase/firestore";
+import { handleFirestoreError, OperationType } from "../lib/firestore-errors";
 import { db } from "../lib/firebase";
 import { formatCurrency } from "../lib/utils";
 
@@ -35,12 +36,16 @@ export default function HomeView({ profile }: { profile: any }) {
         level: Math.floor(totalWagered / 1000) + 1,
         bonus: totalBonus
       }));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, "transactions");
     });
 
     // Fetch Referral count
     const qRefs = query(collection(db, "referrals"), where("referrerId", "==", profile.uid));
     const unsubscribeRefs = onSnapshot(qRefs, (snap) => {
       setStats(prev => ({ ...prev, referrals: snap.size }));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, "referrals");
     });
 
     return () => {
@@ -53,17 +58,30 @@ export default function HomeView({ profile }: { profile: any }) {
   const [bonusCooldown, setBonusCooldown] = useState<string | null>(null);
   const [bonusAmount, setBonusAmount] = useState(50);
   const [minBet, setMinBet] = useState(10);
+  const [gamesConfig, setGamesConfig] = useState<Record<string, any>>({});
 
   useEffect(() => {
-    onSnapshot(doc(db, "system", "config"), (snap) => {
+    const unsubGlobal = onSnapshot(doc(db, "system", "config"), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
         setBonusAmount(data.dailyBonus || 50);
         setMinBet(data.minBet || 10);
       }
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, "system/config");
     });
 
-    if (!profile?.lastBonusClaimed) return;
+    const unsubGames = onSnapshot(collection(db, "games"), (snap) => {
+      const config: Record<string, any> = {};
+      snap.docs.forEach(d => {
+        config[d.id] = d.data();
+      });
+      setGamesConfig(config);
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, "games");
+    });
+
+    if (!profile?.lastBonusClaimed) return () => { unsubGlobal(); unsubGames(); };
     const updateCooldown = () => {
       const last = new Date(profile.lastBonusClaimed).getTime();
       const now = new Date().getTime();
@@ -90,6 +108,9 @@ export default function HomeView({ profile }: { profile: any }) {
       await updateDoc(doc(db, "users", profile.uid), {
         balance: increment(reward),
         lastBonusClaimed: new Date().toISOString()
+      }).catch(err => {
+        handleFirestoreError(err, OperationType.WRITE, `users/${profile.uid}`);
+        throw err;
       });
       await addDoc(collection(db, "transactions"), {
         userId: profile.uid,
@@ -97,6 +118,9 @@ export default function HomeView({ profile }: { profile: any }) {
         type: 'bonus',
         status: 'completed',
         createdAt: new Date().toISOString()
+      }).catch(err => {
+        handleFirestoreError(err, OperationType.WRITE, "transactions");
+        throw err;
       });
     } catch (e) {
       console.error(e);
@@ -208,18 +232,18 @@ export default function HomeView({ profile }: { profile: any }) {
         <h3 className="font-bold text-lg">{profile?.language === 'ur' ? 'تیزی سے کھیلیں' : 'Quick Launch'}</h3>
         <div className="space-y-3">
           {[
-            { name: 'Spin Wheel', img: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
-            { name: 'Coin Flip', img: "https://cdn-icons-png.flaticon.com/512/550/550614.png" },
-            { name: 'Swipe Master', img: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" }
+            { id: 'spin', name: 'Spin Wheel', img: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
+            { id: 'coin', name: 'Coin Flip', img: "https://cdn-icons-png.flaticon.com/512/550/550614.png" },
+            { id: 'swipe', name: 'Swipe Master', img: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" }
           ].map((game) => (
             <div key={game.name} className="bg-neutral-900 border border-neutral-800 p-3 rounded-2xl flex items-center justify-between group cursor-pointer hover:border-orange-500/50 transition-colors">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 bg-neutral-800 rounded-xl overflow-hidden shadow-lg">
-                  <img src={game.img} alt={game.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+                   <img src={game.img} alt={game.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
                 </div>
                 <div>
                   <p className="font-bold uppercase tracking-tight text-sm">{game.name}</p>
-                  <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Min Bet: RS {minBet}</p>
+                  <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Min Bet: RS {gamesConfig[game.id]?.minBet || minBet}</p>
                 </div>
               </div>
               <button className="bg-neutral-800 px-4 py-2 rounded-xl text-neutral-400 group-hover:text-orange-500 group-hover:bg-orange-500/10 transition-colors font-bold text-[10px] uppercase tracking-widest">
