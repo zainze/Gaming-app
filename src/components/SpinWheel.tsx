@@ -62,40 +62,39 @@ export default function SpinWheel({ onWin, onBet, balance, minBet = 10, winRate 
   };
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 p-8 rounded-3xl space-y-8 flex flex-col items-center overflow-hidden">
+    <div className="bg-white border border-neutral-100 p-8 rounded-3xl space-y-8 flex flex-col items-center overflow-hidden shadow-sm">
       <div className="text-center space-y-2">
-        <h3 className="text-2xl font-black italic uppercase">Super Spin</h3>
-        <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest text-center">Spin to win up to RS {minBet * 10}</p>
+        <h3 className="text-2xl font-black italic uppercase text-neutral-900">Super Spin</h3>
+        <p className="text-neutral-400 text-xs font-bold uppercase tracking-widest text-center text-center">Spin to win up to RS {minBet * 10}</p>
       </div>
 
       <div className="relative">
-        <div className="absolute top-0 left-1/2 -ml-2 -mt-4 w-4 h-8 bg-white rounded-full z-20 shadow-2xl border-2 border-orange-500" />
+        <div className="absolute top-0 left-1/2 -ml-2 -mt-4 w-4 h-8 bg-neutral-900 rounded-full z-20 shadow-xl border-2 border-orange-500" />
           <motion.div
           animate={{ rotate: rotation }}
           transition={{ duration: 4, ease: [0.1, 0, 0, 1] }}
-          className="w-72 h-72 border-8 border-neutral-950 rounded-full relative shadow-[0_0_50px_rgba(249,115,22,0.2)]"
+          className="w-72 h-72 border-8 border-neutral-100 rounded-full relative shadow-xl"
           style={{ 
-            background: 'conic-gradient(from 0deg, #f97316 0deg 45deg, #171717 45deg 90deg, #ea580c 90deg 135deg, #262626 135deg 180deg, #f97316 180deg 225deg, #171717 225deg 270deg, #ea580c 270deg 315deg, #262626 315deg 360deg)',
-            boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)'
+            background: 'conic-gradient(from 0deg, #f97316 0deg 45deg, #f5f5f5 45deg 90deg, #ea580c 90deg 135deg, #ffffff 135deg 180deg, #f97316 180deg 225deg, #f5f5f5 225deg 270deg, #ea580c 270deg 315deg, #ffffff 315deg 360deg)',
           }}
         >
           {segments.map((s, i) => (
             <div 
               key={i} 
-              className="absolute top-0 left-1/2 -ml-4 w-8 h-36 flex flex-col items-center pt-6 origin-bottom font-black text-xs text-white drop-shadow-md"
+              className={`absolute top-0 left-1/2 -ml-4 w-8 h-36 flex flex-col items-center pt-6 origin-bottom font-black text-xs drop-shadow-sm ${s === 'MISS' ? 'text-neutral-400' : 'text-neutral-900'}`}
               style={{ transform: `rotate(${i * (360 / segments.length)}deg)` }}
             >
               <span className="rotate-0 uppercase tracking-tighter">{s}</span>
             </div>
           ))}
-          <div className="absolute inset-0 m-auto w-16 h-16 bg-neutral-900 rounded-full border-4 border-orange-600 flex items-center justify-center z-10 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+          <div className="absolute inset-0 m-auto w-16 h-16 bg-white rounded-full border-4 border-orange-600 flex items-center justify-center z-10 shadow-lg">
             <Zap size={24} className="text-orange-500 fill-orange-500/20" />
           </div>
           {/* Decorative lights */}
           {[...Array(16)].map((_, i) => (
             <div 
               key={i}
-              className="absolute top-0 left-1/2 -ml-1 w-2 h-2 rounded-full bg-white/40 origin-[center_144px]"
+              className="absolute top-0 left-1/2 -ml-1 w-2 h-2 rounded-full bg-neutral-300/40 origin-[center_144px]"
               style={{ transform: `rotate(${i * 22.5}deg) translateY(4px)` }}
             />
           ))}
@@ -117,7 +116,7 @@ export default function SpinWheel({ onWin, onBet, balance, minBet = 10, winRate 
       <button 
         onClick={spin}
         disabled={spinning}
-        className="w-full bg-orange-600 hover:bg-orange-500 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+        className="w-full bg-orange-600 hover:bg-orange-500 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 text-white"
       >
         {spinning ? <RefreshCcw className="animate-spin" /> : `Spin RS ${BET_COST}`}
       </button>

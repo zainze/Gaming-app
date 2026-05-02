@@ -148,28 +148,28 @@ export default function HomeView({ profile }: { profile: any }) {
         </h2>
         <div className="flex items-center justify-between">
           <p className="text-3xl font-black truncate max-w-[200px]">{profile?.displayName}</p>
-          <div className="bg-neutral-900 border border-neutral-800 rounded-full px-4 py-1.5 flex items-center gap-2 shadow-inner">
+          <div className="bg-white border border-neutral-200 rounded-full px-4 py-1.5 flex items-center gap-2 shadow-sm">
             <TrendingUp size={16} className="text-green-500" />
-            <span className="font-bold text-xs uppercase tracking-tighter">Level {stats.level}</span>
+            <span className="font-bold text-xs uppercase tracking-tighter text-neutral-600">Level {stats.level}</span>
           </div>
         </div>
       </section>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-2 relative overflow-hidden group">
-          <div className="absolute -top-1 -right-1 opacity-10 group-hover:scale-110 transition-transform">
+        <div className="bg-white border border-neutral-200 rounded-2xl p-4 space-y-2 relative overflow-hidden group shadow-sm">
+          <div className="absolute -top-1 -right-1 opacity-5 group-hover:scale-110 transition-transform">
             <Sparkles size={40} className="text-orange-500" />
           </div>
           <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-500">
             <Gift size={20} />
           </div>
           <div className="space-y-1">
-            <p className="text-[10px] font-bold text-neutral-500 uppercase">
+            <p className="text-[10px] font-bold text-neutral-400 uppercase">
               {profile?.language === 'ur' ? 'ڈیلی بونس' : 'Daily Bonus'}
             </p>
             {bonusCooldown ? (
-              <div className="flex items-center gap-1.5 text-neutral-500 text-xs font-bold uppercase tracking-tighter">
+              <div className="flex items-center gap-1.5 text-neutral-400 text-xs font-bold uppercase tracking-tighter">
                 <Timer size={12} /> {bonusCooldown}
               </div>
             ) : (
@@ -183,15 +183,15 @@ export default function HomeView({ profile }: { profile: any }) {
             )}
           </div>
         </div>
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-4 space-y-2">
+        <div className="bg-white border border-neutral-200 rounded-2xl p-4 space-y-2 shadow-sm">
           <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500">
             <Users size={20} />
           </div>
           <div>
-            <p className="text-[10px] font-bold text-neutral-500 uppercase">
+            <p className="text-[10px] font-bold text-neutral-400 uppercase">
               {profile?.language === 'ur' ? 'کل ریفرلز' : 'Total Referrals'}
             </p>
-            <p className="text-xl font-black">{stats.referrals}</p>
+            <p className="text-xl font-black text-neutral-900">{stats.referrals}</p>
           </div>
         </div>
       </div>
@@ -229,24 +229,24 @@ export default function HomeView({ profile }: { profile: any }) {
 
       {/* Quick Launch Games */}
       <section className="space-y-4">
-        <h3 className="font-bold text-lg">{profile?.language === 'ur' ? 'تیزی سے کھیلیں' : 'Quick Launch'}</h3>
+        <h3 className="font-bold text-lg text-neutral-900">{profile?.language === 'ur' ? 'تیزی سے کھیلیں' : 'Quick Launch'}</h3>
         <div className="space-y-3">
           {[
             { id: 'spin', name: 'Spin Wheel', img: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
             { id: 'coin', name: 'Coin Flip', img: "https://cdn-icons-png.flaticon.com/512/550/550614.png" },
             { id: 'swipe', name: 'Swipe Master', img: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" }
           ].map((game) => (
-            <div key={game.name} className="bg-neutral-900 border border-neutral-800 p-3 rounded-2xl flex items-center justify-between group cursor-pointer hover:border-orange-500/50 transition-colors">
+            <div key={game.name} className="bg-white border border-neutral-200 p-3 rounded-2xl flex items-center justify-between group cursor-pointer hover:border-orange-500/30 transition-colors shadow-sm">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-neutral-800 rounded-xl overflow-hidden shadow-lg">
+                <div className="w-14 h-14 bg-neutral-50 rounded-xl overflow-hidden shadow-sm border border-neutral-100">
                    <img src={game.img} alt={game.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
                 </div>
                 <div>
-                  <p className="font-bold uppercase tracking-tight text-sm">{game.name}</p>
-                  <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Min Bet: RS {gamesConfig[game.id]?.minBet || minBet}</p>
+                  <p className="font-bold uppercase tracking-tight text-sm text-neutral-900">{game.name}</p>
+                  <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">Min Bet: RS {gamesConfig[game.id]?.minBet || minBet}</p>
                 </div>
               </div>
-              <button className="bg-neutral-800 px-4 py-2 rounded-xl text-neutral-400 group-hover:text-orange-500 group-hover:bg-orange-500/10 transition-colors font-bold text-[10px] uppercase tracking-widest">
+              <button className="bg-neutral-50 px-4 py-2 rounded-xl text-neutral-400 group-hover:text-orange-500 group-hover:bg-orange-500/10 transition-colors font-bold text-[10px] uppercase tracking-widest border border-neutral-100">
                 Launch
               </button>
             </div>

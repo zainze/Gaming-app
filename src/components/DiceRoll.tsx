@@ -54,10 +54,10 @@ export const DiceRoll: React.FC<DiceRollProps> = ({
   };
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 p-8 rounded-3xl space-y-8 flex flex-col items-center">
+    <div className="bg-white border border-neutral-100 p-8 rounded-3xl space-y-8 flex flex-col items-center shadow-sm">
       <div className="text-center space-y-1">
-        <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white">Dice Pro</h3>
-        <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">Roll high to win big</p>
+        <h3 className="text-2xl font-black italic uppercase tracking-tighter text-neutral-900">Dice Pro</h3>
+        <p className="text-[10px] text-neutral-400 font-black uppercase tracking-widest">Roll high to win big</p>
       </div>
 
       <div className="relative w-32 h-32 flex items-center justify-center">
@@ -75,7 +75,7 @@ export const DiceRoll: React.FC<DiceRollProps> = ({
               : { rotateX: 0, rotateY: 0, scale: 1, opacity: 1 }
             }
             transition={rolling ? { repeat: Infinity, duration: 0.5, ease: "linear" } : { type: "spring", stiffness: 300 }}
-            className={`w-24 h-24 bg-white rounded-2xl shadow-[0_0_40px_rgba(255,255,255,0.1)] flex items-center justify-center border-4 border-neutral-200`}
+            className={`w-24 h-24 bg-white rounded-2xl shadow-xl flex items-center justify-center border-4 border-neutral-100`}
           >
             <div className="grid grid-cols-3 gap-2 p-4">
               {/* Simple Dice Pip Logic */}
@@ -89,7 +89,7 @@ export const DiceRoll: React.FC<DiceRollProps> = ({
                   6: [0, 2, 3, 5, 6, 8]
                 }[diceValue as keyof typeof pips] || [];
                 return (
-                  <div key={i} className={`w-3 h-3 rounded-full ${pips.includes(i) ? 'bg-black' : 'bg-transparent'}`} />
+                  <div key={i} className={`w-3 h-3 rounded-full ${pips.includes(i) ? 'bg-neutral-900' : 'bg-transparent'}`} />
                 );
               })}
             </div>
@@ -105,7 +105,7 @@ export const DiceRoll: React.FC<DiceRollProps> = ({
 
       <div className="w-full space-y-4">
         <div className="flex items-center justify-between px-2">
-          <span className="text-[10px] font-black text-neutral-500 uppercase">Wager</span>
+          <span className="text-[10px] font-black text-neutral-400 uppercase">Wager</span>
           <span className="text-orange-500 font-black italic">RS {bet}</span>
         </div>
         <div className="flex gap-2">
@@ -114,7 +114,7 @@ export const DiceRoll: React.FC<DiceRollProps> = ({
               key={val}
               onClick={() => setBet(val)}
               disabled={rolling}
-              className={`flex-1 py-3 rounded-xl font-black text-[10px] border transition-all ${bet === val ? 'bg-orange-500 border-orange-400 text-white shadow-lg' : 'bg-neutral-950 border-neutral-800 text-neutral-500 hover:border-neutral-700'}`}
+              className={`flex-1 py-3 rounded-xl font-black text-[10px] border transition-all ${bet === val ? 'bg-orange-500 border-orange-400 text-white shadow-lg shadow-orange-500/20' : 'bg-neutral-50 border-neutral-200 text-neutral-400 hover:border-neutral-300'}`}
             >
               RS {val}
             </button>
@@ -123,7 +123,7 @@ export const DiceRoll: React.FC<DiceRollProps> = ({
         <button
           onClick={roll}
           disabled={rolling || balance < bet}
-          className="w-full bg-white text-black py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl disabled:opacity-50 transition-all active:scale-95"
+          className="w-full bg-neutral-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl disabled:opacity-50 transition-all active:scale-95"
         >
           {rolling ? 'Rolling...' : `Roll Dice`}
         </button>

@@ -214,9 +214,9 @@ export default function AdminView() {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col min-h-screen bg-black">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col min-h-screen bg-white">
       {/* Horizontal Scrollable Header Tabs */}
-      <header className="sticky top-0 z-50 bg-black/80 backdrop-blur-xl border-b border-neutral-800">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-neutral-100">
         <div className="flex items-center gap-4 px-4 py-4 overflow-x-auto scrollbar-hide snap-x">
           {tabs.map((tab) => (
             <button
@@ -224,8 +224,8 @@ export default function AdminView() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl whitespace-nowrap snap-center transition-all ${
                 activeTab === tab.id 
-                  ? 'bg-orange-500 text-white shadow-xl shadow-orange-500/20 active:scale-95' 
-                  : 'bg-neutral-900 text-neutral-500 hover:text-neutral-300'
+                  ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20 active:scale-95' 
+                  : 'bg-neutral-50 text-neutral-400 hover:text-neutral-600 border border-neutral-100'
               }`}
             >
               <tab.icon size={16} />
@@ -246,21 +246,21 @@ export default function AdminView() {
                   { label: "Pending Payouts", value: stats.pendingWd, icon: CreditCard, color: "text-orange-500" },
                   { label: "Active Nodes", value: 1, icon: Zap, color: "text-purple-500" },
                 ].map(s => (
-                  <div key={s.label} className="bg-neutral-900 border border-neutral-800 p-4 rounded-3xl relative overflow-hidden">
+                  <div key={s.label} className="bg-white border border-neutral-100 p-4 rounded-3xl relative overflow-hidden shadow-sm">
                     <s.icon className={`absolute -top-2 -right-2 opacity-5 scale-150 ${s.color}`} size={48} />
-                    <p className="text-[9px] font-black uppercase text-neutral-500 tracking-tighter mb-1">{s.label}</p>
-                    <p className="text-xl font-black">{s.value}</p>
+                    <p className="text-[9px] font-black uppercase text-neutral-400 tracking-tighter mb-1">{s.label}</p>
+                    <p className="text-xl font-black text-neutral-900">{s.value}</p>
                   </div>
                 ))}
               </div>
 
-              <div className="bg-orange-500/10 border border-orange-500/20 p-6 rounded-3xl flex items-center gap-4">
-                <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center text-white shadow-xl">
+              <div className="bg-orange-50 border border-orange-100 p-6 rounded-3xl flex items-center gap-4">
+                <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
                   <ShieldCheck size={24} />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm">System Health: Optimal</h4>
-                  <p className="text-[10px] font-bold text-neutral-500 uppercase">Latency: 22ms | Uptime: 99.9%</p>
+                  <h4 className="font-bold text-sm text-neutral-900">System Health: Optimal</h4>
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase">Latency: 22ms | Uptime: 99.9%</p>
                 </div>
               </div>
             </motion.div>
@@ -269,70 +269,70 @@ export default function AdminView() {
           {activeTab === 'users' && (
             <motion.div key="users" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 1, y: -10 }} className="space-y-6">
               <div className="space-y-3">
-                <p className="text-[10px] font-black uppercase text-neutral-500 tracking-widest pl-1">Search Database</p>
+                <p className="text-[10px] font-black uppercase text-neutral-400 tracking-widest pl-1">Search Database</p>
                 <div className="flex gap-2">
-                  <div className="flex-1 bg-neutral-900 border border-neutral-800 rounded-2xl px-4 py-3 flex items-center gap-3">
-                    <Search className="text-neutral-600" size={18} />
+                  <div className="flex-1 bg-neutral-50 border border-neutral-200 rounded-2xl px-4 py-3 flex items-center gap-3">
+                    <Search className="text-neutral-400" size={18} />
                     <input 
                       type="text" 
                       placeholder="user@example.com"
                       value={searchEmail}
                       onChange={(e) => setSearchEmail(e.target.value)}
-                      className="bg-transparent text-sm w-full outline-none placeholder:text-neutral-700" 
+                      className="bg-transparent text-sm w-full outline-none placeholder:text-neutral-300 text-neutral-900" 
                     />
                   </div>
-                  <button onClick={searchUser} className="bg-white text-black px-6 py-3 rounded-2xl font-black uppercase text-xs">Find</button>
+                  <button onClick={searchUser} className="bg-neutral-900 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs shadow-md">Find</button>
                 </div>
               </div>
 
               {foundUser ? (
-                <div className="bg-neutral-900 border border-neutral-800 rounded-3xl overflow-hidden shadow-2xl">
-                  <div className="p-6 bg-gradient-to-br from-neutral-800/10 to-transparent flex items-center gap-4">
-                    <div className="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center text-2xl font-black">
+                <div className="bg-white border border-neutral-100 rounded-3xl overflow-hidden shadow-xl">
+                  <div className="p-6 bg-neutral-50 flex items-center gap-4 border-b border-neutral-100">
+                    <div className="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center text-2xl font-black text-white shadow-lg">
                       {foundUser.displayName?.[0] || 'U'}
                     </div>
                     <div>
-                      <h4 className="font-black text-xl italic uppercase tracking-tighter leading-none mb-1">{foundUser.displayName}</h4>
-                      <p className="text-xs text-neutral-500 font-mono italic">{foundUser.email}</p>
+                      <h4 className="font-black text-xl italic uppercase tracking-tighter leading-none mb-1 text-neutral-900">{foundUser.displayName}</h4>
+                      <p className="text-xs text-neutral-400 font-mono italic">{foundUser.email}</p>
                     </div>
                   </div>
                   
                   <div className="p-6 space-y-6">
                     <div className="flex justify-between items-center text-center">
                       <div>
-                        <p className="text-[10px] font-black text-neutral-500 uppercase">Balance</p>
+                        <p className="text-[10px] font-black text-neutral-400 uppercase">Balance</p>
                         <p className="text-xl font-black text-orange-500">{formatCurrency(foundUser.balance)}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] font-black text-neutral-500 uppercase">Level</p>
-                        <p className="text-xl font-black">Lvl {Math.floor((foundUser.xp || 0) / 1000) + 1}</p>
+                        <p className="text-[10px] font-black text-neutral-400 uppercase">Level</p>
+                        <p className="text-xl font-black text-neutral-900">Lvl {Math.floor((foundUser.xp || 0) / 1000) + 1}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] font-black text-neutral-500 uppercase">Status</p>
+                        <p className="text-[10px] font-black text-neutral-400 uppercase">Status</p>
                         <p className="text-xl font-black text-green-500">Active</p>
                       </div>
                     </div>
 
-                    <div className="space-y-4 pt-4 border-t border-neutral-800">
-                      <p className="text-[10px] font-black uppercase text-neutral-500 tracking-widest text-center">Modifier Engine</p>
+                    <div className="space-y-4 pt-4 border-t border-neutral-100">
+                      <p className="text-[10px] font-black uppercase text-neutral-400 tracking-widest text-center">Modifier Engine</p>
                       <div className="flex gap-2">
                         <input 
                           type="number" 
                           placeholder="Amount" 
                           value={modifyAmount}
                           onChange={(e) => setModifyAmount(e.target.value)}
-                          className="flex-1 bg-neutral-950 border border-neutral-800 rounded-2xl px-4 font-mono font-bold" 
+                          className="flex-1 bg-neutral-50 border border-neutral-200 rounded-2xl px-4 font-mono font-bold text-neutral-900" 
                         />
-                        <button onClick={() => updateUserBalance('add')} className="bg-green-600 px-4 py-3 rounded-2xl font-black uppercase text-[10px] text-white">Add</button>
-                        <button onClick={() => updateUserBalance('subtract')} className="bg-red-600 px-4 py-3 rounded-2xl font-black uppercase text-[10px] text-white">Sub</button>
+                        <button onClick={() => updateUserBalance('add')} className="bg-green-500 px-4 py-3 rounded-2xl font-black uppercase text-[10px] text-white shadow-md">Add</button>
+                        <button onClick={() => updateUserBalance('subtract')} className="bg-red-500 px-4 py-3 rounded-2xl font-black uppercase text-[10px] text-white shadow-md">Sub</button>
                       </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="bg-neutral-900/30 border border-dashed border-neutral-800 p-12 rounded-3xl text-center">
-                  <UserPlus className="mx-auto text-neutral-800 mb-2" size={48} />
-                  <p className="text-neutral-600 font-black uppercase text-[10px]">Enter email above to manage user</p>
+                <div className="bg-neutral-50 border border-dashed border-neutral-200 p-12 rounded-3xl text-center">
+                  <UserPlus className="mx-auto text-neutral-200 mb-2" size={48} />
+                  <p className="text-neutral-400 font-black uppercase text-[10px]">Enter email above to manage user</p>
                 </div>
               )}
             </motion.div>
@@ -341,34 +341,34 @@ export default function AdminView() {
           {activeTab === 'requests' && (
             <motion.div key="reqs" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 1, y: -10 }} className="space-y-4">
               {pendingTxs.length === 0 ? (
-                <div className="bg-neutral-900 border border-neutral-800 p-12 rounded-3xl text-center">
-                  <CheckCircle2 className="mx-auto text-neutral-800 mb-2" size={48} />
-                  <p className="text-neutral-500 font-black uppercase text-[10px]">No pending requests</p>
+                <div className="bg-white border border-neutral-100 p-12 rounded-3xl text-center shadow-sm">
+                  <CheckCircle2 className="mx-auto text-neutral-100 mb-2" size={48} />
+                  <p className="text-neutral-400 font-black uppercase text-[10px]">No pending requests</p>
                 </div>
               ) : (
                 pendingTxs.map(tx => (
-                  <div key={tx.id} className="bg-neutral-900 border border-neutral-800 p-5 rounded-3xl space-y-4">
+                  <div key={tx.id} className="bg-white border border-neutral-100 p-5 rounded-3xl space-y-4 shadow-sm">
                     <div className="flex justify-between items-start">
                       <div className="flex gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tx.type === 'deposit' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
                           {tx.type === 'deposit' ? <ArrowDownCircle size={20} /> : <ArrowUpCircle size={20} />}
                         </div>
                         <div>
-                          <p className="font-black uppercase italic text-sm">{tx.type}</p>
-                          <p className="text-[10px] font-mono text-neutral-500 uppercase">{tx.id.substring(0, 8)}</p>
+                          <p className="font-black uppercase italic text-sm text-neutral-900">{tx.type}</p>
+                          <p className="text-[10px] font-mono text-neutral-400 uppercase">{tx.id.substring(0, 8)}</p>
                         </div>
                       </div>
-                      <p className="text-lg font-black">{formatCurrency(tx.amount)}</p>
+                      <p className="text-lg font-black text-neutral-900">{formatCurrency(tx.amount)}</p>
                     </div>
-                    <div className="bg-black/50 p-3 rounded-2xl border border-neutral-800 text-[10px] space-y-1">
-                      <div className="flex justify-between"><span className="text-neutral-600 uppercase font-black">Method:</span> <span className="font-black">{tx.method}</span></div>
-                      <div className="flex justify-between"><span className="text-neutral-600 uppercase font-black">Account:</span> <span className="font-mono">{tx.accountNumber}</span></div>
-                      <div className="flex justify-between"><span className="text-neutral-600 uppercase font-black">Name:</span> <span className="font-black italic">{tx.accountName}</span></div>
-                      {tx.transactionId && <div className="flex justify-between pt-1 border-t border-neutral-800 mt-1"><span className="text-neutral-600 uppercase font-black">TID:</span> <span className="font-mono text-orange-500">{tx.transactionId}</span></div>}
+                    <div className="bg-neutral-50 p-3 rounded-2xl border border-neutral-100 text-[10px] space-y-1">
+                      <div className="flex justify-between"><span className="text-neutral-400 uppercase font-black">Method:</span> <span className="font-black text-neutral-900">{tx.method}</span></div>
+                      <div className="flex justify-between"><span className="text-neutral-400 uppercase font-black">Account:</span> <span className="font-mono text-neutral-900">{tx.accountNumber}</span></div>
+                      <div className="flex justify-between"><span className="text-neutral-400 uppercase font-black">Name:</span> <span className="font-black italic text-neutral-900">{tx.accountName}</span></div>
+                      {tx.transactionId && <div className="flex justify-between pt-1 border-t border-neutral-100 mt-1"><span className="text-neutral-400 uppercase font-black">TID:</span> <span className="font-mono text-orange-500">{tx.transactionId}</span></div>}
                     </div>
                     <div className="flex gap-2">
-                       <button onClick={() => handleApprove(tx)} className="flex-1 bg-green-500 py-3 rounded-2xl font-black uppercase text-[10px]">Approve</button>
-                       <button onClick={() => handleReject(tx)} className="flex-1 bg-red-500/10 border border-red-500/20 text-red-500 py-3 rounded-2xl font-black uppercase text-[10px]">Reject</button>
+                       <button onClick={() => handleApprove(tx)} className="flex-1 bg-green-500 py-3 rounded-2xl font-black uppercase text-[10px] text-white shadow-md">Approve</button>
+                       <button onClick={() => handleReject(tx)} className="flex-1 bg-red-50 border border-red-100 text-red-500 py-3 rounded-2xl font-black uppercase text-[10px] shadow-sm">Reject</button>
                     </div>
                   </div>
                 ))
@@ -378,44 +378,44 @@ export default function AdminView() {
 
           {activeTab === 'broadcast' && (
             <motion.div key="broadcast" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 1, y: -10 }} className="space-y-6">
-              <div className="bg-neutral-900 border border-neutral-800 p-6 rounded-3xl space-y-4">
+              <div className="bg-white border border-neutral-100 p-6 rounded-3xl space-y-4 shadow-sm">
                 <div className="space-y-1">
-                  <h4 className="font-black uppercase italic">Direct Dispatch</h4>
-                  <p className="text-[9px] font-black text-neutral-500 tracking-widest uppercase">Send notification to target user</p>
+                  <h4 className="font-black uppercase italic text-neutral-900">Direct Dispatch</h4>
+                  <p className="text-[9px] font-black text-neutral-400 tracking-widest uppercase">Send notification to target user</p>
                 </div>
 
-                <div className="space-y-4 pt-4 border-t border-neutral-800">
+                <div className="space-y-4 pt-4 border-t border-neutral-100">
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase text-neutral-600 ml-1">Target UID</label>
+                    <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Target UID</label>
                     <input 
                       type="text" 
                       placeholder="User Unique ID" 
                       value={notifTarget}
                       onChange={(e) => setNotifTarget(e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-2xl px-4 py-3 font-mono text-xs focus:border-orange-500 outline-none" 
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-4 py-3 font-mono text-xs focus:border-orange-500 outline-none text-neutral-900" 
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase text-neutral-600 ml-1">Notification Title</label>
+                    <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Notification Title</label>
                     <input 
                       type="text" 
                       placeholder="Bonus Received!" 
                       value={notifTitle}
                       onChange={(e) => setNotifTitle(e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-2xl px-4 py-3 font-bold text-xs outline-none" 
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-4 py-3 font-bold text-xs outline-none text-neutral-900" 
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-black uppercase text-neutral-600 ml-1">Message Body</label>
+                    <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Message Body</label>
                     <textarea 
                       placeholder="RS 500 bonus added to your wallet..." 
                       rows={4}
                       value={notifBody}
                       onChange={(e) => setNotifBody(e.target.value)}
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-2xl px-4 py-3 font-medium text-xs outline-none"
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-4 py-3 font-medium text-xs outline-none text-neutral-900"
                     ></textarea>
                   </div>
-                  <button onClick={sendNotification} className="w-full bg-orange-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl active:scale-95 transition-all">
+                  <button onClick={sendNotification} className="w-full bg-orange-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-orange-500/20 active:scale-95 transition-all">
                     Send Broadcast
                   </button>
                 </div>
@@ -426,41 +426,41 @@ export default function AdminView() {
           {activeTab === 'ledger' && (
             <motion.div key="ledger" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 1, y: -10 }} className="space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-black uppercase text-neutral-500 tracking-widest pl-1">Global Audit Feed</p>
+                <p className="text-[10px] font-black uppercase text-neutral-400 tracking-widest pl-1">Global Audit Feed</p>
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-[8px] font-black uppercase text-neutral-500">Live</span>
+                  <span className="text-[8px] font-black uppercase text-neutral-400">Live</span>
                 </div>
               </div>
               
               <div className="space-y-2">
                 {ledgerTxs.length === 0 ? (
-                  <div className="bg-neutral-900 border border-neutral-800 p-12 rounded-3xl text-center">
-                    <History className="mx-auto text-neutral-800 mb-2" size={48} />
-                    <p className="text-neutral-500 font-black uppercase text-[10px]">No historical data found</p>
+                  <div className="bg-white border border-neutral-100 p-12 rounded-3xl text-center shadow-sm">
+                    <History className="mx-auto text-neutral-100 mb-2" size={48} />
+                    <p className="text-neutral-400 font-black uppercase text-[10px]">No historical data found</p>
                   </div>
                 ) : (
                   ledgerTxs.map(tx => (
-                    <div key={tx.id} className="bg-neutral-900 border border-neutral-800 p-4 rounded-2xl flex items-center justify-between group">
+                    <div key={tx.id} className="bg-white border border-neutral-100 p-4 rounded-2xl flex items-center justify-between group shadow-sm">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black ${
                           tx.type === 'win' ? 'bg-orange-500/10 text-orange-500' :
                           tx.type === 'deposit' ? 'bg-green-500/10 text-green-500' :
                           tx.type === 'withdraw' ? 'bg-red-500/10 text-red-500' :
-                          'bg-neutral-800 text-neutral-400'
+                          'bg-neutral-50 text-neutral-400 border border-neutral-100'
                         }`}>
                           {tx.type[0].toUpperCase()}
                         </div>
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-tight">{tx.type} Log</p>
-                          <p className="text-[8px] text-neutral-600 font-mono italic">#{tx.id.substring(0, 8)}</p>
+                          <p className="text-[10px] font-black uppercase tracking-tight text-neutral-900">{tx.type} Log</p>
+                          <p className="text-[8px] text-neutral-400 font-mono italic">#{tx.id.substring(0, 8)}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`text-xs font-black ${tx.amount > 0 ? 'text-green-500' : 'text-neutral-100'}`}>
+                        <p className={`text-xs font-black ${tx.amount > 0 ? 'text-green-500' : 'text-neutral-900'}`}>
                           {tx.amount > 0 ? '+' : ''}{formatCurrency(tx.amount)}
                         </p>
-                        <p className="text-[8px] text-neutral-600 font-bold uppercase">{new Date(tx.createdAt).toLocaleTimeString()}</p>
+                        <p className="text-[8px] text-neutral-400 font-bold uppercase">{new Date(tx.createdAt).toLocaleTimeString()}</p>
                       </div>
                     </div>
                   ))
@@ -472,19 +472,20 @@ export default function AdminView() {
           {activeTab === 'games' && (
             <motion.div key="games" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4 pb-20">
               <div className="flex items-center justify-between px-1">
-                <p className="text-[10px] font-black uppercase text-neutral-500 tracking-widest">Game Management</p>
+                <p className="text-[10px] font-black uppercase text-neutral-400 tracking-widest">Game Management</p>
                 <div className="flex items-center gap-2">
-                   <span className="text-[8px] font-black uppercase text-neutral-500">{gamesList.length} Active Modules</span>
+                   <span className="text-[8px] font-black uppercase text-neutral-400">{gamesList.length} Active Modules</span>
                 </div>
               </div>
 
               {gamesList.length === 0 ? (
-                <div className="bg-neutral-900 border border-neutral-800 p-12 rounded-3xl text-center">
-                  <Gamepad2 className="mx-auto text-neutral-800 mb-2" size={48} />
-                  <p className="text-neutral-500 font-black uppercase text-[10px]">No games discovered in registry</p>
+                <div className="bg-white border border-neutral-100 p-12 rounded-3xl text-center shadow-sm">
+                  <Gamepad2 className="mx-auto text-neutral-100 mb-2" size={48} />
+                  <p className="text-neutral-400 font-black uppercase text-[10px]">No games discovered in registry</p>
                   <button 
                     onClick={async () => {
                       const initialGames = [
+                        { id: 'slipper', name: 'Slipper Monte', minBet: 20, winRate: 33, winMultiplier: 3, penaltyAmount: 50 },
                         { id: 'spin', name: 'Spin Wheel', minBet: 10, winRate: 30, multiplier: 5 },
                         { id: 'coin', name: 'Coin Flip', minBet: 10, winRate: 50, multiplier: 2 },
                         { id: 'swipe', name: 'Swipe Master', minBet: 10, winRate: 40, multiplier: 3 },
@@ -496,7 +497,7 @@ export default function AdminView() {
                         await setDoc(doc(db, "games", g.id), { ...g, active: true, createdAt: new Date().toISOString() });
                       }
                     }}
-                    className="mt-4 text-[10px] bg-orange-500 text-white px-4 py-2 rounded-xl font-black uppercase"
+                    className="mt-4 text-[10px] bg-orange-500 text-white px-4 py-2 rounded-xl font-black uppercase shadow-lg shadow-orange-500/20"
                   >
                     Bootstrap Registry
                   </button>
@@ -504,63 +505,74 @@ export default function AdminView() {
               ) : (
                 <div className="grid gap-4">
                   {gamesList.map((game) => (
-                    <div key={game.id} className="bg-neutral-900 border border-neutral-800 rounded-3xl p-5 space-y-6">
+                    <div key={game.id} className="bg-white border border-neutral-100 rounded-3xl p-5 space-y-6 shadow-sm">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-500">
                              <Gamepad2 size={20} />
                           </div>
                           <div>
-                            <h4 className="font-black uppercase italic tracking-tighter">{game.name || game.id}</h4>
-                            <p className="text-[8px] font-mono text-neutral-600">ID: {game.id}</p>
+                            <h4 className="font-black uppercase italic tracking-tighter text-neutral-900">{game.name || game.id}</h4>
+                            <p className="text-[8px] font-mono text-neutral-400">ID: {game.id}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${game.active ? 'bg-green-500' : 'bg-red-500'}`} />
-                          <span className="text-[8px] font-black uppercase text-neutral-500">{game.active ? 'Online' : 'Offline'}</span>
+                          <span className="text-[8px] font-black uppercase text-neutral-400">{game.active ? 'Online' : 'Offline'}</span>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-800/50">
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-neutral-100">
                         <div className="space-y-1.5">
-                          <label className="text-[8px] font-black uppercase text-neutral-600">Min Bet (RS)</label>
+                          <label className="text-[8px] font-black uppercase text-neutral-400">Min Bet (RS)</label>
                           <div className="flex items-center gap-2">
                             <input 
                               type="number" 
                               value={game.minBet || 10}
                               onChange={(e) => updateGameConfig(game.id, { minBet: Number(e.target.value) })}
-                              className="w-full bg-black/40 border border-neutral-800 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500" 
+                              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500 text-neutral-900" 
                             />
                           </div>
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-[8px] font-black uppercase text-neutral-600">Win Probability (%)</label>
+                          <label className="text-[8px] font-black uppercase text-neutral-400">Win Probability (%)</label>
                           <input 
                             type="number" 
                             value={game.winRate || 50}
                             min="0"
                             max="100"
                             onChange={(e) => updateGameConfig(game.id, { winRate: Number(e.target.value) })}
-                            className="w-full bg-black/40 border border-neutral-800 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500" 
+                            className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500 text-neutral-900" 
                           />
                         </div>
                          <div className="space-y-1.5">
-                          <label className="text-[8px] font-black uppercase text-neutral-600">Payout Multiplier</label>
+                          <label className="text-[8px] font-black uppercase text-neutral-400">Payout Multiplier</label>
                           <input 
                             type="number" 
                             step="0.1"
-                            value={game.multiplier || 2}
-                            onChange={(e) => updateGameConfig(game.id, { multiplier: Number(e.target.value) })}
-                            className="w-full bg-black/40 border border-neutral-800 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500" 
+                            value={game.id === 'slipper' ? (game.winMultiplier || 3) : (game.multiplier || 2)}
+                            onChange={(e) => updateGameConfig(game.id, game.id === 'slipper' ? { winMultiplier: Number(e.target.value) } : { multiplier: Number(e.target.value) })}
+                            className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500 text-neutral-900" 
                           />
                         </div>
+                        {game.id === 'slipper' && (
+                          <div className="space-y-1.5">
+                            <label className="text-[8px] font-black uppercase text-neutral-400">Penalty Amount (RS)</label>
+                            <input 
+                              type="number" 
+                              value={game.penaltyAmount || 50}
+                              onChange={(e) => updateGameConfig(game.id, { penaltyAmount: Number(e.target.value) })}
+                              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500 text-neutral-900" 
+                            />
+                          </div>
+                        )}
                         <div className="flex items-end">
                           <button 
                             onClick={() => updateGameConfig(game.id, { active: !game.active })}
                             className={`w-full py-2 rounded-xl font-black uppercase text-[10px] border transition-all ${
                               game.active 
-                                ? 'bg-red-500/10 border-red-500/20 text-red-500' 
-                                : 'bg-green-500/10 border-green-500/20 text-green-500'
+                                ? 'bg-red-50 border-red-100 text-red-500' 
+                                : 'bg-green-50 border-green-100 text-green-500'
                             }`}
                           >
                             {game.active ? 'Disable' : 'Enable'}
@@ -576,36 +588,36 @@ export default function AdminView() {
 
           {activeTab === 'settings' && (
             <motion.div key="settings" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
-              <div className="bg-neutral-900 border border-neutral-800 p-6 rounded-3xl space-y-6">
+              <div className="bg-white border border-neutral-100 p-6 rounded-3xl space-y-6 shadow-sm">
                 <div className="space-y-1">
-                  <h4 className="font-black uppercase italic">Universal Parameters</h4>
-                  <p className="text-[9px] font-black text-neutral-500 tracking-widest uppercase">Master controls for platform logic</p>
+                  <h4 className="font-black uppercase italic text-neutral-900">Universal Parameters</h4>
+                  <p className="text-[9px] font-black text-neutral-400 tracking-widest uppercase">Master controls for platform logic</p>
                 </div>
 
-                <div className="space-y-4 pt-4 border-t border-neutral-800">
-                  <div className="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-neutral-800">
+                <div className="space-y-4 pt-4 border-t border-neutral-100">
+                  <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
                     <div>
                       <p className="text-[10px] font-black uppercase text-neutral-400">Minimum Wager</p>
-                      <p className="text-xl font-black italic">RS {globalConfig.minBet}</p>
+                      <p className="text-xl font-black italic text-neutral-900">RS {globalConfig.minBet}</p>
                     </div>
                     <div className="flex gap-2">
-                       <button onClick={() => updateConfig('minBet', Math.max(1, globalConfig.minBet - 5))} className="w-10 h-10 rounded-xl bg-neutral-800 flex items-center justify-center font-bold">-</button>
-                       <button onClick={() => updateConfig('minBet', globalConfig.minBet + 5)} className="w-10 h-10 rounded-xl bg-neutral-800 flex items-center justify-center font-bold">+</button>
+                       <button onClick={() => updateConfig('minBet', Math.max(1, globalConfig.minBet - 5))} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">-</button>
+                       <button onClick={() => updateConfig('minBet', globalConfig.minBet + 5)} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">+</button>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-neutral-800">
+                  <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
                     <div>
                       <p className="text-[10px] font-black uppercase text-neutral-400">Daily Bonus Payload</p>
-                      <p className="text-xl font-black italic">RS {globalConfig.dailyBonus}</p>
+                      <p className="text-xl font-black italic text-neutral-900">RS {globalConfig.dailyBonus}</p>
                     </div>
                     <div className="flex gap-2">
-                       <button onClick={() => updateConfig('dailyBonus', Math.max(0, globalConfig.dailyBonus - 10))} className="w-10 h-10 rounded-xl bg-neutral-800 flex items-center justify-center font-bold">-</button>
-                       <button onClick={() => updateConfig('dailyBonus', globalConfig.dailyBonus + 10)} className="w-10 h-10 rounded-xl bg-neutral-800 flex items-center justify-center font-bold">+</button>
+                       <button onClick={() => updateConfig('dailyBonus', Math.max(0, globalConfig.dailyBonus - 10))} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">-</button>
+                       <button onClick={() => updateConfig('dailyBonus', globalConfig.dailyBonus + 10)} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">+</button>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-neutral-800">
+                  <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
                     <div>
                       <p className="text-[10px] font-black uppercase text-neutral-400">Maintenance Protocol</p>
                       <p className={`text-sm font-black uppercase ${globalConfig.maintenance ? 'text-red-500' : 'text-green-500'}`}>
@@ -614,7 +626,7 @@ export default function AdminView() {
                     </div>
                     <button 
                       onClick={() => updateConfig('maintenance', !globalConfig.maintenance)}
-                      className={`px-6 py-2 rounded-xl font-black uppercase text-xs ${globalConfig.maintenance ? 'bg-red-500 text-white' : 'bg-neutral-800 text-neutral-400'}`}
+                      className={`px-6 py-2 rounded-xl font-black uppercase text-xs ${globalConfig.maintenance ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'bg-white border border-neutral-200 text-neutral-400 shadow-sm'}`}
                     >
                       Toggle
                     </button>
@@ -622,9 +634,9 @@ export default function AdminView() {
                 </div>
               </div>
 
-              <div className="bg-neutral-950/50 border border-dashed border-neutral-800 p-8 rounded-3xl text-center">
-                 <ShieldCheck className="mx-auto text-neutral-800 mb-2" size={32} />
-                 <p className="text-neutral-600 font-black uppercase text-[8px] tracking-widest">End-to-End System Synchronization Enabled</p>
+              <div className="bg-neutral-50 border border-dashed border-neutral-200 p-8 rounded-3xl text-center">
+                 <ShieldCheck className="mx-auto text-neutral-100 mb-2" size={32} />
+                 <p className="text-neutral-400 font-black uppercase text-[8px] tracking-widest">End-to-End System Synchronization Enabled</p>
               </div>
             </motion.div>
           )}

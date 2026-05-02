@@ -40,10 +40,10 @@ export default function CoinFlip({ onWin, onBet, balance, minBet = 10, winRate =
   };
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 p-8 rounded-3xl space-y-8 flex flex-col items-center">
+    <div className="bg-white border border-neutral-100 p-8 rounded-3xl space-y-8 flex flex-col items-center shadow-sm">
       <div className="text-center space-y-2">
-        <h3 className="text-2xl font-black italic uppercase">Coin Flip</h3>
-        <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest">Double your money in 2 seconds</p>
+        <h3 className="text-2xl font-black italic uppercase text-neutral-900">Coin Flip</h3>
+        <p className="text-neutral-400 text-xs font-bold uppercase tracking-widest text-center">Double your money in 2 seconds</p>
       </div>
 
       <div className="relative w-40 h-40">
@@ -56,7 +56,7 @@ export default function CoinFlip({ onWin, onBet, balance, minBet = 10, winRate =
           className="w-full h-full relative preserve-3d"
           style={{ transformStyle: 'preserve-3d' }}
         >
-          <div className="absolute inset-0 rounded-full border-4 border-orange-500/50 shadow-2xl overflow-hidden backface-hidden bg-neutral-800">
+          <div className="absolute inset-0 rounded-full border-4 border-orange-500/50 shadow-2xl overflow-hidden backface-hidden bg-neutral-100">
             <img 
               src="https://images.unsplash.com/photo-1621416848469-dc0f33851536?q=80&w=400&auto=format&fit=crop" 
               alt="Heads" 
@@ -68,7 +68,7 @@ export default function CoinFlip({ onWin, onBet, balance, minBet = 10, winRate =
             </div>
           </div>
           <div 
-            className="absolute inset-0 rounded-full border-4 border-neutral-700/50 shadow-2xl overflow-hidden backface-hidden bg-neutral-800"
+            className="absolute inset-0 rounded-full border-4 border-neutral-200 shadow-2xl overflow-hidden backface-hidden bg-neutral-100"
             style={{ transform: 'rotateY(180deg)' }}
           >
             <img 
@@ -77,7 +77,7 @@ export default function CoinFlip({ onWin, onBet, balance, minBet = 10, winRate =
               className="w-full h-full object-cover grayscale"
               referrerPolicy="no-referrer"
             />
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+            <div className="absolute inset-0 bg-neutral-900/40 flex items-center justify-center">
               <span className="text-white font-black text-4xl italic drop-shadow-lg uppercase tracking-tighter">Tails</span>
             </div>
           </div>
@@ -98,7 +98,7 @@ export default function CoinFlip({ onWin, onBet, balance, minBet = 10, winRate =
 
       <div className="w-full space-y-4">
         <div className="flex items-center justify-between px-2">
-          <span className="text-[10px] font-bold text-neutral-500 uppercase">Input Bet</span>
+          <span className="text-[10px] font-bold text-neutral-400 uppercase">Input Bet</span>
           <span className="text-orange-500 font-bold">RS {bet}</span>
         </div>
         <div className="flex gap-2">
@@ -106,7 +106,7 @@ export default function CoinFlip({ onWin, onBet, balance, minBet = 10, winRate =
             <button 
               key={val}
               onClick={() => setBet(val)}
-              className={`flex-1 py-3 rounded-xl font-bold text-[10px] border transition-all ${bet === val ? 'bg-orange-500 border-orange-400 text-white shadow-lg shadow-orange-900/20' : 'bg-neutral-950 border-neutral-800 text-neutral-500 hover:border-neutral-700'}`}
+              className={`flex-1 py-3 rounded-xl font-bold text-[10px] border transition-all ${bet === val ? 'bg-orange-500 border-orange-400 text-white shadow-lg shadow-orange-500/20' : 'bg-neutral-50 border-neutral-200 text-neutral-400 hover:border-neutral-300'}`}
             >
               RS {val}
             </button>
@@ -115,7 +115,7 @@ export default function CoinFlip({ onWin, onBet, balance, minBet = 10, winRate =
         <button 
           onClick={flip}
           disabled={flipping}
-          className="w-full bg-orange-600 hover:bg-orange-500 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+          className="w-full bg-orange-500 hover:bg-orange-600 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 text-white"
         >
           {flipping ? <RefreshCcw className="animate-spin" /> : "Flip Coin"}
         </button>

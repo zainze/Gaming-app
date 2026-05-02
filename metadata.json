@@ -1,6 +1,6 @@
 {
   "name": "PlayHub Pro",
-  "description": "Luxurious gaming destination with real-time rewards, professional-grade games, and secure wallet management.",
+  "description": "Luxurious gaming destination featuring Cyber 3-Card Slipper, real-time rewards, professional-grade games, and secure wallet management.",
   "requestFramePermissions": [
     "camera",
     "microphone"

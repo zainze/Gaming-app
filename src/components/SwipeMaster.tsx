@@ -58,17 +58,17 @@ export default function SwipeMaster({ onWin, onBet, userBalance, betAmount, winR
   };
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 p-8 rounded-[2.5rem] space-y-8 flex flex-col items-center overflow-hidden">
+    <div className="bg-white border border-neutral-100 p-8 rounded-[2.5rem] space-y-8 flex flex-col items-center overflow-hidden shadow-sm">
       <div className="text-center space-y-2">
-        <h3 className="text-2xl font-black italic uppercase">Swipe Master</h3>
-        <p className="text-neutral-500 text-[10px] font-bold uppercase tracking-widest text-center italic">Swipe the lucky coin into the bonus zone</p>
+        <h3 className="text-2xl font-black italic uppercase text-neutral-900">Swipe Master</h3>
+        <p className="text-neutral-400 text-[10px] font-bold uppercase tracking-widest text-center italic">Swipe the lucky coin into the bonus zone</p>
       </div>
 
       <div className="relative w-full h-64 flex items-center justify-center">
         {/* Target Zones */}
         <div className="absolute inset-x-0 flex justify-between px-4">
-          <div className="w-16 h-16 border-2 border-dashed border-red-500/20 rounded-full flex items-center justify-center text-red-500/30 font-black text-[10px]">MISS</div>
-          <div className="w-16 h-16 border-2 border-dashed border-green-500/20 rounded-full flex items-center justify-center text-green-500/30 font-black text-[10px]">WIN</div>
+          <div className="w-16 h-16 border-2 border-dashed border-red-500/10 rounded-full flex items-center justify-center text-red-500/20 font-black text-[10px]">MISS</div>
+          <div className="w-16 h-16 border-2 border-dashed border-green-500/10 rounded-full flex items-center justify-center text-green-500/20 font-black text-[10px]">WIN</div>
         </div>
 
         <AnimatePresence mode="wait">
@@ -82,16 +82,16 @@ export default function SwipeMaster({ onWin, onBet, userBalance, betAmount, winR
               {result && (
                 <div className={`space-y-1 mb-4`}>
                     <p className={`text-4xl font-black italic ${result.multiplier > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {result.multiplier > 0 ? `+ $${result.win.toFixed(2)}` : 'WASTED'}
+                        {result.multiplier > 0 ? `+ RS ${result.win.toFixed(2)}` : 'WASTED'}
                     </p>
-                    <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-tight">Multiplier: {result.multiplier}x</p>
+                    <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-tight">Multiplier: {result.multiplier}x</p>
                 </div>
               )}
               <button 
                 onClick={startLevel}
-                className="bg-orange-500 text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-900/20 active:scale-95 transition-all"
+                className="bg-orange-500 text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-500/20 active:scale-95 transition-all"
               >
-                Play for ${betAmount}
+                Play for RS {betAmount}
               </button>
             </motion.div>
           ) : (
@@ -124,17 +124,17 @@ export default function SwipeMaster({ onWin, onBet, userBalance, betAmount, winR
       </div>
 
       <div className="w-full grid grid-cols-3 gap-2">
-        <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-800 flex flex-col items-center">
+        <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-100 flex flex-col items-center">
             <Target size={16} className="text-orange-500 mb-1" />
-            <span className="text-[8px] font-bold text-neutral-500 uppercase">Skill</span>
+            <span className="text-[8px] font-bold text-neutral-400 uppercase">Skill</span>
         </div>
-        <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-800 flex flex-col items-center">
+        <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-100 flex flex-col items-center">
             <Zap size={16} className="text-blue-500 mb-1" />
-            <span className="text-[8px] font-bold text-neutral-500 uppercase">Fast</span>
+            <span className="text-[8px] font-bold text-neutral-400 uppercase">Fast</span>
         </div>
-        <div className="bg-neutral-950 p-3 rounded-xl border border-neutral-800 flex flex-col items-center">
+        <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-100 flex flex-col items-center">
             <AlertTriangle size={16} className="text-red-500 mb-1" />
-            <span className="text-[8px] font-bold text-neutral-500 uppercase">Risk</span>
+            <span className="text-[8px] font-bold text-neutral-400 uppercase">Risk</span>
         </div>
       </div>
     </div>

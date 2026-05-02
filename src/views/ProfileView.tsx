@@ -131,30 +131,30 @@ export default function ProfileView({ profile }: { profile: any }) {
     return (
       <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="p-4 space-y-6 pb-24">
         <header className="flex items-center gap-4">
-          <button onClick={() => setActiveSection('main')} className="p-2 hover:bg-neutral-800 rounded-full transition-colors">
+          <button onClick={() => setActiveSection('main')} className="p-2 hover:bg-neutral-100 rounded-full transition-colors text-neutral-900">
             <ArrowLeft size={24} />
           </button>
-          <h2 className="text-2xl font-black italic uppercase">Notifications</h2>
+          <h2 className="text-2xl font-black italic uppercase text-neutral-900">Notifications</h2>
         </header>
         <div className="space-y-3 font-urdu">
           {notifications.length === 0 ? (
-            <div className="bg-neutral-900 border border-neutral-800 p-8 rounded-3xl text-center">
-              <Bell className="mx-auto text-neutral-800 mb-2" size={32} />
-              <p className="text-neutral-500 font-bold uppercase text-[10px]">No notifications yet</p>
+            <div className="bg-white border border-neutral-100 p-8 rounded-3xl text-center">
+              <Bell className="mx-auto text-neutral-200 mb-2" size={32} />
+              <p className="text-neutral-400 font-bold uppercase text-[10px]">No notifications yet</p>
             </div>
           ) : (
             notifications.map(n => (
               <div 
                 key={n.id} 
                 onClick={() => markAsRead(n.id)}
-                className={`p-4 rounded-2xl border ${n.read ? 'bg-neutral-900/50 border-neutral-800/50' : 'bg-neutral-900 border-orange-500/20 shadow-lg shadow-orange-500/5'}`}
+                className={`p-4 rounded-2xl border ${n.read ? 'bg-neutral-50/50 border-neutral-100' : 'bg-white border-orange-500/20 shadow-sm'}`}
               >
                 <div className="flex justify-between items-start mb-1">
-                  <p className={`font-bold text-sm ${!n.read && 'text-orange-500'}`}>{n.title}</p>
+                  <p className={`font-bold text-sm ${n.read ? 'text-neutral-700' : 'text-orange-500'}`}>{n.title}</p>
                   {!n.read && <div className="w-2 h-2 bg-orange-500 rounded-full mt-1" />}
                 </div>
-                <p className="text-xs text-neutral-500 leading-relaxed">{n.body}</p>
-                <p className="text-[8px] text-neutral-600 font-bold uppercase mt-2">{new Date(n.createdAt).toLocaleString()}</p>
+                <p className="text-xs text-neutral-400 leading-relaxed">{n.body}</p>
+                <p className="text-[8px] text-neutral-400 font-bold uppercase mt-2">{new Date(n.createdAt).toLocaleString()}</p>
               </div>
             ))
           )}
@@ -167,28 +167,28 @@ export default function ProfileView({ profile }: { profile: any }) {
     return (
       <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="p-4 space-y-6 pb-24">
         <header className="flex items-center gap-4">
-          <button onClick={() => setActiveSection('main')} className="p-2 hover:bg-neutral-800 rounded-full transition-colors">
+          <button onClick={() => setActiveSection('main')} className="p-2 hover:bg-neutral-100 rounded-full transition-colors text-neutral-900">
             <ArrowLeft size={24} />
           </button>
-          <h2 className="text-2xl font-black italic uppercase">Language / زبان</h2>
+          <h2 className="text-2xl font-black italic uppercase text-neutral-900">Language / زبان</h2>
         </header>
         <div className="space-y-4">
           <button 
             onClick={() => toggleLanguage('en')}
-            className={`w-full p-6 rounded-3xl border flex items-center justify-between group transition-all ${profile?.language === 'en' ? 'bg-orange-500 border-orange-400' : 'bg-neutral-900 border-neutral-800 hover:border-neutral-700'}`}
+            className={`w-full p-6 rounded-3xl border flex items-center justify-between group transition-all ${profile?.language === 'en' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white border-neutral-200 hover:border-neutral-300 text-neutral-900'}`}
           >
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center font-black">EN</div>
+              <div className="w-10 h-10 bg-neutral-100 rounded-xl flex items-center justify-center font-black text-neutral-900">EN</div>
               <span className="font-bold">English (US)</span>
             </div>
             {profile?.language === 'en' && <Check size={20} />}
           </button>
           <button 
             onClick={() => toggleLanguage('ur')}
-            className={`w-full p-6 rounded-3xl border flex items-center justify-between group transition-all ${profile?.language === 'ur' ? 'bg-orange-500 border-orange-400' : 'bg-neutral-900 border-neutral-800 hover:border-neutral-700'}`}
+            className={`w-full p-6 rounded-3xl border flex items-center justify-between group transition-all ${profile?.language === 'ur' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white border-neutral-200 hover:border-neutral-300 text-neutral-900'}`}
           >
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center font-urdu font-black text-lg">اردو</div>
+              <div className="w-10 h-10 bg-neutral-100 rounded-xl flex items-center justify-center font-urdu font-black text-lg text-neutral-900">اردو</div>
               <div className="text-left">
                 <p className="font-bold">Urdu</p>
                 <p className="text-[10px] opacity-70 uppercase font-bold tracking-widest font-urdu">اردو زبان منتخب کریں</p>
@@ -205,27 +205,27 @@ export default function ProfileView({ profile }: { profile: any }) {
     return (
       <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="p-4 space-y-6 pb-24">
         <header className="flex items-center gap-4">
-          <button onClick={() => setActiveSection('main')} className="p-2 hover:bg-neutral-800 rounded-full transition-colors">
+          <button onClick={() => setActiveSection('main')} className="p-2 hover:bg-neutral-100 rounded-full transition-colors text-neutral-900">
             <ArrowLeft size={24} />
           </button>
-          <h2 className="text-2xl font-black italic uppercase">Favorites</h2>
+          <h2 className="text-2xl font-black italic uppercase text-neutral-900">Favorites</h2>
         </header>
         <div className="space-y-4">
           {(!profile?.favorites || profile.favorites.length === 0) ? (
-            <div className="bg-neutral-900 border border-neutral-800 p-12 rounded-3xl text-center space-y-4">
-              <Heart className="mx-auto text-neutral-800" size={48} />
-              <p className="text-neutral-500 font-bold uppercase text-xs">No favorites added yet</p>
+            <div className="bg-white border border-neutral-100 p-12 rounded-3xl text-center space-y-4">
+              <Heart className="mx-auto text-neutral-100" size={48} />
+              <p className="text-neutral-400 font-bold uppercase text-xs">No favorites added yet</p>
             </div>
           ) : (
             profile.favorites.map((fav: string) => (
-              <div key={fav} className="bg-neutral-900 border border-neutral-800 p-4 rounded-2xl flex items-center justify-between">
+              <div key={fav} className="bg-white border border-neutral-100 p-4 rounded-2xl flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-500">
                     <Zap size={18} />
                   </div>
-                  <span className="font-bold uppercase text-sm">{fav}</span>
+                  <span className="font-bold uppercase text-sm text-neutral-900">{fav}</span>
                 </div>
-                <button className="text-red-500 p-2 hover:bg-red-500/10 rounded-lg">
+                <button className="text-red-500 p-2 hover:bg-red-50 rounded-lg">
                   <Trash2 size={18} />
                 </button>
               </div>
@@ -241,42 +241,42 @@ export default function ProfileView({ profile }: { profile: any }) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className={`p-4 space-y-6 ${profile?.language === 'ur' ? 'font-urdu' : ''}`}
+      className={`p-4 space-y-6 pb-24 ${profile?.language === 'ur' ? 'font-urdu' : ''}`}
     >
       <header className="flex flex-col items-center py-8 space-y-4">
         <div className="relative">
-          <div className="w-24 h-24 rounded-full border-4 border-orange-500 p-1 shadow-2xl shadow-orange-500/20">
+          <div className="w-24 h-24 rounded-full border-4 border-orange-500 p-1 shadow-xl shadow-orange-500/10">
             <img 
               src={profile?.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.uid}`} 
               alt="Profile" 
-              className="w-full h-full rounded-full object-cover bg-neutral-800"
+              className="w-full h-full rounded-full object-cover bg-neutral-100"
               referrerPolicy="no-referrer"
             />
           </div>
-          <div className="absolute bottom-0 right-0 bg-neutral-900 border border-neutral-700 p-1.5 rounded-full text-green-500">
+          <div className="absolute bottom-0 right-0 bg-white border border-neutral-200 p-1.5 rounded-full text-green-500">
             <div className="w-2 h-2 bg-green-500 rounded-full" />
           </div>
         </div>
         <div className="text-center">
-          <h2 className="text-2xl font-black">{profile?.displayName}</h2>
-          <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest">{profile?.role}</p>
+          <h2 className="text-2xl font-black text-neutral-900">{profile?.displayName}</h2>
+          <p className="text-neutral-400 text-xs font-bold uppercase tracking-widest">{profile?.role}</p>
         </div>
       </header>
 
       {/* Admin Section */}
       {(profile?.role === 'admin' || isAdminEmail) && (
-        <section className="bg-neutral-900 border border-orange-500/30 rounded-3xl p-6 space-y-4 shadow-xl">
+        <section className="bg-white border border-orange-500/20 rounded-3xl p-6 space-y-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <h3 className="font-bold flex items-center gap-2 text-orange-500">
                 <Shield size={18} /> Admin Dashboard
               </h3>
-              <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-tight">Main Admin: zainzeb333@gmail.com</p>
+              <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-tight">Main Admin: zainzeb333@gmail.com</p>
             </div>
           </div>
           <button 
             onClick={() => navigate('/admin')}
-            className="w-full bg-orange-500 text-white py-3 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-orange-900/20 active:scale-95 transition-all"
+            className="w-full bg-orange-500 text-white py-3 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-orange-500/20 active:scale-95 transition-all"
           >
             Enter Admin Panel
           </button>
@@ -284,33 +284,33 @@ export default function ProfileView({ profile }: { profile: any }) {
       )}
 
       {/* Referral Section */}
-      <section className="bg-neutral-900 border border-neutral-800 rounded-3xl overflow-hidden shadow-xl">
-        <div className="p-6 bg-gradient-to-br from-orange-500/10 to-transparent flex items-center justify-between border-b border-neutral-800">
+      <section className="bg-white border border-neutral-200 rounded-3xl overflow-hidden shadow-sm">
+        <div className="p-6 bg-gradient-to-br from-orange-500/5 to-transparent flex items-center justify-between border-b border-neutral-100">
           <div className="space-y-1">
-            <h3 className="font-bold flex items-center gap-2">
+            <h3 className="font-bold flex items-center gap-2 text-neutral-900">
               <Share2 size={18} className="text-orange-500" /> Invite & Earn
             </h3>
-            <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-tight">Earn RS 50 on every friend's registration</p>
+            <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-tight">Earn RS 50 on every friend's registration</p>
           </div>
-          <div className="bg-orange-500/10 text-orange-500 px-3 py-1 rounded-full text-[10px] font-black uppercase">Active</div>
+          <div className="bg-orange-50 text-orange-500 px-3 py-1 rounded-full text-[10px] font-black uppercase">Active</div>
         </div>
         
         <div className="p-6 space-y-4">
           {!profile?.referredBy ? (
             <div className="space-y-3">
-              <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest pl-1">Been invited? Enter Code</p>
+              <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1">Been invited? Enter Code</p>
               <div className="flex gap-2">
                 <input 
                   type="text" 
                   value={referralCode}
                   onChange={(e) => setReferralCode(e.target.value)}
                   placeholder="EX: ABCD12"
-                  className="flex-1 bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 font-mono font-bold text-sm uppercase placeholder:text-neutral-700 focus:border-orange-500 outline-none transition-colors"
+                  className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-mono font-bold text-sm uppercase placeholder:text-neutral-300 focus:border-orange-500 outline-none transition-colors text-neutral-900"
                 />
                 <button 
                   onClick={submitReferral}
                   disabled={refStatus === 'loading' || refStatus === 'success'}
-                  className={`px-6 py-2 rounded-xl font-bold text-xs uppercase tracking-widest transition-all active:scale-95 ${refStatus === 'success' ? 'bg-green-500 text-white' : 'bg-white text-black'}`}
+                  className={`px-6 py-2 rounded-xl font-bold text-xs uppercase tracking-widest transition-all active:scale-95 ${refStatus === 'success' ? 'bg-green-500 text-white' : 'bg-neutral-900 text-white'}`}
                 >
                   {refStatus === 'loading' ? '...' : refStatus === 'success' ? 'Applied' : 'Apply'}
                 </button>
@@ -318,20 +318,20 @@ export default function ProfileView({ profile }: { profile: any }) {
               {refStatus === 'error' && <p className="text-red-500 text-[10px] font-bold uppercase pl-1 animate-pulse">Invalid or expired code</p>}
             </div>
           ) : (
-            <div className="bg-green-500/5 border border-green-500/20 p-4 rounded-2xl flex items-center gap-3">
+            <div className="bg-green-50 border border-green-100 p-4 rounded-2xl flex items-center gap-3">
               <Check className="text-green-500" size={16} />
               <p className="text-[10px] text-green-500 font-bold uppercase">Referral benefits active</p>
             </div>
           )}
 
           <div className="pt-2">
-            <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest pl-1 mb-2">Your Invite Code</p>
+            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1 mb-2">Your Invite Code</p>
             <div 
               onClick={copyToClipboard}
-              className="flex items-center justify-between bg-neutral-950 border border-neutral-800 p-4 rounded-2xl cursor-pointer group hover:border-orange-500/50 transition-colors"
+              className="flex items-center justify-between bg-neutral-50 border border-neutral-200 p-4 rounded-2xl cursor-pointer group hover:border-orange-500/30 transition-colors"
             >
               <span className="font-mono font-black text-lg tracking-widest text-orange-500">{profile?.inviteCode}</span>
-              <div className="flex items-center gap-2 text-neutral-500 group-hover:text-neutral-300">
+              <div className="flex items-center gap-2 text-neutral-400 group-hover:text-neutral-600">
                 <span className="text-[10px] font-bold uppercase">{copied ? 'Copied' : 'Copy'}</span>
                 {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
               </div>
@@ -342,7 +342,7 @@ export default function ProfileView({ profile }: { profile: any }) {
 
       {/* Settings Grid */}
       <section className="grid grid-cols-1 gap-2">
-        <h3 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest pl-4 mb-2">Account Settings</h3>
+        <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-4 mb-2">Account Settings</h3>
         
         {[
           { id: 'notifications', icon: Bell, label: "Notifications", color: "text-blue-500", badge: notifications.filter(n => !n.read).length },
@@ -353,18 +353,18 @@ export default function ProfileView({ profile }: { profile: any }) {
           <button 
             key={item.id} 
             onClick={() => setActiveSection(item.id as ActiveSection)}
-            className="flex items-center justify-between bg-neutral-900/50 p-4 rounded-2xl hover:bg-neutral-800 transition-colors group"
+            className="flex items-center justify-between bg-white p-4 rounded-2xl hover:bg-neutral-50 transition-colors group border border-neutral-100 shadow-sm"
           >
             <div className="flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-xl bg-neutral-900 flex items-center justify-center ${item.color} relative`}>
+              <div className={`w-10 h-10 rounded-xl bg-neutral-50 flex items-center justify-center ${item.color} relative`}>
                 <item.icon size={20} />
                 {item.badge ? (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] font-black border-2 border-neutral-900">{item.badge}</span>
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] font-black border-2 border-white">{item.badge}</span>
                 ) : null}
               </div>
-              <span className="font-bold text-sm">{item.label}</span>
+              <span className="font-bold text-sm text-neutral-900">{item.label}</span>
             </div>
-            <ChevronRight size={18} className="text-neutral-600 group-hover:translate-x-1 transition-transform" />
+            <ChevronRight size={18} className="text-neutral-300 group-hover:translate-x-1 transition-transform" />
           </button>
         ))}
       </section>
@@ -372,7 +372,7 @@ export default function ProfileView({ profile }: { profile: any }) {
       <div className="pt-4 pb-12">
         <button 
           onClick={() => signOut(auth)}
-          className="w-full bg-red-500/10 border border-red-500/20 text-red-500 py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-red-500/20 transition-colors"
+          className="w-full bg-red-50 border border-red-100 text-red-500 py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-red-100 transition-colors"
         >
           <LogOut size={20} /> Sign Out
         </button>

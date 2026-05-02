@@ -57,7 +57,7 @@ export const LuckyChests: React.FC<LuckyChestsProps> = ({ onWin, onLoss, minBet,
   };
 
   return (
-    <div className="flex flex-col items-center gap-8 py-8">
+    <div className="flex flex-col items-center gap-8 py-8 bg-white rounded-3xl border border-neutral-100 shadow-sm">
       <div className="flex justify-center gap-4 w-full px-4">
         {chests.map((i) => (
           <motion.button
@@ -68,8 +68,8 @@ export const LuckyChests: React.FC<LuckyChestsProps> = ({ onWin, onLoss, minBet,
             whileTap={{ scale: 0.95 }}
             className={`relative w-24 h-24 rounded-2xl flex items-center justify-center border-2 transition-all ${
               revealed === i 
-                ? (i === winningIndex ? 'bg-green-500/20 border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]' : 'bg-red-500/20 border-red-500') 
-                : 'bg-neutral-900 border-neutral-800 hover:border-orange-500/50'
+                ? (i === winningIndex ? 'bg-green-50 border-green-500 shadow-lg shadow-green-500/10' : 'bg-red-50 border-red-500') 
+                : 'bg-neutral-50 border-neutral-100 hover:border-orange-500/50'
             }`}
           >
             <AnimatePresence mode="wait">
@@ -104,20 +104,20 @@ export const LuckyChests: React.FC<LuckyChestsProps> = ({ onWin, onLoss, minBet,
         ))}
       </div>
 
-      <div className="w-full max-w-xs space-y-4">
+      <div className="w-full max-w-xs space-y-4 px-4">
         <div className="flex items-center justify-between gap-4">
           <button 
             disabled={playing || revealed !== null}
             onClick={() => setBet(Math.max(minBet, bet - 10))}
-            className="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center font-bold"
+            className="w-10 h-10 rounded-xl bg-neutral-50 border border-neutral-100 flex items-center justify-center font-bold text-neutral-900"
           >-</button>
-          <div className="flex-1 text-center font-black text-xl italic tracking-tighter">
+          <div className="flex-1 text-center font-black text-xl italic tracking-tighter text-neutral-900">
             RS {bet}
           </div>
           <button 
             disabled={playing || revealed !== null}
             onClick={() => setBet(bet + 10)}
-            className="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center font-bold"
+            className="w-10 h-10 rounded-xl bg-neutral-50 border border-neutral-100 flex items-center justify-center font-bold text-neutral-900"
           >+</button>
         </div>
 
@@ -129,7 +129,7 @@ export const LuckyChests: React.FC<LuckyChestsProps> = ({ onWin, onLoss, minBet,
             Play Again
           </button>
         ) : (
-          <p className="text-center text-[10px] font-black uppercase text-neutral-500 tracking-widest">
+          <p className="text-center text-[10px] font-black uppercase text-neutral-400 tracking-widest">
             {playing ? 'Searching Chest...' : 'Pick a Lucky Chest'}
           </p>
         )}

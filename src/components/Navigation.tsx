@@ -13,7 +13,7 @@ export default function Navigation() {
   const location = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg bg-neutral-900/95 backdrop-blur-xl border-t border-neutral-800 px-6 py-4 flex items-center justify-between z-50 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg bg-white/95 backdrop-blur-xl border-t border-neutral-100 px-6 py-4 flex items-center justify-between z-50 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
       {navItems.map((item) => {
         const isActive = location.pathname === item.path;
         return (
@@ -22,7 +22,7 @@ export default function Navigation() {
             to={item.path}
             className={cn(
               "flex flex-col items-center gap-1 transition-all duration-300",
-              isActive ? "text-orange-500 scale-110" : "text-neutral-500 hover:text-neutral-300"
+              isActive ? "text-orange-500 scale-110" : "text-neutral-400 hover:text-neutral-600"
             )}
           >
             <item.icon size={24} strokeWidth={isActive ? 2.5 : 2} />

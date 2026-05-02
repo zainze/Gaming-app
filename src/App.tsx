@@ -102,6 +102,9 @@ export default function App() {
                   language: 'en',
                   favorites: [],
                   inviteCode: inviteCode,
+                  winStreak: 0,
+                  lossCount: 0,
+                  lastCycleReset: new Date().toISOString(),
                   createdAt: new Date().toISOString()
                 };
                 
@@ -137,7 +140,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-black text-white">
+      <div className="flex items-center justify-center min-h-screen bg-white text-black">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -149,16 +152,16 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-orange-500/30">
-        <div className="pb-24 max-w-lg mx-auto border-x border-neutral-800 min-h-screen relative shadow-2xl overflow-x-hidden">
+      <div className="min-h-screen bg-neutral-100 text-neutral-900 font-sans selection:bg-orange-500/30">
+        <div className="pb-24 max-w-lg mx-auto bg-white border-x border-neutral-100 min-h-screen relative shadow-sm overflow-x-hidden">
           {/* Top Bar */}
-          <header className="sticky top-0 z-50 bg-neutral-950/80 backdrop-blur-md border-b border-neutral-800 p-4 flex items-center justify-between">
+          <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-neutral-100 p-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-orange-900/20">P</div>
+              <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-orange-500/20">P</div>
               <span className="font-bold text-xl tracking-tight">PlayHub<span className="text-orange-500">Pro</span></span>
             </div>
             <div className="flex items-center gap-4">
-              <Search size={20} className="text-neutral-500 hover:text-orange-500 transition-colors cursor-pointer" />
+              <Search size={20} className="text-neutral-400 hover:text-orange-500 transition-colors cursor-pointer" />
             </div>
           </header>
 
