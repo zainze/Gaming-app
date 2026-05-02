@@ -19,6 +19,22 @@ export default function ProfileView({ profile }: { profile: any }) {
   const isAdminEmail = profile?.email === 'zainzeb333@gmail.com';
 
   useEffect(() => {
+    // Auto-fix for legacy users missing invite code or registry
+    if (profile && !profile.inviteCode) {
+      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const batch = writeBatch(db);
+      batch.update(doc(db, "users", profile.uid), { inviteCode: code });
+      batch.set(doc(db, "invite_codes", code), { uid: profile.uid });
+      batch.commit().catch(console.error);
+    } else if (profile?.inviteCode) {
+      // Ensure it's in the registry
+      getDoc(doc(db, "invite_codes", profile.inviteCode)).then(snap => {
+        if (!snap.exists()) {
+          setDoc(doc(db, "invite_codes", profile.inviteCode), { uid: profile.uid });
+        }
+      });
+    }
+
     if (!profile) return;
     const q = query(
       collection(db, "notifications"),
@@ -50,80 +66,161 @@ export default function ProfileView({ profile }: { profile: any }) {
 
   const [referralCode, setReferralCode] = useState("");
   const [refStatus, setRefStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [systemConfig, setSystemConfig] = useState<any>(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "system", "config"), (snap) => {
+      if (snap.exists()) setSystemConfig(snap.data());
+    });
+    return () => unsub();
+  }, []);
+
+  const referralReward = systemConfig?.referralReward || 50;
 
   const submitReferral = async () => {
     if (!referralCode.trim() || profile?.referredBy) return;
     setRefStatus('loading');
+    const inputRaw = referralCode.trim();
+    // Extract code if it's a full URL or path (e.g., https://playhub.pro/i/CODE -> CODE)
+    const inputCode = (inputRaw.includes('/') ? inputRaw.replace(/\/+$/, '').split('/').pop() : inputRaw)?.toUpperCase().trim() || "";
+    
+    if (!inputCode) {
+      setRefStatus('error');
+      return;
+    }
+
     try {
-      // 1. Find the UID for this invite code
-      const codeDoc = await getDoc(doc(db, "invite_codes", referralCode.toUpperCase().trim())).catch(err => {
-        handleFirestoreError(err, OperationType.GET, `invite_codes/${referralCode}`);
-        throw err;
-      });
+      // 1. Try Referral Code (invite_codes registry)
+      let referrerId: string | null = null;
+      const codeDoc = await getDoc(doc(db, "invite_codes", inputCode));
       
-      if (!codeDoc.exists()) {
-        setRefStatus('error');
+      if (codeDoc.exists()) {
+        referrerId = codeDoc.data().uid;
+      } else {
+        // Fallback: Search users collection for this inviteCode
+        const userQ = query(collection(db, "users"), where("inviteCode", "==", inputCode), limit(1));
+        const userSnap = await getDocs(userQ);
+        if (!userSnap.empty) {
+          referrerId = userSnap.docs[0].id;
+          // While we're here, let's fix the registry for future fast lookups
+          setDoc(doc(db, "invite_codes", inputCode), { uid: referrerId });
+        }
+      }
+      
+      if (referrerId) {
+        if (referrerId === profile.uid) {
+          setRefStatus('error');
+          return;
+        }
+
+        const batch = writeBatch(db);
+        
+        // Mark current user as referred
+        batch.update(doc(db, "users", profile.uid), { referredBy: referrerId });
+
+        // Add reward to referrer balance
+        batch.update(doc(db, "users", referrerId), { balance: increment(referralReward) });
+
+        // Create referral record
+        const refId = `${profile.uid}_${referrerId}`;
+        batch.set(doc(db, "referrals", refId), {
+          referrerId: referrerId,
+          referredId: profile.uid,
+          rewardAmount: referralReward,
+          createdAt: new Date().toISOString()
+        });
+
+        // Create transaction for referrer
+        batch.set(doc(collection(db, "transactions")), {
+          userId: referrerId,
+          amount: referralReward,
+          type: 'referral',
+          status: 'completed',
+          createdAt: new Date().toISOString()
+        });
+
+        // Notification
+        batch.set(doc(collection(db, "notifications")), {
+          userId: referrerId,
+          title: "Referral Reward! 🎉",
+          body: `Congratulations! ${profile.displayName} used your code. RS ${referralReward} added to balance.`,
+          type: 'success',
+          read: false,
+          createdAt: new Date().toISOString()
+        });
+
+        await batch.commit().catch(err => {
+          handleFirestoreError(err, OperationType.WRITE, "referral_batch");
+          throw err;
+        });
+        setRefStatus('success');
         return;
       }
 
-      const referrerId = codeDoc.data().uid;
-      if (referrerId === profile.uid) {
+    // 2. Try Promo Code (promo_codes)
+    const promoDoc = await getDoc(doc(db, "promo_codes", inputCode)).catch(err => {
+      handleFirestoreError(err, OperationType.GET, `promo_codes/${inputCode}`);
+      throw err;
+    });
+    if (promoDoc.exists()) {
+      const promo = promoDoc.data();
+      if (!promo.active || (promo.usedBy && promo.usedBy.includes(profile.uid))) {
         setRefStatus('error');
         return;
       }
 
       const batch = writeBatch(db);
       
-      // 2. Mark current user as referred
-      const userRef = doc(db, "users", profile.uid);
-      batch.update(userRef, { referredBy: referrerId });
-
-      // 3. Add RS 50 to referrer balance
-      const referrerRef = doc(db, "users", referrerId);
-      batch.update(referrerRef, { balance: increment(50) });
-
-      // 4. Create referral record (Deterministic ID)
-      const refId = `${profile.uid}_${referrerId}`;
-      const referralRef = doc(db, "referrals", refId);
-      batch.set(referralRef, {
-        referrerId: referrerId,
-        referredId: profile.uid,
-        rewardAmount: 50,
-        createdAt: new Date().toISOString()
-      });
-
-      // 5. Create transaction for referrer
-      const txRef = doc(collection(db, "transactions"));
-      batch.set(txRef, {
-        userId: referrerId,
-        amount: 50,
-        type: 'referral',
-        status: 'completed',
-        createdAt: new Date().toISOString()
-      });
-
-      // 6. Create notification for referrer
-      const notifRef = doc(collection(db, "notifications"));
-      batch.set(notifRef, {
-        userId: referrerId,
-        title: "Referral Reward! 🎉",
-        body: `Congratulations! ${profile.displayName} used your code. RS 50 added to balance.`,
-        type: 'success',
-        read: false,
-        createdAt: new Date().toISOString()
+      // Reward Type Handling
+      if (promo.type === 'balance') {
+         batch.update(doc(db, "users", profile.uid), { balance: increment(promo.value) });
+         batch.set(doc(collection(db, "transactions")), {
+           userId: profile.uid,
+           amount: promo.value,
+           type: 'bonus',
+           status: 'completed',
+           createdAt: new Date().toISOString(),
+           promoCode: inputCode
+         });
+      } else if (promo.type === 'double_rewards') {
+         // Set double rewards for 24 hours
+         const expiry = new Date();
+         expiry.setHours(expiry.getHours() + 24);
+         batch.update(doc(db, "users", profile.uid), { 
+           doubleRewardsUntil: expiry.toISOString(),
+           rewardMultiplier: 2
+         });
+         batch.set(doc(collection(db, "transactions")), {
+           userId: profile.uid,
+           amount: 0,
+           type: 'bonus',
+           status: 'completed',
+           createdAt: new Date().toISOString(),
+           promoCode: inputCode,
+           note: "Double Rewards Activated (24h)"
+         });
+      }
+      
+      // Record Usage
+      batch.update(doc(db, "promo_codes", inputCode), {
+        usedBy: [...(promo.usedBy || []), profile.uid]
       });
 
       await batch.commit().catch(err => {
-        handleFirestoreError(err, OperationType.WRITE, "referral_batch");
+        handleFirestoreError(err, OperationType.WRITE, "promo_batch");
         throw err;
       });
-
       setRefStatus('success');
-    } catch (err) {
-      console.error("Referral error:", err);
-      setRefStatus('error');
+      return;
     }
-  };
+
+    setRefStatus('error');
+  } catch (err) {
+    console.error("Referral/Promo error:", err);
+    // Already handled by throw from handleFirestoreError
+    setRefStatus('error');
+  }
+};
 
   if (activeSection === 'privacy') return <PrivacyView onBack={() => setActiveSection('main')} />;
 
@@ -288,41 +385,34 @@ export default function ProfileView({ profile }: { profile: any }) {
         <div className="p-6 bg-gradient-to-br from-orange-500/5 to-transparent flex items-center justify-between border-b border-neutral-100">
           <div className="space-y-1">
             <h3 className="font-bold flex items-center gap-2 text-neutral-900">
-              <Share2 size={18} className="text-orange-500" /> Invite & Earn
+              <Share2 size={18} className="text-orange-500" /> Promo & Referral
             </h3>
-            <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-tight">Earn RS 50 on every friend's registration</p>
+            <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-tight">Earn RS {referralReward} on every friend's registration</p>
           </div>
           <div className="bg-orange-50 text-orange-500 px-3 py-1 rounded-full text-[10px] font-black uppercase">Active</div>
         </div>
         
         <div className="p-6 space-y-4">
-          {!profile?.referredBy ? (
-            <div className="space-y-3">
-              <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1">Been invited? Enter Code</p>
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  value={referralCode}
-                  onChange={(e) => setReferralCode(e.target.value)}
-                  placeholder="EX: ABCD12"
-                  className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-mono font-bold text-sm uppercase placeholder:text-neutral-300 focus:border-orange-500 outline-none transition-colors text-neutral-900"
-                />
-                <button 
-                  onClick={submitReferral}
-                  disabled={refStatus === 'loading' || refStatus === 'success'}
-                  className={`px-6 py-2 rounded-xl font-bold text-xs uppercase tracking-widest transition-all active:scale-95 ${refStatus === 'success' ? 'bg-green-500 text-white' : 'bg-neutral-900 text-white'}`}
-                >
-                  {refStatus === 'loading' ? '...' : refStatus === 'success' ? 'Applied' : 'Apply'}
-                </button>
-              </div>
-              {refStatus === 'error' && <p className="text-red-500 text-[10px] font-bold uppercase pl-1 animate-pulse">Invalid or expired code</p>}
+          <div className="space-y-3">
+            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1">Redeem Promo Code or Invite</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input 
+                type="text" 
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value)}
+                placeholder="PROMO OR INVITE"
+                className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 font-mono font-bold text-sm uppercase placeholder:text-neutral-300 focus:border-orange-500 outline-none transition-colors text-neutral-900"
+              />
+              <button 
+                onClick={submitReferral}
+                disabled={refStatus === 'loading' || (refStatus === 'success' && !!profile?.referredBy)}
+                className={`w-full sm:w-auto px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-tighter transition-all active:scale-95 flex-shrink-0 ${refStatus === 'success' ? 'bg-green-500 text-white' : 'bg-neutral-900 text-white'}`}
+              >
+                {refStatus === 'loading' ? 'Processing...' : refStatus === 'success' ? 'Applied Successfully' : 'Redeem Code'}
+              </button>
             </div>
-          ) : (
-            <div className="bg-green-50 border border-green-100 p-4 rounded-2xl flex items-center gap-3">
-              <Check className="text-green-500" size={16} />
-              <p className="text-[10px] text-green-500 font-bold uppercase">Referral benefits active</p>
-            </div>
-          )}
+            {refStatus === 'error' && <p className="text-red-500 text-[10px] font-bold uppercase pl-1 animate-pulse">Invalid or expired code</p>}
+          </div>
 
           <div className="pt-2">
             <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1 mb-2">Your Invite Code</p>

@@ -35,6 +35,7 @@ export default function ThreeCardSlipper({
   const [winningIndex, setWinningIndex] = useState<number>(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [shake, setShake] = useState(false);
+  const [showPenalty, setShowPenalty] = useState(false);
   const [shufflePositions, setShufflePositions] = useState([0, 1, 2]);
   
   const audioContext = useRef<AudioContext | null>(null);
@@ -76,6 +77,14 @@ export default function ThreeCardSlipper({
 
   const playLossSound = () => {
     playSound(110, 'sawtooth', 0.5, 0.2); // A2
+  };
+
+  const playPenaltySound = () => {
+    if (!audioContext.current) return;
+    // Aggressive descending tone
+    playSound(220, 'sawtooth', 0.1, 0.2); 
+    setTimeout(() => playSound(164.81, 'sawtooth', 0.1, 0.2), 100);
+    setTimeout(() => playSound(110, 'sawtooth', 0.4, 0.3), 200);
   };
 
   const triggerShake = () => {
@@ -125,6 +134,9 @@ export default function ThreeCardSlipper({
       onLoss();
       if (losses + 1 >= 2) {
         triggerShake();
+        playPenaltySound();
+        setShowPenalty(true);
+        setTimeout(() => setShowPenalty(false), 2000);
         onPenalty(penaltyAmount);
       }
     }
@@ -236,6 +248,30 @@ export default function ThreeCardSlipper({
             className={`mt-4 text-center py-2 rounded-xl border font-black uppercase text-[10px] cursor-pointer transition-all hover:scale-[1.02] ${selectedIndex === winningIndex ? 'bg-green-500 border-green-600 text-white shadow-lg' : 'bg-red-500 border-red-600 text-white shadow-lg'}`}
           >
             {selectedIndex === winningIndex ? "SUCCESS" : "FAILED"} - TAP TO RESET
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showPenalty && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.5 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5, y: -20 }}
+            className="absolute inset-0 z-[100] flex items-center justify-center pointer-events-none p-6"
+          >
+            <div className="bg-red-600/95 backdrop-blur-xl border-2 border-red-400 p-8 rounded-[2rem] shadow-2xl flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
+                <AlertCircle size={40} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-black text-2xl italic uppercase tracking-tighter">Penalty!</h3>
+                <p className="text-red-100 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Too many losses</p>
+              </div>
+              <div className="bg-black/20 px-6 py-3 rounded-2xl">
+                <span className="text-white font-black text-3xl italic">-RS {penaltyAmount}</span>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

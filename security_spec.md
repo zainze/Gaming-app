@@ -1,4 +1,4 @@
-# Security Specification - PlayHub Pro
+# Security Specification - h666
 
 ## 1. Data Invariants
 - Each user profile corresponds to a unique Firebase Auth UID.

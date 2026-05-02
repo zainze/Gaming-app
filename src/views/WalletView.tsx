@@ -1,10 +1,11 @@
 import { motion } from "motion/react";
-import { Plus, Minus, History, CreditCard, ArrowDownCircle, ArrowUpCircle, QrCode, Smartphone, Landmark, CheckCircle2, AlertCircle } from "lucide-react";
+import { Plus, Minus, History, CreditCard, ArrowDownCircle, ArrowUpCircle, QrCode, Smartphone, Landmark, CheckCircle2, AlertCircle, Upload } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { formatCurrency } from "../lib/utils";
 import { db, auth } from "../lib/firebase";
 import { handleFirestoreError, OperationType } from "../lib/firestore-errors";
 import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc } from "firebase/firestore";
+import { uploadToCloudinary } from "../lib/cloudinary";
 
 type Transaction = {
   id: string;
@@ -16,6 +17,7 @@ type Transaction = {
   accountNumber?: string;
   accountName?: string;
   transactionId?: string;
+  proofUrl?: string;
 };
 
 export default function WalletView({ profile }: { profile: any }) {
@@ -23,14 +25,27 @@ export default function WalletView({ profile }: { profile: any }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [depositMethod, setDepositMethod] = useState<'EasyPaisa' | 'JazzCash' | 'Bank'>('EasyPaisa');
   const [withdrawMethod, setWithdrawMethod] = useState<'EasyPaisa' | 'JazzCash' | 'Bank'>('EasyPaisa');
+  const [paymentConfig, setPaymentConfig] = useState<any>(null);
   
   // Form States
   const [amount, setAmount] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [accountName, setAccountName] = useState("");
   const [transactionId, setTransactionId] = useState("");
+  const [proofFile, setProofFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  useEffect(() => {
+    const unsubConfig = onSnapshot(doc(db, "system", "config"), (snap) => {
+      if (snap.exists()) {
+        setPaymentConfig(snap.data());
+      }
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, "system/config");
+    });
+    return () => unsubConfig();
+  }, []);
 
   useEffect(() => {
     if (!profile?.uid) return;
@@ -63,6 +78,11 @@ export default function WalletView({ profile }: { profile: any }) {
 
     setLoading(true);
     try {
+      let proofUrl = "";
+      if (proofFile) {
+        proofUrl = await uploadToCloudinary(proofFile);
+      }
+
       await addDoc(collection(db, "transactions"), {
         userId: profile.uid,
         amount: parseFloat(amount),
@@ -71,6 +91,7 @@ export default function WalletView({ profile }: { profile: any }) {
         accountNumber,
         accountName,
         transactionId,
+        proofUrl,
         status: 'pending',
         createdAt: new Date().toISOString()
       }).catch(err => {
@@ -82,6 +103,7 @@ export default function WalletView({ profile }: { profile: any }) {
       setAccountNumber("");
       setAccountName("");
       setTransactionId("");
+      setProofFile(null);
     } catch (err) {
       console.error(err);
       setMessage({ type: 'error', text: 'Failed to submit request' });
@@ -209,28 +231,71 @@ export default function WalletView({ profile }: { profile: any }) {
       </div>
 
       {/* Tab Content */}
-      <div className="space-y-4">
+    <div className="space-y-4">
         {tab === 'deposit' && (
           <form onSubmit={handleDeposit} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="bg-white border border-neutral-200 rounded-3xl p-6 space-y-6 shadow-sm">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1">Select Method</label>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pl-1">
+                  <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Payment Protocol</label>
+                  <span className="text-[8px] font-black text-green-500 uppercase flex items-center gap-1">
+                    <span className="w-1 h-1 bg-green-500 rounded-full" /> Instant Processing
+                  </span>
+                </div>
                 <div className="grid grid-cols-3 gap-3">
-                  {(['EasyPaisa', 'JazzCash', 'Bank'] as const).map((m) => (
+                  {[
+                    { id: 'EasyPaisa', name: 'EasyPaisa', icon: paymentConfig?.easypaisaLogo || 'https://cdn-icons-png.flaticon.com/512/3039/3039431.png' },
+                    { id: 'JazzCash', name: 'JazzCash', icon: paymentConfig?.jazzcashLogo || 'https://cdn-icons-png.flaticon.com/512/1041/1041844.png' },
+                    { id: 'Bank', name: 'Bank Transfer', icon: 'https://cdn-icons-png.flaticon.com/512/2830/2830284.png' }
+                  ].map((m) => (
                     <button 
                       type="button"
-                      key={m} 
-                      onClick={() => setDepositMethod(m)}
-                      className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${
-                        depositMethod === m 
-                        ? 'border-orange-500 bg-orange-50 text-orange-500' 
-                        : 'border-neutral-100 bg-neutral-50 text-neutral-400'
+                      key={m.id} 
+                      onClick={() => setDepositMethod(m.id as any)}
+                      className={`relative p-4 rounded-3xl border flex flex-col items-center gap-3 transition-all group ${
+                        depositMethod === m.id 
+                        ? 'border-orange-500 bg-orange-50 shadow-lg shadow-orange-500/5' 
+                        : 'border-neutral-100 bg-neutral-50 hover:bg-neutral-100'
                       }`}
                     >
-                      {m === 'EasyPaisa' ? <Smartphone size={18} /> : m === 'JazzCash' ? <Smartphone size={18} /> : <Landmark size={18} />}
-                      <span className="text-[8px] font-black uppercase tracking-tighter">{m}</span>
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center p-2 transition-transform duration-500 ${depositMethod === m.id ? 'scale-110' : 'group-hover:scale-105'}`}>
+                         <img 
+                           src={m.icon} 
+                           alt={m.name} 
+                           className={`w-full h-full object-contain ${depositMethod === m.id ? '' : 'grayscale'}`} 
+                         />
+                      </div>
+                      <span className={`text-[8px] font-black uppercase tracking-tighter ${depositMethod === m.id ? 'text-orange-600' : 'text-neutral-400'}`}>{m.name}</span>
+                      {depositMethod === m.id && (
+                        <motion.div 
+                          layoutId="activeMethod"
+                          className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 border-2 border-white rounded-full flex items-center justify-center"
+                        >
+                          <CheckCircle2 size={8} className="text-white" />
+                        </motion.div>
+                      )}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              <div className="p-4 bg-neutral-50 rounded-2xl border border-neutral-100 space-y-2">
+                <p className="text-[10px] font-black uppercase text-neutral-400 text-center mb-2">Send Funds to</p>
+                <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-neutral-100">
+                    <span className="text-[8px] font-black uppercase text-neutral-400">Account #</span>
+                    <span className="text-xs font-black italic select-all">
+                      {depositMethod === 'EasyPaisa' ? paymentConfig?.easypaisaNumber || "0300 0000000" : 
+                       depositMethod === 'JazzCash' ? paymentConfig?.jazzcashNumber || "0300 0000000" : 
+                       paymentConfig?.bankNumber || "Not Set"}
+                    </span>
+                </div>
+                <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-neutral-100">
+                    <span className="text-[8px] font-black uppercase text-neutral-400">Title</span>
+                    <span className="text-xs font-black italic">
+                      {depositMethod === 'EasyPaisa' ? paymentConfig?.easypaisaName || "ADMIN" : 
+                       depositMethod === 'JazzCash' ? paymentConfig?.jazzcashName || "ADMIN" : 
+                       paymentConfig?.bankName || "ADMIN"}
+                    </span>
                 </div>
               </div>
 
@@ -275,6 +340,27 @@ export default function WalletView({ profile }: { profile: any }) {
                     className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl p-4 text-sm font-bold focus:ring-1 focus:ring-orange-500 outline-none font-mono text-neutral-900" 
                   />
                 </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1">Payment Screenshot (Optional)</label>
+                  <div className="relative">
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                      className="hidden" 
+                      id="proof-upload"
+                    />
+                    <label 
+                      htmlFor="proof-upload"
+                      className="w-full bg-neutral-50 border border-neutral-200 border-dashed rounded-2xl p-4 flex items-center justify-center gap-3 cursor-pointer hover:bg-neutral-100 transition-colors"
+                    >
+                      <Upload size={18} className="text-neutral-400" />
+                      <span className="text-xs font-bold text-neutral-500 uppercase tracking-tight">
+                        {proofFile ? proofFile.name : "Upload Receipt Screenshot"}
+                      </span>
+                    </label>
+                  </div>
+                </div>
               </div>
 
               <button 
@@ -290,22 +376,45 @@ export default function WalletView({ profile }: { profile: any }) {
         {tab === 'withdraw' && (
           <form onSubmit={handleWithdraw} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
              <div className="bg-white border border-neutral-200 rounded-3xl p-6 space-y-6 shadow-sm">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1">Select Method</label>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pl-1">
+                  <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Select Receiving Method</label>
+                   <span className="text-[8px] font-black text-orange-500 uppercase flex items-center gap-1">
+                    <span className="w-1 h-1 bg-orange-500 rounded-full animate-pulse" /> Verified Channels Only
+                  </span>
+                </div>
                 <div className="grid grid-cols-3 gap-3">
-                  {(['EasyPaisa', 'JazzCash', 'Bank'] as const).map((m) => (
+                  {[
+                    { id: 'EasyPaisa', name: 'EasyPaisa', icon: paymentConfig?.easypaisaLogo || 'https://cdn-icons-png.flaticon.com/512/3039/3039431.png' },
+                    { id: 'JazzCash', name: 'JazzCash', icon: paymentConfig?.jazzcashLogo || 'https://cdn-icons-png.flaticon.com/512/1041/1041844.png' },
+                    { id: 'Bank', name: 'Bank Transfer', icon: 'https://cdn-icons-png.flaticon.com/512/2830/2830284.png' }
+                  ].map((m) => (
                     <button 
                       type="button"
-                      key={m} 
-                      onClick={() => setWithdrawMethod(m)}
-                      className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${
-                        withdrawMethod === m 
-                        ? 'border-orange-500 bg-orange-50 text-orange-500' 
-                        : 'border-neutral-100 bg-neutral-50 text-neutral-400'
+                      key={m.id} 
+                      onClick={() => setWithdrawMethod(m.id as any)}
+                      className={`relative p-4 rounded-3xl border flex flex-col items-center gap-3 transition-all group ${
+                        withdrawMethod === m.id 
+                        ? 'border-orange-500 bg-orange-50 shadow-lg shadow-orange-500/5' 
+                        : 'border-neutral-100 bg-neutral-50 hover:bg-neutral-100'
                       }`}
                     >
-                      {m === 'EasyPaisa' ? <Smartphone size={18} /> : m === 'JazzCash' ? <Smartphone size={18} /> : <Landmark size={18} />}
-                      <span className="text-[8px] font-black uppercase tracking-tighter">{m}</span>
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center p-2 transition-transform duration-500 ${withdrawMethod === m.id ? 'scale-110' : 'group-hover:scale-105'}`}>
+                         <img 
+                           src={m.icon} 
+                           alt={m.name} 
+                           className={`w-full h-full object-contain ${withdrawMethod === m.id ? '' : 'grayscale'}`} 
+                         />
+                      </div>
+                      <span className={`text-[8px] font-black uppercase tracking-tighter ${withdrawMethod === m.id ? 'text-orange-600' : 'text-neutral-400'}`}>{m.name}</span>
+                      {withdrawMethod === m.id && (
+                        <motion.div 
+                          layoutId="activeWithdrawMethod"
+                          className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 border-2 border-white rounded-full flex items-center justify-center"
+                        >
+                          <CheckCircle2 size={8} className="text-white" />
+                        </motion.div>
+                      )}
                     </button>
                   ))}
                 </div>

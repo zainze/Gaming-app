@@ -16,6 +16,8 @@
         "language": { "type": "string", "enum": ["en", "ur"] },
         "favorites": { "type": "array", "items": { "type": "string" } },
         "lastBonusClaimed": { "type": "string", "format": "date-time" },
+        "doubleRewardsUntil": { "type": "string", "format": "date-time" },
+        "rewardMultiplier": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["uid", "email", "balance", "role"]
@@ -44,11 +46,13 @@
         "id": { "type": "string" },
         "userId": { "type": "string" },
         "amount": { "type": "number" },
-        "type": { "type": "string", "enum": ["deposit", "withdraw", "wager", "win", "referral"] },
+        "type": { "type": "string", "enum": ["deposit", "withdraw", "wager", "win", "referral", "bonus"] },
         "method": { "type": "string", "description": "EasyPaisa, JazzCash, Bank" },
         "accountNumber": { "type": "string" },
         "accountName": { "type": "string" },
         "transactionId": { "type": "string", "description": "Proof of payment for deposits" },
+        "promoCode": { "type": "string" },
+        "note": { "type": "string" },
         "status": { "type": "string", "enum": ["pending", "completed", "failed"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },
@@ -99,6 +103,20 @@
       "properties": {
         "uid": { "type": "string" }
       }
+    },
+    "PromoCode": {
+      "title": "Promo Code",
+      "description": "Reward codes for users",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "value": { "type": "number" },
+        "type": { "type": "string", "enum": ["balance", "double_rewards"] },
+        "active": { "type": "boolean" },
+        "usedBy": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["code", "value", "type", "active"]
     }
   },
   "firestore": {
@@ -130,8 +148,21 @@
       "schema": "InviteCode",
       "description": "Invite code to UID mapping"
     },
+    "/promo_codes/{code}": {
+      "schema": "PromoCode",
+      "description": "Promo and reward codes registry"
+    },
     "/system/config": {
-      "schema": "object",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "minBet": { "type": "number" },
+          "dailyBonus": { "type": "number" },
+          "referralReward": { "type": "number" },
+          "joiningBonus": { "type": "number", "description": "Initial balance for new users" },
+          "maintenance": { "type": "boolean" }
+        }
+      },
       "description": "Global system settings."
     }
   }

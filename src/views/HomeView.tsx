@@ -196,6 +196,22 @@ export default function HomeView({ profile }: { profile: any }) {
         </div>
       </div>
 
+      {/* Active Boost Banner */}
+      {profile?.doubleRewardsUntil && new Date(profile.doubleRewardsUntil) > new Date() && (
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-4 rounded-3xl text-white flex items-center justify-between shadow-lg shadow-orange-500/20">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <Sparkles size={20} className="animate-pulse" />
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase italic italic">{profile?.rewardMultiplier || 2}X Rewards Active</p>
+              <p className="text-[8px] font-bold uppercase opacity-80">All winnings are being multiplied! Ends soon.</p>
+            </div>
+          </div>
+          <div className="bg-black/20 px-3 py-1 rounded-full text-[8px] font-black uppercase">Active</div>
+        </div>
+      )}
+
       {/* Horizontal Banner Coupons */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
@@ -232,25 +248,30 @@ export default function HomeView({ profile }: { profile: any }) {
         <h3 className="font-bold text-lg text-neutral-900">{profile?.language === 'ur' ? 'تیزی سے کھیلیں' : 'Quick Launch'}</h3>
         <div className="space-y-3">
           {[
+            { id: 'aviator', name: 'Aviator', img: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=400&auto=format&fit=crop" },
             { id: 'spin', name: 'Spin Wheel', img: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
             { id: 'coin', name: 'Coin Flip', img: "https://cdn-icons-png.flaticon.com/512/550/550614.png" },
-            { id: 'swipe', name: 'Swipe Master', img: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" }
-          ].map((game) => (
-            <div key={game.name} className="bg-white border border-neutral-200 p-3 rounded-2xl flex items-center justify-between group cursor-pointer hover:border-orange-500/30 transition-colors shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-neutral-50 rounded-xl overflow-hidden shadow-sm border border-neutral-100">
-                   <img src={game.img} alt={game.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+          ].map((game) => {
+            const config = gamesConfig[game.id] || {};
+            const displayImage = config.image || game.img;
+            
+            return (
+              <div key={game.name} className="bg-white border border-neutral-200 p-3 rounded-2xl flex items-center justify-between group cursor-pointer hover:border-orange-500/30 transition-colors shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-neutral-50 rounded-xl overflow-hidden shadow-sm border border-neutral-100">
+                    <img src={displayImage} alt={game.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+                  </div>
+                  <div>
+                    <p className="font-bold uppercase tracking-tight text-sm text-neutral-900">{game.name}</p>
+                    <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">Min Bet: RS {config.minBet || minBet}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-bold uppercase tracking-tight text-sm text-neutral-900">{game.name}</p>
-                  <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">Min Bet: RS {gamesConfig[game.id]?.minBet || minBet}</p>
-                </div>
+                <button className="bg-neutral-50 px-4 py-2 rounded-xl text-neutral-400 group-hover:text-orange-500 group-hover:bg-orange-500/10 transition-colors font-bold text-[10px] uppercase tracking-widest border border-neutral-100">
+                  Launch
+                </button>
               </div>
-              <button className="bg-neutral-50 px-4 py-2 rounded-xl text-neutral-400 group-hover:text-orange-500 group-hover:bg-orange-500/10 transition-colors font-bold text-[10px] uppercase tracking-widest border border-neutral-100">
-                Launch
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
     </motion.main>

@@ -53,7 +53,7 @@ export default function PrivacyView({ onBack }: { onBack: () => void }) {
         <Fingerprint className="text-orange-500" size={32} />
         <div>
           <p className="font-bold text-sm">Enhanced Security Active</p>
-          <p className="text-[10px] text-neutral-500 uppercase font-bold">Verified by PlayHub Guard</p>
+          <p className="text-[10px] text-neutral-500 uppercase font-bold">Verified by h666 Guard</p>
         </div>
       </div>
 

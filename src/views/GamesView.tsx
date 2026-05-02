@@ -13,13 +13,20 @@ import { LuckyChests } from "../components/LuckyChests";
 import { DiceRoll } from "../components/DiceRoll";
 import { ScratchCard } from "../components/ScratchCard";
 import ThreeCardSlipper from "../components/ThreeCardSlipper";
+import { Aviator } from "../components/Aviator";
+import { BannerSlider } from "../components/BannerSlider";
+import { PlinkoPro } from "../components/PlinkoPro";
+import { MinesFinder } from "../components/MinesFinder";
 
 export default function GamesView({ profile }: { profile: any }) {
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const [minBet, setMinBet] = useState(10);
   const [gamesConfig, setGamesConfig] = useState<Record<string, any>>({});
 
+  const [gamesList, setGamesList] = useState<any[]>([]);
+
   useEffect(() => {
+    // ... existing system config unsub omitted for brevity or I should just include it ...
     const unsubGlobal = onSnapshot(doc(db, "system", "config"), (snap) => {
       if (snap.exists()) {
         setMinBet(snap.data().minBet || 10);
@@ -30,10 +37,16 @@ export default function GamesView({ profile }: { profile: any }) {
 
     const unsubGames = onSnapshot(collection(db, "games"), (snap) => {
       const config: Record<string, any> = {};
+      const list: any[] = [];
       snap.docs.forEach(d => {
-        config[d.id] = d.data();
+        const data = d.data();
+        config[d.id] = data;
+        if (data.active !== false) {
+          list.push({ id: d.id, ...data });
+        }
       });
       setGamesConfig(config);
+      setGamesList(list);
     }, (err) => {
       handleFirestoreError(err, OperationType.GET, "games");
     });
@@ -45,75 +58,53 @@ export default function GamesView({ profile }: { profile: any }) {
   }, []);
 
   const categories = [
-    { name: "Classic", icon: Gamepad2, count: 2, color: "text-orange-500" },
-    { name: "Skill", icon: Sparkles, count: 2, color: "text-purple-500" },
-    { name: "Multiplayer", icon: Users, count: 0, color: "text-blue-500" },
+    { name: "All", icon: Gamepad2, color: "text-orange-500" },
+    { name: "Skill", icon: Users, color: "text-blue-500" },
   ];
 
-  const games = [
-    { 
-      title: "Slipper Monte", 
-      category: "Skill", 
-      players: 342, 
-      id: 'slipper', 
-      image: "https://images.unsplash.com/photo-1626775238053-4315516ebaec?q=80&w=400&auto=format&fit=crop",
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V9Z"/><path d="M9 22V12h6v10"/><path d="M2 13h20"/></svg>' 
-    },
-    { 
-      title: "Spin Wheel", 
-      category: "Classic", 
-      players: 124, 
-      id: 'spin', 
-      image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png",
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.5L12 3l1 9.5h7L12 21l-1-9.5H4z"/></svg>' 
-    },
-    { 
-      title: "Coin Flip", 
-      category: "Classic", 
-      players: 56, 
-      id: 'coin', 
-      image: "https://cdn-icons-png.flaticon.com/512/550/550614.png",
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/></svg>' 
-    },
-    { 
-      title: "Swipe Master", 
-      category: "Skill", 
-      players: 210, 
-      id: 'swipe', 
-      image: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png",
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>' 
-    },
-    { 
-      title: "Lucky Chests", 
-      category: "Classic", 
-      players: 89, 
-      id: 'chests', 
-      image: "https://cdn-icons-png.flaticon.com/512/3233/3233483.png",
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>' 
-    },
-    { 
-      title: "Dice Pro", 
-      category: "Classic", 
-      players: 156, 
-      id: 'dice', 
-      image: "https://cdn-icons-png.flaticon.com/512/3533/3533966.png",
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="15.5" r="1.5"/></svg>' 
-    },
-    { 
-      title: "Gold Scratch", 
-      category: "Skill", 
-      players: 243, 
-      id: 'scratch', 
-      image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png",
-      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>' 
-    },
-  ];
+  // Merge hardcoded meta if needed, but prefer Firestore
+  const defaultGamesMeta: Record<string, any> = {
+    slipper: { title: "Slipper Monte", category: "Skill", image: "https://images.unsplash.com/photo-1626775238053-4315516ebaec?q=80&w=400&auto=format&fit=crop" },
+    spin: { title: "Spin Wheel", category: "Classic", image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
+    coin: { title: "Coin Flip", category: "Classic", image: "https://cdn-icons-png.flaticon.com/512/550/550614.png" },
+    swipe: { title: "Swipe Master", category: "Skill", image: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" },
+    chests: { title: "Lucky Chests", category: "Classic", image: "https://cdn-icons-png.flaticon.com/512/3233/3233483.png" },
+    dice: { title: "Dice Pro", category: "Classic", image: "https://cdn-icons-png.flaticon.com/512/3533/3533966.png" },
+    scratch: { title: "Gold Scratch", category: "Skill", image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
+    aviator: { title: "Aviator", category: "Classic", image: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=400&auto=format&fit=crop" },
+    plinko: { title: "Plinko Pro", category: "Skill", image: "https://images.unsplash.com/photo-1553481187-be93c21490a9?q=80&w=400&auto=format&fit=crop" },
+    mines: { title: "Mines Finder", category: "Skill", image: "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=400&auto=format&fit=crop" },
+  };
+
+  const [activeCategory, setActiveCategory] = useState("All");
+
+  const displayedGames = gamesList.map(g => ({
+    ...g,
+    title: g.name || defaultGamesMeta[g.id]?.title || g.id,
+    category: g.category || defaultGamesMeta[g.id]?.category || "Classic",
+    image: g.image || defaultGamesMeta[g.id]?.image || "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop",
+    players: Math.floor(Math.random() * 500) + 100 // Randomized live players for effect
+  }));
+
+  const filteredGames = displayedGames.filter(g => 
+    activeCategory === "All" || g.category === activeCategory
+  );
+
 
   const handleWin = async (amount: number) => {
     if (!profile) return;
+    
+    let finalAmount = amount;
+    const now = new Date();
+    const isDoubleActive = profile.doubleRewardsUntil && new Date(profile.doubleRewardsUntil) > now;
+    
+    if (isDoubleActive) {
+      finalAmount *= (profile.rewardMultiplier || 2);
+    }
+
     try {
       await updateDoc(doc(db, "users", profile.uid), {
-        balance: increment(amount),
+        balance: increment(finalAmount),
         winStreak: increment(1)
       }).catch(err => {
         handleFirestoreError(err, OperationType.WRITE, `users/${profile.uid}`);
@@ -122,10 +113,11 @@ export default function GamesView({ profile }: { profile: any }) {
       // Add transaction for history
       await addDoc(collection(db, "transactions"), {
         userId: profile.uid,
-        amount: amount,
+        amount: finalAmount,
         type: 'win',
         status: 'completed',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        note: isDoubleActive ? "Double Rewards Applied" : undefined
       }).catch(err => {
         handleFirestoreError(err, OperationType.WRITE, "transactions");
         throw err;
@@ -238,8 +230,10 @@ export default function GamesView({ profile }: { profile: any }) {
     }
   };
 
+  const isFullScreen = activeGame === 'aviator' || activeGame === 'mines' || activeGame === 'plinko';
+
   return (
-    <div className="relative w-full h-full">
+    <div className={`relative w-full h-full ${isFullScreen ? 'overflow-hidden' : ''}`}>
       <AnimatePresence mode="wait">
         {activeGame === 'slipper' && (
           <motion.div 
@@ -302,6 +296,21 @@ export default function GamesView({ profile }: { profile: any }) {
             <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-neutral-400 font-bold uppercase text-xs mb-4 hover:text-black transition-colors group">
               <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Lobby
             </button>
+            
+            {profile?.doubleRewardsUntil && new Date(profile.doubleRewardsUntil) > new Date() && (
+              <motion.div 
+                animate={{ scale: [1, 1.02, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="bg-orange-500 text-white p-3 rounded-2xl flex items-center justify-between mb-4 shadow-lg shadow-orange-500/20"
+              >
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} />
+                  <span className="text-[10px] font-black uppercase tracking-widest italic">2X Multiplier Applied!</span>
+                </div>
+                <div className="text-[8px] font-bold bg-black/20 px-2 py-0.5 rounded text-white/90">DOUBLE LOOT</div>
+              </motion.div>
+            )}
+
             <SpinWheel 
               onWin={handleWin} 
               onBet={handleBet} 
@@ -404,6 +413,99 @@ export default function GamesView({ profile }: { profile: any }) {
           </motion.div>
         )}
 
+        {activeGame === 'aviator' && (
+          <motion.div 
+            key="aviator"
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-white"
+          >
+            <div className="h-full flex flex-col pointer-events-auto">
+              <div className="p-4 flex items-center justify-between border-b border-neutral-100 shrink-0 bg-white">
+                <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-neutral-400 font-black uppercase text-[10px] hover:text-black transition-colors">
+                  <ChevronLeft size={16} /> Exit Game
+                </button>
+                <div className="flex flex-col items-end">
+                   <span className="text-[8px] font-black uppercase text-neutral-400 tracking-widest">Active Game</span>
+                   <span className="text-xs font-black italic">Aviator Pro</span>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto no-scrollbar pb-6 bg-white">
+                <Aviator 
+                  onWin={handleWin} 
+                  onBet={handleBet} 
+                  balance={profile?.balance || 0} 
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {activeGame === 'plinko' && (
+          <motion.div 
+            key="plinko"
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-white"
+          >
+             <div className="h-full flex flex-col pointer-events-auto">
+              <div className="p-4 flex items-center justify-between border-b border-neutral-100 shrink-0 bg-white">
+                <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-neutral-400 font-black uppercase text-[10px] hover:text-black transition-colors">
+                  <ChevronLeft size={16} /> Exit Game
+                </button>
+                <div className="flex flex-col items-end">
+                   <span className="text-[8px] font-black uppercase text-neutral-400 tracking-widest">Active Game</span>
+                   <span className="text-xs font-black italic">Plinko Pro</span>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto no-scrollbar pb-6 bg-white">
+                <div className="p-4">
+                  <PlinkoPro 
+                    onWin={handleWin} 
+                    onLoss={handleLoss} 
+                    balance={profile?.balance || 0} 
+                    config={gamesConfig['plinko'] || { minBet: 10, winRate: 45 }}
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {activeGame === 'mines' && (
+          <motion.div 
+            key="mines"
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-white"
+          >
+             <div className="h-full flex flex-col pointer-events-auto">
+              <div className="p-4 flex items-center justify-between border-b border-neutral-100 shrink-0 bg-white">
+                <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-neutral-400 font-black uppercase text-[10px] hover:text-black transition-colors">
+                  <ChevronLeft size={16} /> Exit Game
+                </button>
+                <div className="flex flex-col items-end">
+                   <span className="text-[8px] font-black uppercase text-neutral-400 tracking-widest">Active Game</span>
+                   <span className="text-xs font-black italic">Mines Finder</span>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto no-scrollbar pb-6 bg-white">
+                <div className="p-4">
+                  <MinesFinder 
+                    onWin={handleWin} 
+                    onLoss={handleLoss} 
+                    balance={profile?.balance || 0} 
+                    config={gamesConfig['mines'] || { minBet: 10, winRate: 35 }}
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {!activeGame && (
           <motion.div 
             key="lobby"
@@ -411,61 +513,87 @@ export default function GamesView({ profile }: { profile: any }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
-            className="p-4 space-y-6"
+            className="p-4 space-y-4"
           >
-            <header className="space-y-1">
-              <h2 className="text-3xl font-black italic uppercase">Game Lobby</h2>
-              <p className="text-neutral-500 text-sm font-medium">Join over 2,000 players online</p>
-            </header>
-
-            {/* Categories */}
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide py-1">
+            {/* Categories at Top */}
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
               {categories.map((cat) => (
-                <button key={cat.name} className="flex-shrink-0 bg-neutral-50 border border-neutral-100 rounded-2xl px-6 py-3 flex flex-col items-start gap-2 hover:border-neutral-200 active:scale-95 transition-all">
-                  <cat.icon size={20} className={cat.color} />
-                  <div className="text-left">
-                    <p className="font-bold text-xs uppercase text-neutral-900">{cat.name}</p>
-                    <p className="text-[10px] text-neutral-400">{cat.count} AVAILABLE</p>
-                  </div>
+                <button 
+                  key={cat.name} 
+                  onClick={() => setActiveCategory(cat.name)}
+                  className={`flex-shrink-0 border rounded-xl px-4 py-2 flex items-center gap-2 active:scale-95 transition-all ${
+                    activeCategory === cat.name 
+                      ? 'bg-orange-500 border-orange-600 text-white shadow-lg shadow-orange-500/20' 
+                      : 'bg-neutral-900 text-neutral-400 border-neutral-800'
+                  }`}
+                >
+                  <cat.icon size={14} className={activeCategory === cat.name ? 'text-white' : cat.color} />
+                  <p className="font-black text-[10px] uppercase tracking-widest">{cat.name}</p>
                 </button>
               ))}
             </div>
 
+            <header className="space-y-1">
+              <h2 className="text-3xl font-black italic uppercase">Game Lobby</h2>
+            </header>
+
+            <BannerSlider />
+
+            {profile?.doubleRewardsUntil && new Date(profile.doubleRewardsUntil) > new Date() && (
+              <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-4 rounded-3xl text-white flex items-center justify-between shadow-lg shadow-orange-500/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <Sparkles size={20} className="animate-pulse" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-black uppercase italic italic">2X Rewards Active</p>
+                    <p className="text-[8px] font-bold uppercase opacity-80">All winnings are currently being doubled!</p>
+                  </div>
+                </div>
+                <div className="bg-black/20 px-3 py-1 rounded-full text-[8px] font-black uppercase">Boosted</div>
+              </div>
+            )}
+
             {/* Game Grid */}
             <div className="grid grid-cols-2 gap-4 pb-12">
-              {games.map((game) => (
-                <motion.div 
-                  key={game.id} 
-                  layoutId={game.id}
-                  onClick={() => setActiveGame(game.id)}
-                  className="bg-neutral-50 border border-neutral-100 rounded-3xl p-4 space-y-4 hover:border-orange-500/30 transition-colors group cursor-pointer shadow-sm"
-                >
-                  <div className="relative rounded-2xl overflow-hidden aspect-square border border-neutral-100 shadow-md">
-                    <img 
-                      src={game.image} 
-                      alt={game.title} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 glass bg-white/40 backdrop-blur-md px-2 py-1 rounded-lg border border-white/20">
-                        <Play size={10} className="fill-black text-black" />
-                        <span className="text-[8px] font-black uppercase tracking-widest text-black">Play Now</span>
+              {filteredGames.map((game) => {
+                const config = gamesConfig[game.id] || {};
+                const displayImage = config.image || game.image;
+                
+                return (
+                  <motion.div 
+                    key={game.id} 
+                    layoutId={game.id}
+                    onClick={() => setActiveGame(game.id)}
+                    className="bg-neutral-50 border border-neutral-100 rounded-3xl p-4 space-y-4 hover:border-orange-500/30 transition-colors group cursor-pointer shadow-sm"
+                  >
+                    <div className="relative rounded-2xl overflow-hidden aspect-square border border-neutral-100 shadow-md">
+                      <img 
+                        src={displayImage} 
+                        alt={game.title} 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+                      <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 glass bg-white/40 backdrop-blur-md px-2 py-1 rounded-lg border border-white/20">
+                          <Play size={10} className="fill-black text-black" />
+                          <span className="text-[8px] font-black uppercase tracking-widest text-black">Play Now</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="space-y-1">
-                    <h5 className="font-bold text-sm truncate uppercase tracking-tight text-neutral-900">{game.title}</h5>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-neutral-400 font-bold uppercase">Min Bet: RS {gamesConfig[game.id]?.minBet || minBet}</span>
-                      <span className="text-[10px] text-neutral-400 flex items-center gap-1 font-mono">
-                        <Users size={10} /> {game.players}
-                      </span>
+                    <div className="space-y-1">
+                      <h5 className="font-bold text-sm truncate uppercase tracking-tight text-neutral-900">{game.title}</h5>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-neutral-400 font-bold uppercase">Min Bet: RS {config.minBet || minBet}</span>
+                        <span className="text-[10px] text-neutral-400 flex items-center gap-1 font-mono">
+                          <Users size={10} /> {game.players}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </div>
           </motion.div>
         )}

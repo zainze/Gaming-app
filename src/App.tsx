@@ -92,12 +92,18 @@ export default function App() {
                   role = "admin";
                 }
 
+                const configSnap = await getDoc(doc(db, "system", "config")).catch(err => {
+                  handleFirestoreError(err, OperationType.GET, "system/config");
+                  throw err;
+                });
+                const joiningBonus = configSnap.exists() ? (configSnap.data().joiningBonus || 0) : 100;
+
                 const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
                 const newProfile = {
                   uid: firebaseUser.uid,
                   email: firebaseUser.email,
                   displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || "New User",
-                  balance: 100,
+                  balance: joiningBonus,
                   role: role,
                   language: 'en',
                   favorites: [],
@@ -157,8 +163,8 @@ export default function App() {
           {/* Top Bar */}
           <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-neutral-100 p-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-orange-500/20">P</div>
-              <span className="font-bold text-xl tracking-tight">PlayHub<span className="text-orange-500">Pro</span></span>
+              <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center font-black text-white shadow-lg shadow-neutral-500/20">h</div>
+              <span className="font-black text-xl tracking-tighter uppercase italic">h<span className="text-orange-500">666</span></span>
             </div>
             <div className="flex items-center gap-4">
               <Search size={20} className="text-neutral-400 hover:text-orange-500 transition-colors cursor-pointer" />
