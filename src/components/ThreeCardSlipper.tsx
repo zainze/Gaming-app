@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { CreditCard, Trophy, AlertCircle, Zap, Shield, Sparkles } from "lucide-react";
+import { playSound, stopSound } from "../lib/sounds";
 
 interface ThreeCardSlipperProps {
   onWin: (amount: number) => void;
@@ -38,55 +39,6 @@ export default function ThreeCardSlipper({
   const [showPenalty, setShowPenalty] = useState(false);
   const [shufflePositions, setShufflePositions] = useState([0, 1, 2]);
   
-  const audioContext = useRef<AudioContext | null>(null);
-
-  // Initialize AudioContext on first interaction
-  const initAudio = () => {
-    if (!audioContext.current) {
-      audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-  };
-
-  const playSound = (freq: number, type: OscillatorType, duration: number, volume: number = 0.1) => {
-    if (!audioContext.current) return;
-    const osc = audioContext.current.createOscillator();
-    const gain = audioContext.current.createGain();
-    
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, audioContext.current.currentTime);
-    
-    gain.gain.setValueAtTime(volume, audioContext.current.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioContext.current.currentTime + duration);
-    
-    osc.connect(gain);
-    gain.connect(audioContext.current.destination);
-    
-    osc.start();
-    osc.stop(audioContext.current.currentTime + duration);
-  };
-
-  const playShuffleSound = () => {
-    playSound(200 + Math.random() * 100, 'sine', 0.1, 0.05);
-  };
-
-  const playWinSound = () => {
-    playSound(523.25, 'triangle', 0.5, 0.1); // C5
-    setTimeout(() => playSound(659.25, 'triangle', 0.5, 0.1), 100); // E5
-    setTimeout(() => playSound(783.99, 'triangle', 0.5, 0.1), 200); // G5
-  };
-
-  const playLossSound = () => {
-    playSound(110, 'sawtooth', 0.5, 0.2); // A2
-  };
-
-  const playPenaltySound = () => {
-    if (!audioContext.current) return;
-    // Aggressive descending tone
-    playSound(220, 'sawtooth', 0.1, 0.2); 
-    setTimeout(() => playSound(164.81, 'sawtooth', 0.1, 0.2), 100);
-    setTimeout(() => playSound(110, 'sawtooth', 0.4, 0.3), 200);
-  };
-
   const triggerShake = () => {
     setShake(true);
     setTimeout(() => setShake(false), 500);
@@ -94,7 +46,7 @@ export default function ThreeCardSlipper({
 
   const shuffle = async () => {
     if (gameState !== 'idle' || balance < bet) return;
-    initAudio();
+    playSound('click');
 
     const success = await onBet(bet);
     if (!success) return;
@@ -103,15 +55,16 @@ export default function ThreeCardSlipper({
     setSelectedIndex(null);
     const winIdx = Math.floor(Math.random() * 3);
     setWinningIndex(winIdx);
+    playSound('spin');
 
     // Shuffle sequence
     let count = 0;
     const interval = setInterval(() => {
       setShufflePositions([...Array(3).keys()].sort(() => Math.random() - 0.5));
-      playShuffleSound();
       count++;
       if (count > 10) {
         clearInterval(interval);
+        stopSound('spin');
         setShufflePositions([0, 1, 2]);
         setGameState('picking');
       }
@@ -124,17 +77,16 @@ export default function ThreeCardSlipper({
     setGameState('result');
 
     if (index === winningIndex) {
-      playWinSound();
+      playSound('win');
       onWin(bet * winMultiplier);
       if (streak + 1 >= 30) {
         onStreakBonus(5000);
       }
     } else {
-      playLossSound();
+      playSound('lose');
       onLoss();
       if (losses + 1 >= 2) {
         triggerShake();
-        playPenaltySound();
         setShowPenalty(true);
         setTimeout(() => setShowPenalty(false), 2000);
         onPenalty(penaltyAmount);

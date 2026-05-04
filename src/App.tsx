@@ -31,21 +31,23 @@ import WalletView from "./views/WalletView";
 import ProfileView from "./views/ProfileView";
 import AdminView from "./views/AdminView";
 import AuthView from "./views/AuthView";
+import SplashScreen from "./components/SplashScreen";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [systemConfig, setSystemConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [splashVisible, setSplashVisible] = useState(true);
 
   useEffect(() => {
-    // Connection test
+    // Connection test (silent)
     const testConnection = async () => {
       try {
         await getDocFromServer(doc(db, 'system', 'connection_test'));
       } catch (error) {
-        if (error instanceof Error && error.message.includes('offline')) {
-          console.error("Firebase is offline. Check configuration.");
-        }
+        // Log quietly once
+        console.debug("Firebase connection check:", error);
       }
     };
     testConnection();
@@ -96,7 +98,7 @@ export default function App() {
                   handleFirestoreError(err, OperationType.GET, "system/config");
                   throw err;
                 });
-                const joiningBonus = configSnap.exists() ? (configSnap.data().joiningBonus || 0) : 100;
+                const joiningBonus = configSnap.exists() ? (Number(configSnap.data().joiningBonus) || 0) : 100;
 
                 const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
                 const newProfile = {
@@ -144,16 +146,28 @@ export default function App() {
     };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-white text-black">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full"
-        />
-      </div>
-    );
+  useEffect(() => {
+    // Config Listener
+    const unsubConfig = onSnapshot(doc(db, "system", "config"), (snap) => {
+      if (snap.exists()) {
+        setSystemConfig(snap.data());
+      }
+    });
+
+    return () => unsubConfig();
+  }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(() => {
+        setSplashVisible(false);
+      }, 2500); // Minimum splash time
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
+  if (splashVisible) {
+    return <SplashScreen logo={systemConfig?.appLogo} />;
   }
 
   return (
@@ -163,7 +177,16 @@ export default function App() {
           {/* Top Bar */}
           <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-neutral-100 p-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center font-black text-white shadow-lg shadow-neutral-500/20">h</div>
+              {systemConfig?.appLogo ? (
+                <img 
+                  src={systemConfig.appLogo} 
+                  alt="Logo" 
+                  className="w-10 h-10 object-contain p-0.5" 
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center font-black text-white shadow-lg shadow-neutral-500/20">h</div>
+              )}
               <span className="font-black text-xl tracking-tighter uppercase italic">h<span className="text-orange-500">666</span></span>
             </div>
             <div className="flex items-center gap-4">

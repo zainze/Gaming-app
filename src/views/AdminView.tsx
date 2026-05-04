@@ -22,7 +22,8 @@ import {
   Image as ImageIcon,
   Plus,
   Trash2,
-  Landmark
+  Landmark,
+  LayoutGrid
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { db } from "../lib/firebase";
@@ -59,6 +60,7 @@ export default function AdminView() {
   // User Management State
   const [searchEmail, setSearchEmail] = useState("");
   const [foundUser, setFoundUser] = useState<any>(null);
+  const [recentUsers, setRecentUsers] = useState<any[]>([]);
   const [modifyAmount, setModifyAmount] = useState("");
 
   // Broadcast State
@@ -72,6 +74,13 @@ export default function AdminView() {
   const [banners, setBanners] = useState<any[]>([]);
   const [uploadingGameId, setUploadingGameId] = useState<string | null>(null);
   const [uploadingBannerId, setUploadingBannerId] = useState<string | null>(null);
+  const [uploadingSocialId, setUploadingSocialId] = useState<string | null>(null);
+
+  const deleteSocialIcon = async (key: string) => {
+    if (confirm("Remove this icon?")) {
+      await updateConfig(`${key}Icon`, "");
+    }
+  };
 
   // ... existing system config unsub
   useEffect(() => {
@@ -164,11 +173,18 @@ export default function AdminView() {
       handleFirestoreError(err, OperationType.GET, "games");
     });
 
+    const unsubRecentUsers = onSnapshot(query(collection(db, "users"), orderBy("createdAt", "desc"), limit(5)), (snap) => {
+      setRecentUsers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, "users");
+    });
+
     return () => {
       unsubPending();
       unsubLedger();
       unsubConfig();
       unsubGames();
+      unsubRecentUsers();
     };
   }, []);
 
@@ -251,15 +267,15 @@ export default function AdminView() {
   };
 
   const tabs: { id: Tab; label: string; icon: any }[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'users', label: 'Users', icon: Users },
-    { id: 'requests', label: 'Requests', icon: Clock },
-    { id: 'ledger', label: 'Ledger', icon: History },
+    { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
+    { id: 'users', label: 'Fund Settlements', icon: Landmark },
+    { id: 'requests', label: 'Bank Requests', icon: Clock },
+    { id: 'ledger', label: 'Global Audit', icon: History },
     { id: 'broadcast', label: 'Broadcast', icon: Bell },
-    { id: 'games', label: 'Games', icon: Gamepad2 },
-    { id: 'banners', label: 'Banners', icon: ImageIcon },
-    { id: 'settings', label: 'Platform Settings', icon: Settings2 },
-    { id: 'promos', label: 'Promo Codes', icon: Trophy },
+    { id: 'games', label: 'Game Engine', icon: Gamepad2 },
+    { id: 'banners', label: 'Marketing', icon: ImageIcon },
+    { id: 'settings', label: 'Platform Config', icon: Settings2 },
+    { id: 'promos', label: 'Vouchers', icon: Trophy },
   ];
 
   return (
@@ -303,6 +319,24 @@ export default function AdminView() {
                 ))}
               </div>
 
+              <div 
+                onClick={() => setActiveTab('users')}
+                className="bg-blue-600 p-6 rounded-3xl flex items-center justify-between group cursor-pointer active:scale-95 transition-all shadow-xl shadow-blue-500/20 ring-4 ring-blue-600/30 ring-offset-2"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center text-white backdrop-blur-md">
+                    <Landmark size={24} />
+                  </div>
+                  <div>
+                    <h4 className="font-black text-sm text-white italic uppercase tracking-tight">Financial Settlement Tool</h4>
+                    <p className="text-[9px] font-bold text-white/60 uppercase">Manage & Reconcile User Balances</p>
+                  </div>
+                </div>
+                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-md">
+                  <Plus size={20} />
+                </div>
+              </div>
+
               <div className="bg-orange-50 border border-orange-100 p-6 rounded-3xl flex items-center gap-4">
                 <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
                   <ShieldCheck size={24} />
@@ -318,32 +352,67 @@ export default function AdminView() {
           {activeTab === 'users' && (
             <motion.div key="users" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 1, y: -10 }} className="space-y-6">
               <div className="space-y-3">
-                <p className="text-[10px] font-black uppercase text-neutral-400 tracking-widest pl-1">Search Database</p>
+                <p className="text-[10px] font-black uppercase text-neutral-400 tracking-widest pl-1">Financial Reconciliation Search</p>
                 <div className="flex gap-2">
-                  <div className="flex-1 bg-neutral-50 border border-neutral-200 rounded-2xl px-4 py-3 flex items-center gap-3">
+                  <div className="flex-1 bg-neutral-50 border border-neutral-200 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-inner">
                     <Search className="text-neutral-400" size={18} />
                     <input 
                       type="text" 
-                      placeholder="user@example.com"
+                      placeholder="Enter user email (e.g. user@gmail.com)"
                       value={searchEmail}
                       onChange={(e) => setSearchEmail(e.target.value)}
-                      className="bg-transparent text-sm w-full outline-none placeholder:text-neutral-300 text-neutral-900" 
+                      className="bg-transparent text-sm w-full outline-none placeholder:text-neutral-300 text-neutral-900 font-bold" 
                     />
                   </div>
-                  <button onClick={searchUser} className="bg-neutral-900 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs shadow-md">Find</button>
+                  <button onClick={searchUser} className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black uppercase text-xs shadow-lg shadow-blue-600/20 active:scale-95 transition-all">Search User</button>
                 </div>
               </div>
 
+              {!foundUser && recentUsers.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black uppercase text-neutral-400 tracking-widest pl-1">Recent Account Activity</p>
+                  <div className="grid gap-2">
+                    {recentUsers.map(u => (
+                      <div 
+                        key={u.id} 
+                        onClick={() => {
+                          setSearchEmail(u.email);
+                          setFoundUser(u);
+                        }}
+                        className="bg-white border border-neutral-100 p-3 rounded-2xl flex items-center justify-between cursor-pointer hover:border-blue-200 transition-colors shadow-sm active:scale-[0.98]"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center font-black text-xs uppercase">
+                            {u.displayName?.[0] || 'U'}
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-neutral-900 uppercase">{u.displayName}</p>
+                            <p className="text-[8px] text-neutral-400 font-mono italic">{u.email}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-black text-blue-600">{formatCurrency(u.balance || 0)}</p>
+                          <p className="text-[8px] font-bold text-neutral-300 uppercase">Click to Settle</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {foundUser ? (
                 <div className="bg-white border border-neutral-100 rounded-3xl overflow-hidden shadow-xl">
-                  <div className="p-6 bg-neutral-50 flex items-center gap-4 border-b border-neutral-100">
-                    <div className="w-16 h-16 bg-orange-500 rounded-2xl flex items-center justify-center text-2xl font-black text-white shadow-lg">
-                      {foundUser.displayName?.[0] || 'U'}
+                  <div className="p-6 bg-blue-600 flex items-center justify-between gap-4 border-b border-blue-500">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-2xl font-black text-blue-600 shadow-xl">
+                        {foundUser.displayName?.[0] || 'U'}
+                      </div>
+                      <div>
+                        <h4 className="font-black text-xl italic uppercase tracking-tighter leading-none mb-1 text-white">{foundUser.displayName}</h4>
+                        <p className="text-xs text-blue-200 font-mono italic">{foundUser.email}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-black text-xl italic uppercase tracking-tighter leading-none mb-1 text-neutral-900">{foundUser.displayName}</h4>
-                      <p className="text-xs text-neutral-400 font-mono italic">{foundUser.email}</p>
-                    </div>
+                    <button onClick={() => setFoundUser(null)} className="text-white/60 hover:text-white font-black text-[10px] uppercase">Close</button>
                   </div>
                   
                   <div className="p-6 space-y-6">
@@ -363,17 +432,53 @@ export default function AdminView() {
                     </div>
 
                     <div className="space-y-4 pt-4 border-t border-neutral-100">
-                      <p className="text-[10px] font-black uppercase text-neutral-400 tracking-widest text-center">Modifier Engine</p>
-                      <div className="flex gap-2">
-                        <input 
-                          type="number" 
-                          placeholder="Amount" 
-                          value={modifyAmount}
-                          onChange={(e) => setModifyAmount(e.target.value)}
-                          className="flex-1 bg-neutral-50 border border-neutral-200 rounded-2xl px-4 font-mono font-bold text-neutral-900" 
-                        />
-                        <button onClick={() => updateUserBalance('add')} className="bg-green-500 px-4 py-3 rounded-2xl font-black uppercase text-[10px] text-white shadow-md">Add</button>
-                        <button onClick={() => updateUserBalance('subtract')} className="bg-red-500 px-4 py-3 rounded-2xl font-black uppercase text-[10px] text-white shadow-md">Sub</button>
+                      <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl">
+                        <div className="flex items-center gap-3 mb-3">
+                          <Landmark className="text-blue-600" size={18} />
+                          <h5 className="font-black text-[10px] uppercase text-blue-900 tracking-widest">Financial Settlement</h5>
+                        </div>
+                        <div className="flex gap-2">
+                          <input 
+                            type="number" 
+                            placeholder="New Balance target..." 
+                            value={modifyAmount}
+                            onChange={(e) => setModifyAmount(e.target.value)}
+                            className="flex-1 bg-white border border-blue-200 rounded-xl px-4 py-2 font-mono font-bold text-blue-900 text-sm outline-none focus:border-blue-500 shadow-sm" 
+                          />
+                          <button 
+                            onClick={async () => {
+                              if (!foundUser || !modifyAmount) return;
+                              const amount = parseFloat(modifyAmount);
+                              if (Number.isNaN(amount)) {
+                                alert("Please enter a valid numeric amount.");
+                                return;
+                              }
+                              if (confirm(`SETTLE ACCOUNT: Reset balance to RS ${amount}?`)) {
+                                await updateDoc(doc(db, "users", foundUser.id), {
+                                  balance: amount
+                                });
+                                setModifyAmount("");
+                                const updatedDoc = await getDoc(doc(db, "users", foundUser.id));
+                                if (updatedDoc.exists()) {
+                                  setFoundUser({ id: updatedDoc.id, ...updatedDoc.data() });
+                                }
+                                alert("Financial Settlement Executed!");
+                              }
+                            }} 
+                            className="bg-blue-600 px-6 py-2 rounded-xl font-black uppercase text-xs text-white shadow-lg active:scale-95 transition-all"
+                          >
+                            SETTLE NOW
+                          </button>
+                        </div>
+                        <p className="text-[8px] font-bold text-blue-400 uppercase mt-2 italic">* This action will overwrite the user's current balance.</p>
+                      </div>
+
+                      <div className="space-y-3 pt-2">
+                        <p className="text-[9px] font-black uppercase text-neutral-400 tracking-widest pl-1">Balance Increments</p>
+                        <div className="flex gap-2">
+                          <button onClick={() => updateUserBalance('add')} className="flex-1 bg-green-500 py-3 rounded-2xl font-black uppercase text-[10px] text-white shadow-md active:scale-95">Add Funds</button>
+                          <button onClick={() => updateUserBalance('subtract')} className="flex-1 bg-red-500 py-3 rounded-2xl font-black uppercase text-[10px] text-white shadow-md active:scale-95">Sweep Funds</button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -874,8 +979,8 @@ export default function AdminView() {
                           <div className="flex items-center gap-2">
                             <input 
                               type="number" 
-                              value={game.minBet || 10}
-                              onChange={(e) => updateGameConfig(game.id, { minBet: Number(e.target.value) })}
+                              value={game.minBet || 0}
+                              onChange={(e) => updateGameConfig(game.id, { minBet: Number(e.target.value) || 0 })}
                               className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500 text-neutral-900" 
                             />
                           </div>
@@ -884,10 +989,10 @@ export default function AdminView() {
                           <label className="text-[8px] font-black uppercase text-neutral-400">Win Probability (%)</label>
                           <input 
                             type="number" 
-                            value={game.winRate || 50}
+                            value={game.winRate || 0}
                             min="0"
                             max="100"
-                            onChange={(e) => updateGameConfig(game.id, { winRate: Number(e.target.value) })}
+                            onChange={(e) => updateGameConfig(game.id, { winRate: Number(e.target.value) || 0 })}
                             className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500 text-neutral-900" 
                           />
                         </div>
@@ -897,7 +1002,7 @@ export default function AdminView() {
                             type="number" 
                             step="0.1"
                             value={game.id === 'slipper' ? (game.winMultiplier || 3) : (game.multiplier || 2)}
-                            onChange={(e) => updateGameConfig(game.id, game.id === 'slipper' ? { winMultiplier: Number(e.target.value) } : { multiplier: Number(e.target.value) })}
+                            onChange={(e) => updateGameConfig(game.id, game.id === 'slipper' ? { winMultiplier: Number(e.target.value) || 0 } : { multiplier: Number(e.target.value) || 0 })}
                             className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500 text-neutral-900" 
                           />
                         </div>
@@ -906,8 +1011,8 @@ export default function AdminView() {
                             <label className="text-[8px] font-black uppercase text-neutral-400">Penalty Amount (RS)</label>
                             <input 
                               type="number" 
-                              value={game.penaltyAmount || 50}
-                              onChange={(e) => updateGameConfig(game.id, { penaltyAmount: Number(e.target.value) })}
+                              value={game.penaltyAmount || 0}
+                              onChange={(e) => updateGameConfig(game.id, { penaltyAmount: Number(e.target.value) || 0 })}
                               className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500 text-neutral-900" 
                             />
                           </div>
@@ -955,14 +1060,58 @@ export default function AdminView() {
                 </div>
 
                 <div className="space-y-4 pt-4 border-t border-neutral-100">
+                  {/* Logo Configuration */}
+                  <div className="bg-neutral-50 rounded-2xl border border-neutral-100 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-neutral-400">Platform Logo</p>
+                        <p className="text-[8px] font-bold text-neutral-300 uppercase">Displayed on Splash & Header</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {(globalConfig as any).appLogo && (
+                          <img 
+                            src={(globalConfig as any).appLogo} 
+                            className="w-12 h-12 rounded-xl object-contain bg-white shadow-sm border border-neutral-200 p-1" 
+                            alt="App Logo"
+                            referrerPolicy="no-referrer"
+                          />
+                        )}
+                        <input 
+                          type="file" 
+                          id="app-logo-upload" 
+                          className="hidden" 
+                          accept="image/*" 
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              try {
+                                const url = await uploadToCloudinary(file);
+                                await updateConfig('appLogo', url);
+                              } catch (err) {
+                                console.error("Logo upload failed", err);
+                                alert("Upload failed!");
+                              }
+                            }
+                          }} 
+                        />
+                        <label 
+                          htmlFor="app-logo-upload"
+                          className="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-xl font-black uppercase text-[10px] shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
+                        >
+                          {(globalConfig as any).appLogo ? 'Change Logo' : 'Upload Logo'}
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
                     <div>
                       <p className="text-[10px] font-black uppercase text-neutral-400">Minimum Wager</p>
-                      <p className="text-xl font-black italic text-neutral-900">RS {globalConfig.minBet}</p>
+                      <p className="text-xl font-black italic text-neutral-900">RS {Number(globalConfig.minBet) || 0}</p>
                     </div>
                     <div className="flex gap-2">
-                       <button onClick={() => updateConfig('minBet', Math.max(1, globalConfig.minBet - 5))} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">-</button>
-                       <button onClick={() => updateConfig('minBet', globalConfig.minBet + 5)} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">+</button>
+                       <button onClick={() => updateConfig('minBet', Math.max(1, (Number(globalConfig.minBet) || 10) - 5))} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">-</button>
+                       <button onClick={() => updateConfig('minBet', (Number(globalConfig.minBet) || 10) + 5)} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">+</button>
                     </div>
                   </div>
 
@@ -979,19 +1128,29 @@ export default function AdminView() {
 
                   <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
                     <div>
-                      <p className="text-[10px] font-black uppercase text-neutral-400">Daily Bonus Payload</p>
-                      <p className="text-xl font-black italic text-neutral-900">RS {globalConfig.dailyBonus}</p>
+                      <p className="text-[10px] font-black uppercase text-neutral-400">Daily Reward Amount</p>
+                      <input 
+                         type="number" 
+                         value={Number(globalConfig.dailyBonus) || 0}
+                         onChange={(e) => updateConfig('dailyBonus', parseInt(e.target.value) || 0)}
+                         className="text-xl font-black italic text-neutral-900 bg-transparent border-none outline-none w-24"
+                      />
                     </div>
                     <div className="flex gap-2">
-                       <button onClick={() => updateConfig('dailyBonus', Math.max(0, globalConfig.dailyBonus - 10))} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">-</button>
-                       <button onClick={() => updateConfig('dailyBonus', globalConfig.dailyBonus + 10)} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">+</button>
+                       <button onClick={() => updateConfig('dailyBonus', Math.max(0, (Number(globalConfig.dailyBonus) || 50) - 10))} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">-</button>
+                       <button onClick={() => updateConfig('dailyBonus', (Number(globalConfig.dailyBonus) || 50) + 10)} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">+</button>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
                     <div>
                       <p className="text-[10px] font-black uppercase text-neutral-400">Joining Bonus (New Users)</p>
-                      <p className="text-xl font-black italic text-neutral-900">RS {(globalConfig as any).joiningBonus || 0}</p>
+                      <input 
+                        type="number" 
+                        value={(globalConfig as any).joiningBonus || 0}
+                        onChange={(e) => updateConfig('joiningBonus', parseInt(e.target.value) || 0)}
+                        className="text-xl font-black italic text-neutral-900 bg-transparent border-none outline-none w-24"
+                      />
                     </div>
                     <div className="flex gap-2">
                        <button onClick={() => updateConfig('joiningBonus', Math.max(0, ((globalConfig as any).joiningBonus || 0) - 10))} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">-</button>
@@ -1013,6 +1172,122 @@ export default function AdminView() {
                       Toggle
                     </button>
                   </div>
+
+                {/* Social & Gaming Hub Config */}
+                <div className="bg-white border-2 border-dashed border-blue-200 rounded-3xl p-6 space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                      <LayoutGrid size={20} />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-neutral-900 uppercase italic">Gaming Hub Manager</h3>
+                      <p className="text-[10px] text-neutral-400 font-bold uppercase">Manage Home Screen Mini-App Dock</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {['social1', 'social2', 'social3', 'social4'].map((key, idx) => (
+                      <div key={key} className="p-4 bg-neutral-50 rounded-2xl border border-neutral-100 space-y-3 relative overflow-hidden group">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5 bg-blue-600 text-white rounded-lg flex items-center justify-center text-[10px] font-black">{idx + 1}</span>
+                            <p className="text-[10px] font-black uppercase text-neutral-900">{idx === 0 ? 'Primary Slot' : `Channel Slot ${idx + 1}`}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => updateConfig(`${key}Active`, !(globalConfig as any)[`${key}Active`])}
+                              className={`px-3 py-1 rounded-full text-[8px] font-black uppercase transition-all ${
+                                (globalConfig as any)[`${key}Active`] 
+                                  ? 'bg-green-100 text-green-600 border border-green-200' 
+                                  : 'bg-red-100 text-red-600 border border-red-200'
+                              }`}
+                            >
+                              {(globalConfig as any)[`${key}Active`] ? 'Enabled' : 'Disabled'}
+                            </button>
+                            
+                             {(globalConfig as any)[`${key}Icon`] ? (
+                              <div className="relative group/icon">
+                                <img 
+                                  src={(globalConfig as any)[`${key}Icon`]} 
+                                  className="w-10 h-10 rounded-xl object-cover bg-white shadow-sm border border-neutral-200" 
+                                  alt="preview"
+                                  referrerPolicy="no-referrer"
+                                />
+                                <button 
+                                  onClick={() => deleteSocialIcon(key)}
+                                  className="absolute -top-1 -right-1 bg-red-500 text-white p-0.5 rounded-full opacity-0 group-hover/icon:opacity-100 transition-opacity"
+                                >
+                                  <XCircle size={10} />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="w-10 h-10 bg-neutral-200 rounded-xl flex items-center justify-center text-neutral-400 border border-dashed border-neutral-300">
+                                <ImageIcon size={16} />
+                              </div>
+                            )}
+                            <div className="flex flex-col gap-1">
+                              <input 
+                                type="file" 
+                                id={`upload-${key}`} 
+                                className="hidden" 
+                                accept="image/*" 
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    setUploadingSocialId(key);
+                                    try {
+                                      const url = await uploadToCloudinary(file);
+                                      await updateConfig(`${key}Icon`, url);
+                                      // Auto enable on upload
+                                      if (!(globalConfig as any)[`${key}Active`]) {
+                                        await updateConfig(`${key}Active`, true);
+                                      }
+                                    } catch (err) {
+                                      console.error("Upload failed", err);
+                                      alert("Upload failed! Please check console for details.");
+                                    } finally {
+                                      setUploadingSocialId(null);
+                                    }
+                                  }
+                                }} 
+                              />
+                              <label 
+                                htmlFor={`upload-${key}`}
+                                className={`cursor-pointer px-3 py-1.5 rounded-lg font-black uppercase text-[8px] flex items-center gap-1 transition-all ${uploadingSocialId === key ? 'bg-neutral-200 text-neutral-400' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 active:scale-95'}`}
+                              >
+                                {uploadingSocialId === key ? '...' : <><Upload size={10} /> { (globalConfig as any)[`${key}Icon`] ? 'Change' : 'Upload' }</>}
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="space-y-1">
+                            <p className="text-[8px] font-black text-neutral-400 uppercase tracking-tighter">Button Display Name</p>
+                            <input 
+                              type="text" 
+                              placeholder={idx === 0 ? "e.g. WHATSAPP" : "e.g. JOIN CHANNEL"}
+                              value={(globalConfig as any)[`${key}Label`] || ''}
+                              onChange={(e) => updateConfig(`${key}Label`, e.target.value)}
+                              className="w-full text-[10px] font-bold text-blue-600 bg-white border border-neutral-200 rounded-xl px-3 py-2 outline-none focus:border-blue-500 shadow-sm"
+                            />
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <p className="text-[8px] font-black text-neutral-400 uppercase tracking-tighter">Target Destination (URL)</p>
+                            <input 
+                              type="text" 
+                              placeholder="https://..."
+                              value={(globalConfig as any)[`${key}Link`] || ''}
+                              onChange={(e) => updateConfig(`${key}Link`, e.target.value)}
+                              className="w-full text-[10px] font-medium text-neutral-500 bg-white border border-neutral-200 rounded-xl px-3 py-2 outline-none focus:border-blue-500 shadow-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 </div>
               </div>
 

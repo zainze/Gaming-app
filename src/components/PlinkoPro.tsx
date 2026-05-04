@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CircleDot, Play, RefreshCw, Trophy } from 'lucide-react';
+import { playSound } from '../lib/sounds';
 
 interface PlinkoProps {
   onWin: (amount: number) => void;
@@ -22,6 +23,7 @@ export const PlinkoPro: React.FC<PlinkoProps> = ({ onWin, onLoss, balance, confi
 
   const spawnBall = () => {
     if (balance < betAmount) return;
+    playSound('click');
     
     const path: { x: number; y: number }[] = [{ x: 0, y: -40 }];
     let currentX = 0;
@@ -50,6 +52,7 @@ export const PlinkoPro: React.FC<PlinkoProps> = ({ onWin, onLoss, balance, confi
     }
 
     setBalls(prev => [...prev, { id: ballId, path }]);
+    playSound('chip');
 
     // Determine Result
     const index = Math.floor(((currentX / 16) + (rows - 1)) / 2) + 1;
@@ -60,9 +63,14 @@ export const PlinkoPro: React.FC<PlinkoProps> = ({ onWin, onLoss, balance, confi
       setLastMultipliers(prev => [{ id: ballId, val: mult }, ...prev].slice(0, 5));
       const totalWin = betAmount * mult;
       if (totalWin > betAmount) {
+        playSound('win');
         onWin(totalWin - betAmount);
       } else if (totalWin < betAmount) {
+        playSound('lose');
         onLoss(betAmount - totalWin);
+      } else {
+        // Break even, maybe a click?
+        playSound('click');
       }
       setBalls(prev => prev.filter(b => b.id !== ballId));
     }, 2800);
@@ -166,8 +174,8 @@ export const PlinkoPro: React.FC<PlinkoProps> = ({ onWin, onLoss, balance, confi
              <div className="flex items-center justify-between">
                 <input 
                   type="number" 
-                  value={betAmount} 
-                  onChange={(e) => setBetAmount(Number(e.target.value))}
+                  value={betAmount || 0} 
+                  onChange={(e) => setBetAmount(Number(e.target.value) || 0)}
                   className="bg-transparent text-2xl font-black italic text-neutral-900 outline-none w-full"
                 />
                 <div className="flex gap-1 shrink-0">

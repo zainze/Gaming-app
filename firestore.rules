@@ -82,7 +82,7 @@ service cloud.firestore {
       // provided they also create a referral record in the same batch
       allow update: if isSignedIn() 
         && incoming().diff(existing()).affectedKeys().hasOnly(['balance'])
-        && incoming().balance == (existing().balance + (get(/databases/$(database)/documents/system/config).data.referralReward))
+        && incoming().balance == (existing().balance + (get(/databases/$(database)/documents/system/config).data.get('referralReward', 50)))
         && existsAfter(/databases/$(database)/documents/referrals/$(request.auth.uid + '_' + userId));
       
       // Admin bypass
@@ -143,9 +143,11 @@ service cloud.firestore {
       allow get: if isSignedIn() && (resource.data.referrerId == request.auth.uid || resource.data.referredId == request.auth.uid || isAdmin());
       allow list: if isSignedIn() && (resource.data.referrerId == request.auth.uid || resource.data.referredId == request.auth.uid || isAdmin());
       allow create: if isSignedIn() 
-        && incoming().referredId == request.auth.uid 
-        && incoming().rewardAmount == (get(/databases/$(database)/documents/system/config).data.referralReward)
-        && refId == (request.auth.uid + '_' + incoming().referrerId); // Deterministic ID to prevent double dipping
+        && (isAdmin() || (
+            incoming().referredId == request.auth.uid 
+            && incoming().rewardAmount == (get(/databases/$(database)/documents/system/config).data.get('referralReward', 50))
+            && refId == (request.auth.uid + '_' + incoming().referrerId)
+        ));
       allow update, delete: if false;
     }
   }

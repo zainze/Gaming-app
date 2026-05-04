@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Gift, Zap, Octagon } from 'lucide-react';
+import { playSound } from '../lib/sounds';
 
 interface LuckyChestsProps {
   onWin: (amount: number) => void;
@@ -23,6 +24,7 @@ export const LuckyChests: React.FC<LuckyChestsProps> = ({ onWin, onLoss, minBet,
     if (playing || revealed !== null) return;
     if (balance < bet) return;
 
+    playSound('click');
     setPlaying(true);
     
     // Win logic based on winRate
@@ -44,8 +46,10 @@ export const LuckyChests: React.FC<LuckyChestsProps> = ({ onWin, onLoss, minBet,
       setPlaying(false);
 
       if (index === staticWinner) {
+        playSound('win');
         onWin(bet * multiplier);
       } else {
+        playSound('lose');
         onLoss(bet);
       }
     }, 1000);

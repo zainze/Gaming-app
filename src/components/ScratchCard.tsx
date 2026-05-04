@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Eraser, Zap, Trophy, Coins, Sparkles } from 'lucide-react';
+import { playSound, stopSound } from '../lib/sounds';
 
 interface ScratchCardProps {
   onWin: (amount: number) => void;
@@ -10,13 +11,6 @@ interface ScratchCardProps {
   winRate?: number;
   multiplier?: number;
 }
-
-// Audio assets
-const SOUNDS = {
-  scratch: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3',
-  win: 'https://assets.mixkit.co/active_storage/sfx/2020/2020-preview.mp3',
-  loss: 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3',
-};
 
 export const ScratchCard: React.FC<ScratchCardProps> = ({ 
   onWin, 
@@ -35,25 +29,6 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isScratching = useRef(false);
   const lastPoint = useRef<{ x: number; y: number } | null>(null);
-  const scratchAudio = useRef<HTMLAudioElement | null>(null);
-
-  // Initialize audio
-  useEffect(() => {
-    scratchAudio.current = new Audio(SOUNDS.scratch);
-    scratchAudio.current.loop = true;
-    scratchAudio.current.volume = 0.3;
-    
-    return () => {
-      scratchAudio.current?.pause();
-      scratchAudio.current = null;
-    };
-  }, []);
-
-  const playSound = (type: keyof typeof SOUNDS) => {
-    const audio = new Audio(SOUNDS[type]);
-    audio.volume = type === 'scratch' ? 0.3 : 0.5;
-    audio.play().catch(() => {});
-  };
 
   const initCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -103,14 +78,13 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({
   const startScratching = (e: React.MouseEvent | React.TouchEvent) => {
     isScratching.current = true;
     lastPoint.current = getCoordinates(e);
-    scratchAudio.current?.play().catch(() => {});
+    playSound('spin'); // Using spin sound for scratch texture
   };
 
   const stopScratching = () => {
     isScratching.current = false;
     lastPoint.current = null;
-    scratchAudio.current?.pause();
-    if (scratchAudio.current) scratchAudio.current.currentTime = 0;
+    stopSound('spin');
     checkProgress();
   };
 
@@ -178,18 +152,19 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({
     if (revealed) return;
     setRevealed(true);
     isScratching.current = false;
-    scratchAudio.current?.pause();
+    stopSound('spin');
     
     if (isWinner) {
       playSound('win');
       onWin(bet * multiplier);
     } else {
-      playSound('loss');
+      playSound('lose');
     }
   };
 
   const startScratch = async () => {
     if (playing) return;
+    playSound('click');
     const success = await onBet(bet);
     if (!success) return;
 
@@ -197,9 +172,11 @@ export const ScratchCard: React.FC<ScratchCardProps> = ({
     setRevealed(false);
     setScratchProgress(0);
     setIsWinner(Math.random() < (winRate / 100));
+    playSound('chip');
   };
 
   const reset = () => {
+    playSound('click');
     setPlaying(false);
     setRevealed(false);
     setIsWinner(false);

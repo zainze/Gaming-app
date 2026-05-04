@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bomb, Diamond, Play, Shield, Trophy } from 'lucide-react';
+import { playSound } from '../lib/sounds';
 
 interface MinesProps {
   onWin: (amount: number) => void;
@@ -20,6 +21,7 @@ export const MinesFinder: React.FC<MinesProps> = ({ onWin, onLoss, balance, conf
 
   const startNewGame = () => {
     if (balance < betAmount) return;
+    playSound('click');
     
     const mineCount = Math.max(1, Math.floor(10 * (1 - (config.winRate / 100 || 0.45))));
     const minePositions: number[] = [];
@@ -33,6 +35,7 @@ export const MinesFinder: React.FC<MinesProps> = ({ onWin, onLoss, balance, conf
     setIsPlaying(true);
     setStatus('playing');
     setCashoutAmount(betAmount);
+    playSound('chip');
   };
 
   const revealCell = (index: number) => {
@@ -40,6 +43,7 @@ export const MinesFinder: React.FC<MinesProps> = ({ onWin, onLoss, balance, conf
 
     const newGrid = [...grid];
     if (mines.includes(index)) {
+      playSound('lose');
       newGrid[index] = 'bomb';
       setGrid(newGrid);
       setStatus('lost');
@@ -47,6 +51,7 @@ export const MinesFinder: React.FC<MinesProps> = ({ onWin, onLoss, balance, conf
       onLoss(betAmount);
       setHistory(prev => [{ type: 'loss', amount: betAmount }, ...prev].slice(0, 5));
     } else {
+      playSound('click');
       newGrid[index] = 'diamond';
       setGrid(newGrid);
       
@@ -63,6 +68,7 @@ export const MinesFinder: React.FC<MinesProps> = ({ onWin, onLoss, balance, conf
 
   const cashOut = () => {
     if (status !== 'playing') return;
+    playSound('win');
     setStatus('won');
     setIsPlaying(false);
     onWin(cashoutAmount - betAmount);
@@ -157,8 +163,8 @@ export const MinesFinder: React.FC<MinesProps> = ({ onWin, onLoss, balance, conf
                     <div className="flex items-center justify-between">
                         <input 
                             type="number" 
-                            value={betAmount}
-                            onChange={(e) => setBetAmount(Number(e.target.value))}
+                            value={betAmount || 0}
+                            onChange={(e) => setBetAmount(Number(e.target.value) || 0)}
                             className="bg-transparent font-black text-2xl text-neutral-900 outline-none w-full"
                         />
                         <div className="flex gap-1">

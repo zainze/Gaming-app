@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Coins, Trophy, RefreshCcw } from "lucide-react";
+import { playSound } from "../lib/sounds";
 
 export default function CoinFlip({ onWin, onBet, balance, minBet = 10, winRate = 50, multiplier = 2 }: { 
   onWin: (amount: number) => void,
@@ -18,11 +19,13 @@ export default function CoinFlip({ onWin, onBet, balance, minBet = 10, winRate =
   const flip = async () => {
     if (flipping || balance < bet) return;
     
+    playSound('click');
     const betSuccess = await onBet(bet);
     if (!betSuccess) return;
 
     setFlipping(true);
     setResult(null);
+    playSound('chip');
     
     setTimeout(() => {
       const isWin = Math.random() < (winRate / 100);
@@ -31,9 +34,11 @@ export default function CoinFlip({ onWin, onBet, balance, minBet = 10, winRate =
       setFlipping(false);
       
       if (finalSide === 'heads') {
+        playSound('win');
         setResult("YOU WON!");
         onWin(bet * multiplier);
       } else {
+        playSound('lose');
         setResult("TRY AGAIN");
       }
     }, 2000);

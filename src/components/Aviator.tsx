@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plane, TrendingUp, Wallet, Zap, RotateCcw, AlertTriangle, Trophy, Play } from 'lucide-react';
+import { playSound, stopSound } from '../lib/sounds';
 
 interface AviatorProps {
   balance: number;
@@ -21,8 +22,6 @@ export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet }) => {
   const startTimeRef = useRef<number>(0);
 
   const generateCrashPoint = () => {
-    // Standard Aviator logic: 99% / (1 - random)
-    // We add a house edge (~3%)
     const r = Math.random();
     return Math.max(1.0, 0.97 / (1.0 - r));
   };
@@ -32,26 +31,27 @@ export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet }) => {
     setCrashPoint(cp);
     setGameState('running');
     setMultiplier(1.0);
+    playSound('spin');
     startTimeRef.current = performance.now();
   }, []);
 
   const handleBet = () => {
     if (balance < betAmount) return;
+    playSound('click');
     onBet(betAmount);
     setHasBet(true);
     if (gameState === 'idle' || gameState === 'crashed') {
       setGameState('waiting');
-      // Start round after 3 seconds of "waiting"
       setTimeout(startRound, 2000);
     }
   };
 
   const handleCashOut = () => {
     if (gameState !== 'running' || !hasBet) return;
+    playSound('win');
     const winAmount = betAmount * multiplier;
     onWin(winAmount);
     setHasBet(false);
-    // User cashed out, but game continues until crash
   };
 
   // Game Loop
@@ -59,14 +59,14 @@ export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet }) => {
     if (gameState === 'running') {
       const update = (time: number) => {
         const elapsed = (time - startTimeRef.current) / 1000;
-        // Exponential growth: multiplier = 1.05^t
         const nextMultiplier = Math.pow(1.15, elapsed);
         
         if (nextMultiplier >= crashPoint) {
+          stopSound('spin');
+          playSound('lose');
           setGameState('crashed');
           setHistory(prev => [crashPoint, ...prev].slice(0, 5));
           setHasBet(false);
-          // Wait 3 seconds then go to idle
           setTimeout(() => setGameState('idle'), 3000);
           return;
         }
@@ -78,6 +78,7 @@ export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet }) => {
       requestRef.current = requestAnimationFrame(update);
       return () => {
         if (requestRef.current) cancelAnimationFrame(requestRef.current);
+        stopSound('spin');
       };
     }
   }, [gameState, crashPoint]);
@@ -271,8 +272,8 @@ export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet }) => {
                  <span className="text-[10px] font-black text-orange-500">RS</span>
                  <input 
                     type="number" 
-                    value={betAmount} 
-                    onChange={(e) => setBetAmount(Number(e.target.value))}
+                    value={betAmount || 0} 
+                    onChange={(e) => setBetAmount(Number(e.target.value) || 0)}
                     className="bg-transparent text-3xl font-black italic text-neutral-900 outline-none w-full"
                  />
                </div>

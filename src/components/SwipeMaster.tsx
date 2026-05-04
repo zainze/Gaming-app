@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { motion, useMotionValue, useTransform, AnimatePresence } from "motion/react";
 import { Coins, Target, Zap, AlertTriangle } from "lucide-react";
+import { playSound } from "../lib/sounds";
 
 export default function SwipeMaster({ onWin, onBet, userBalance, betAmount, winRate = 40, multiplier = 3 }: { 
   onWin: (amount: number) => void, 
@@ -38,7 +39,10 @@ export default function SwipeMaster({ onWin, onBet, userBalance, betAmount, winR
       setGameState('result');
       
       if (sessionMultiplier > 0) {
+        playSound('win');
         onWin(betAmount * sessionMultiplier);
+      } else {
+        playSound('lose');
       }
     } else {
       x.set(0);
@@ -48,11 +52,13 @@ export default function SwipeMaster({ onWin, onBet, userBalance, betAmount, winR
 
   const startLevel = async () => {
     if (userBalance < betAmount) return;
+    playSound('click');
     const betSuccess = await onBet(betAmount);
     if (!betSuccess) return;
 
     setGameState('playing');
     setResult(null);
+    playSound('chip');
     x.set(0);
     y.set(0);
   };

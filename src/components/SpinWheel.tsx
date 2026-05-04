@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { RefreshCcw, Zap } from "lucide-react";
+import { playSound, stopSound } from "../lib/sounds";
 
 export default function SpinWheel({ onWin, onBet, balance, minBet = 10, winRate = 30, multiplier = 5 }: { 
   onWin: (amount: number) => void,
@@ -21,11 +22,13 @@ export default function SpinWheel({ onWin, onBet, balance, minBet = 10, winRate 
   const spin = async () => {
     if (spinning || balance < BET_COST) return;
 
+    playSound('click');
     const betSuccess = await onBet(BET_COST);
     if (!betSuccess) return;
 
     setSpinning(true);
     setResult(null);
+    playSound('spin');
 
     const isWin = Math.random() < (winRate / 100);
     const segmentWidth = 360 / segments.length;
@@ -41,9 +44,6 @@ export default function SpinWheel({ onWin, onBet, balance, minBet = 10, winRate 
       targetSector = missSectors[Math.floor(Math.random() * missSectors.length)];
     }
 
-    // Logic: sector 0 is at top? current logic says segments[segments.length - 1 - sector]
-    // Let's simplify: 
-    // targetRotation should end such that segments[targetSector] is under the needle
     const extraRots = 5 + Math.floor(Math.random() * 5);
     const targetBaseRotation = (segments.length - 1 - targetSector) * segmentWidth;
     const finalRot = rotation + extraRots * 360 + targetBaseRotation + (Math.random() * (segmentWidth * 0.8) + (segmentWidth * 0.1));
@@ -52,10 +52,15 @@ export default function SpinWheel({ onWin, onBet, balance, minBet = 10, winRate 
 
     setTimeout(() => {
       setSpinning(false);
+      stopSound('spin');
       const sector = Math.floor(((finalRot % 360)) / segmentWidth);
       const win = segments[segments.length - 1 - sector];
       setResult(win === "MISS" ? "Better Luck Next Time" : `YOU WON ${win}!`);
-      if (win !== "MISS") {
+      
+      if (win === "MISS") {
+        playSound('lose');
+      } else {
+        playSound('win');
         onWin(parseInt(win.replace('RS', '')));
       }
     }, 4000);

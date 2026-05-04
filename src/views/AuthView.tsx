@@ -1,9 +1,22 @@
 import { motion } from "motion/react";
 import { LogIn, Sparkles, ShieldCheck, Gamepad2, Coins } from "lucide-react";
-import { auth } from "../lib/firebase";
+import { auth, db } from "../lib/firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { useState, useEffect } from "react";
+import { doc, onSnapshot } from "firebase/firestore";
 
 export default function AuthView() {
+  const [logo, setLogo] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "system", "config"), (snap) => {
+      if (snap.exists()) {
+        setLogo(snap.data().appLogo || null);
+      }
+    });
+    return () => unsub();
+  }, []);
+
   const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider();
     try {
@@ -28,9 +41,13 @@ export default function AuthView() {
           <motion.div 
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="w-20 h-20 bg-orange-500 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-xl shadow-orange-500/20 rotate-12"
+            className="w-20 h-20 bg-orange-500 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-xl shadow-orange-500/20 rotate-12 overflow-hidden"
           >
-            <Gamepad2 size={40} className="text-white -rotate-12" />
+            {logo ? (
+              <img src={logo} className="w-full h-full object-contain p-2 -rotate-12" alt="Logo" referrerPolicy="no-referrer" />
+            ) : (
+              <Gamepad2 size={40} className="text-white -rotate-12" />
+            )}
           </motion.div>
           <div className="space-y-1">
             <h1 className="text-5xl font-black tracking-tighter uppercase italic text-neutral-900">h<span className="text-orange-500">666</span></h1>

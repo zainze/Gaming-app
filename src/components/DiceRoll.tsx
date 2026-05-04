@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Dices, Trophy, AlertCircle } from 'lucide-react';
+import { playSound } from '../lib/sounds';
 
 interface DiceRollProps {
   onWin: (amount: number) => void;
@@ -26,11 +27,13 @@ export const DiceRoll: React.FC<DiceRollProps> = ({
 
   const roll = async () => {
     if (rolling) return;
+    playSound('click');
     const success = await onBet(bet);
     if (!success) return;
 
     setRolling(true);
     setResult(null);
+    playSound('chip');
 
     // Dynamic win logic
     const isWin = Math.random() < (winRate / 100);
@@ -45,9 +48,11 @@ export const DiceRoll: React.FC<DiceRollProps> = ({
       setRolling(false);
 
       if (isWin) {
+        playSound('win');
         setResult(`YOU WON RS ${bet * multiplier}!`);
         onWin(bet * multiplier);
       } else {
+        playSound('lose');
         setResult("TRY AGAIN");
       }
     }, 1500);

@@ -1,10 +1,11 @@
 import { motion } from "motion/react";
-import { Gift, TrendingUp, Users, Zap, ExternalLink, Timer, Sparkles } from "lucide-react";
+import { Gift, TrendingUp, Users, Zap, ExternalLink, Timer, Sparkles, Bell, Trophy, Landmark, Plus, MessageCircle, Target } from "lucide-react";
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, onSnapshot, doc, updateDoc, increment, addDoc, getDoc } from "firebase/firestore";
 import { handleFirestoreError, OperationType } from "../lib/firestore-errors";
 import { db } from "../lib/firebase";
 import { formatCurrency } from "../lib/utils";
+import { playSound } from "../lib/sounds";
 
 export default function HomeView({ profile }: { profile: any }) {
   const [stats, setStats] = useState({
@@ -59,11 +60,15 @@ export default function HomeView({ profile }: { profile: any }) {
   const [bonusAmount, setBonusAmount] = useState(50);
   const [minBet, setMinBet] = useState(10);
   const [gamesConfig, setGamesConfig] = useState<Record<string, any>>({});
+  const [promoCode, setPromoCode] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [systemConfig, setSystemConfig] = useState<any>(null);
 
   useEffect(() => {
     const unsubGlobal = onSnapshot(doc(db, "system", "config"), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
+        setSystemConfig(data);
         setBonusAmount(data.dailyBonus || 50);
         setMinBet(data.minBet || 10);
       }
@@ -102,6 +107,7 @@ export default function HomeView({ profile }: { profile: any }) {
 
   const handleClaimBonus = async () => {
     if (!profile || bonusCooldown || bonusLoading) return;
+    playSound('click');
     setBonusLoading(true);
     try {
       const reward = bonusAmount;
@@ -112,6 +118,7 @@ export default function HomeView({ profile }: { profile: any }) {
         handleFirestoreError(err, OperationType.WRITE, `users/${profile.uid}`);
         throw err;
       });
+      playSound('win');
       await addDoc(collection(db, "transactions"), {
         userId: profile.uid,
         amount: reward,
@@ -129,10 +136,66 @@ export default function HomeView({ profile }: { profile: any }) {
     }
   };
 
-  const banners = [
-    { id: 1, color: "from-orange-500 to-red-600", title: "Double Rewards", description: "Use code LUCKY20 for 2x bonus on spin!", code: "LUCKY20" },
-    { id: 2, color: "from-blue-600 to-purple-600", title: "Join Discord", description: "Get exclusive coupons and daily rewards.", code: "SOCIAL" },
-  ];
+  const handleRedeemPromo = async () => {
+    if (!profile || !promoCode || promoLoading) return;
+    setPromoLoading(true);
+    playSound('click');
+    try {
+      const codeRef = doc(db, "promo_codes", promoCode.toUpperCase().trim());
+      const codeSnap = await getDoc(codeRef);
+      
+      if (!codeSnap.exists() || !codeSnap.data().active) {
+        alert("Invalid or expired promo code!");
+        return;
+      }
+
+      const codeData = codeSnap.data();
+      const usedBy = codeData.usedBy || [];
+      
+      if (usedBy.includes(profile.uid)) {
+        alert("You have already used this promo code!");
+        return;
+      }
+
+      // If it's a daily code, we might need a separate check for today
+      // For now, standard one-time use per user per code as defined in admin
+      
+      const reward = Number(codeData.value) || 0;
+
+      if (codeData.type === 'balance') {
+        await updateDoc(doc(db, "users", profile.uid), {
+          balance: increment(reward)
+        });
+        await addDoc(collection(db, "transactions"), {
+          userId: profile.uid,
+          amount: reward,
+          type: 'bonus',
+          method: 'Promo Code: ' + promoCode,
+          status: 'completed',
+          createdAt: new Date().toISOString()
+        });
+      } else if (codeData.type === 'double_rewards') {
+        const until = new Date();
+        until.setHours(until.getHours() + 24);
+        await updateDoc(doc(db, "users", profile.uid), {
+          doubleRewardsUntil: until.toISOString(),
+          rewardMultiplier: reward || 2
+        });
+      }
+
+      await updateDoc(codeRef, {
+        usedBy: [...usedBy, profile.uid]
+      });
+
+      playSound('win');
+      alert(`Success! Reward logic applied: ${codeData.type === 'balance' ? `RS ${reward} added!` : `24H Double Rewards active!`}`);
+      setPromoCode("");
+    } catch (err: any) {
+      handleFirestoreError(err, OperationType.WRITE, "promo_redemption");
+    } finally {
+      setPromoLoading(false);
+    }
+  };
 
   return (
     <motion.main 
@@ -212,34 +275,56 @@ export default function HomeView({ profile }: { profile: any }) {
         </div>
       )}
 
-      {/* Horizontal Banner Coupons */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-bold text-lg">{profile?.language === 'ur' ? 'خصوصی پیشکش' : 'Special Offers'}</h3>
+      {/* Gaming Channels Dock */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <p className="text-[9px] font-black uppercase text-neutral-400 tracking-widest italic">Official Channels</p>
+          <div className="flex gap-1 items-center">
+            <span className="w-1 h-1 bg-green-500 rounded-full animate-ping" />
+            <p className="text-[8px] font-black text-green-500 uppercase">Live Now</p>
+          </div>
         </div>
-        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x">
-          {banners.map((banner) => (
-            <div 
-              key={banner.id}
-              className={`min-w-[280px] h-40 bg-gradient-to-br ${banner.color} rounded-3xl p-6 flex flex-col justify-between shadow-2xl shadow-neutral-900/50 snap-center relative overflow-hidden group`}
-            >
-              <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
-                <Zap size={120} />
-              </div>
-              <div className="space-y-1 relative z-10">
-                <h4 className="text-2xl font-black leading-tight uppercase italic">{banner.title}</h4>
-                <p className="text-white/80 text-xs font-medium max-w-[200px]">{banner.description}</p>
-              </div>
-              <div className="flex items-center justify-between relative z-10">
-                <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-lg px-3 py-1 font-mono text-sm font-bold tracking-widest uppercase">
-                  {banner.code}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+          {[1, 2, 3, 4].map((i) => {
+            const key = `social${i}`;
+            const label = systemConfig?.[`${key}Label`];
+            const link = systemConfig?.[`${key}Link`];
+            const iconUrl = systemConfig?.[`${key}Icon`];
+            const isActive = systemConfig?.[`${key}Active`];
+            
+            if (!isActive || !label || !link) return null;
+
+            return (
+              <a 
+                key={i}
+                href={link} 
+                target="_blank" 
+                rel="noreferrer"
+                className="flex-shrink-0 flex flex-col items-center gap-1 group"
+              >
+                <div className={`w-12 h-12 ${i === 1 ? 'bg-green-500 shadow-green-500/20 border-green-700' : 'bg-neutral-900 shadow-neutral-900/20 border-black'} rounded-2xl flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform relative overflow-hidden border-b-4`}>
+                   {iconUrl ? (
+                     <img 
+                       src={iconUrl} 
+                       alt={label} 
+                       className="w-full h-full object-cover" 
+                       referrerPolicy="no-referrer" 
+                       onError={(e) => {
+                         // Fallback if image fails to load
+                         (e.target as any).src = "https://cdn-icons-png.flaticon.com/512/3242/3242095.png";
+                       }}
+                     />
+                   ) : (
+                     <Zap size={18} />
+                   )}
+                   <div className="absolute top-0 right-0 p-0.5">
+                     <Sparkles size={8} className="text-white/40" />
+                   </div>
                 </div>
-                <button className="p-2 bg-white rounded-full text-neutral-900 shadow-lg active:scale-90 transition-transform">
-                  <ExternalLink size={18} />
-                </button>
-              </div>
-            </div>
-          ))}
+                <span className={`text-[8px] font-black uppercase transition-colors ${i === 1 ? 'text-green-600' : 'text-neutral-900'} truncate max-w-[48px]`}>{label}</span>
+              </a>
+            );
+          })}
         </div>
       </section>
 

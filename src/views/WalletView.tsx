@@ -202,13 +202,13 @@ export default function WalletView({ profile }: { profile: any }) {
             <div className="flex-1 bg-white/10 border border-white/20 rounded-2xl p-3">
               <p className="text-[10px] text-white/60 font-bold uppercase">Total Wins</p>
               <p className="font-bold text-green-200">
-                {formatCurrency(transactions.filter(t => t.type === 'win').reduce((acc, curr) => acc + curr.amount, 0))}
+                {formatCurrency(transactions.filter(t => t.type === 'win').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0))}
               </p>
             </div>
             <div className="flex-1 bg-white/10 border border-white/20 rounded-2xl p-3">
               <p className="text-[10px] text-white/60 font-bold uppercase">Pending</p>
               <p className="font-bold text-orange-100">
-                {formatCurrency(transactions.filter(t => t.status === 'pending' && t.type === 'withdraw').reduce((acc, curr) => acc + curr.amount, 0))}
+                {formatCurrency(transactions.filter(t => t.status === 'pending' && t.type === 'withdraw').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0))}
               </p>
             </div>
           </div>

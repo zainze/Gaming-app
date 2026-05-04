@@ -1,10 +1,10 @@
 import { motion } from "motion/react";
-import { LogOut, Share2, Shield, User as UserIcon, Heart, Globe, Bell, ChevronRight, Copy, Check, ArrowLeft, Languages, Trash2, Zap } from "lucide-react";
+import { LogOut, Share2, Shield, User as UserIcon, Heart, Globe, Bell, ChevronRight, Copy, Check, ArrowLeft, Languages, Trash2, Zap, Users, Gamepad2, Gift, Trophy, Target, Landmark, Star } from "lucide-react";
 import { auth, db } from "../lib/firebase";
 import { signOut } from "firebase/auth";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, query, where, onSnapshot, orderBy, updateDoc, doc, getDocs, limit, increment, addDoc, writeBatch, getDoc } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy, updateDoc, doc, getDocs, limit, increment, addDoc, writeBatch, getDoc, setDoc } from "firebase/firestore";
 import { handleFirestoreError, OperationType } from "../lib/firestore-errors";
 import PrivacyView from "./PrivacyView";
 
@@ -354,9 +354,17 @@ export default function ProfileView({ profile }: { profile: any }) {
             <div className="w-2 h-2 bg-green-500 rounded-full" />
           </div>
         </div>
-        <div className="text-center">
+        <div className="text-center relative">
+          <div className="absolute -top-4 -right-12 bg-yellow-400 text-neutral-900 px-3 py-1 rounded-full font-black text-[8px] uppercase shadow-lg border-2 border-white flex items-center gap-1 z-20 animate-pulse">
+            <Zap size={10} className="fill-current" />
+            <span>2.5X BONUS</span>
+          </div>
           <h2 className="text-2xl font-black text-neutral-900">{profile?.displayName}</h2>
-          <p className="text-neutral-400 text-xs font-bold uppercase tracking-widest">{profile?.role}</p>
+          <div className="flex items-center justify-center gap-2">
+            <p className="text-neutral-400 text-xs font-bold uppercase tracking-widest">{profile?.role}</p>
+            <div className="w-1 h-1 bg-neutral-300 rounded-full" />
+            <p className="text-orange-500 text-xs font-bold uppercase tracking-widest">RANK #12</p>
+          </div>
         </div>
       </header>
 
@@ -368,7 +376,7 @@ export default function ProfileView({ profile }: { profile: any }) {
               <h3 className="font-bold flex items-center gap-2 text-orange-500">
                 <Shield size={18} /> Admin Dashboard
               </h3>
-              <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-tight">Main Admin: zainzeb333@gmail.com</p>
+              <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-tight">Access platform controls</p>
             </div>
           </div>
           <button 
@@ -380,50 +388,95 @@ export default function ProfileView({ profile }: { profile: any }) {
         </section>
       )}
 
-      {/* Referral Section */}
-      <section className="bg-white border border-neutral-200 rounded-3xl overflow-hidden shadow-sm">
-        <div className="p-6 bg-gradient-to-br from-orange-500/5 to-transparent flex items-center justify-between border-b border-neutral-100">
-          <div className="space-y-1">
-            <h3 className="font-bold flex items-center gap-2 text-neutral-900">
-              <Share2 size={18} className="text-orange-500" /> Promo & Referral
-            </h3>
-            <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-tight">Earn RS {referralReward} on every friend's registration</p>
+      {/* Gaming Status & Level */}
+      <section className="bg-gradient-to-br from-neutral-900 to-neutral-800 rounded-3xl p-6 relative overflow-hidden shadow-2xl border border-neutral-700">
+        <div className="absolute top-0 right-0 p-8 opacity-5">
+          <Trophy size={120} />
+        </div>
+        <div className="relative z-10 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
+                <Target size={24} />
+              </div>
+              <div>
+                <h4 className="text-white font-black uppercase text-sm tracking-tight">Pro Player Level</h4>
+                <p className="text-orange-400 text-[10px] font-bold uppercase tracking-widest">Premium Rank Status</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-white font-black italic text-xl">LVL 42</p>
+              <div className="flex gap-1 justify-end">
+                {[1, 2, 3].map(i => <Star key={i} size={10} className="text-orange-400 fill-orange-400" />)}
+              </div>
+            </div>
           </div>
-          <div className="bg-orange-50 text-orange-500 px-3 py-1 rounded-full text-[10px] font-black uppercase">Active</div>
+          
+          <div className="space-y-2">
+            <div className="flex justify-between text-[8px] font-black uppercase text-neutral-400">
+              <span>Tier Progress</span>
+              <span>85% to Next Reward</span>
+            </div>
+            <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/10">
+              <div className="h-full bg-orange-500 w-[85%] shadow-[0_0_12px_rgba(249,115,22,0.4)]" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Referral Section - Redesigned as Gaming Quest */}
+      <section className="bg-white border border-neutral-200 rounded-[2.5rem] overflow-hidden shadow-sm">
+        <div className="p-6 bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-between">
+          <div className="space-y-1">
+            <h3 className="font-black text-white italic uppercase flex items-center gap-2">
+              <Gamepad2 size={20} /> Reward Quests
+            </h3>
+            <p className="text-[10px] text-blue-100 font-bold uppercase tracking-tight">Unlock special chests with promo codes</p>
+          </div>
+          <div className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black text-white uppercase border border-white/30 italic">ACTIVE</div>
         </div>
         
-        <div className="p-6 space-y-4">
+        <div className="p-6 space-y-8">
           <div className="space-y-3">
-            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1">Redeem Promo Code or Invite</p>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input 
-                type="text" 
-                value={referralCode}
-                onChange={(e) => setReferralCode(e.target.value)}
-                placeholder="PROMO OR INVITE"
-                className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 font-mono font-bold text-sm uppercase placeholder:text-neutral-300 focus:border-orange-500 outline-none transition-colors text-neutral-900"
-              />
-              <button 
-                onClick={submitReferral}
-                disabled={refStatus === 'loading' || (refStatus === 'success' && !!profile?.referredBy)}
-                className={`w-full sm:w-auto px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-tighter transition-all active:scale-95 flex-shrink-0 ${refStatus === 'success' ? 'bg-green-500 text-white' : 'bg-neutral-900 text-white'}`}
-              >
-                {refStatus === 'loading' ? 'Processing...' : refStatus === 'success' ? 'Applied Successfully' : 'Redeem Code'}
-              </button>
-            </div>
-            {refStatus === 'error' && <p className="text-red-500 text-[10px] font-bold uppercase pl-1 animate-pulse">Invalid or expired code</p>}
+             <div className="flex items-center gap-2 px-1">
+                <Zap size={14} className="text-orange-500" />
+                <p className="text-[10px] font-black uppercase text-neutral-500 tracking-widest">Enter Secret Voucher</p>
+             </div>
+             <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex-1 bg-neutral-50 border-2 border-dashed border-neutral-200 rounded-2xl relative group focus-within:border-blue-500 transition-all">
+                  <input 
+                    type="text" 
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value)}
+                    placeholder="ENTER CODE HERE..."
+                    className="w-full bg-transparent px-6 py-4 font-mono font-black text-lg uppercase placeholder:text-neutral-300 outline-none text-neutral-900"
+                  />
+                </div>
+                <button 
+                  onClick={submitReferral}
+                  disabled={refStatus === 'loading' || (refStatus === 'success' && !!profile?.referredBy)}
+                  className={`w-full sm:w-auto px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-tighter transition-all active:scale-95 flex-shrink-0 shadow-2xl relative overflow-hidden group ${refStatus === 'success' ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'}`}
+                >
+                  <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform" />
+                  <span className="relative">{refStatus === 'loading' ? 'CHECKING...' : refStatus === 'success' ? 'CLAIMED! 🎉' : 'CLAIM REWARD'}</span>
+                </button>
+             </div>
+             {refStatus === 'error' && <p className="text-red-500 text-[10px] font-black uppercase pl-1 animate-bounce">Invalid or expired quest code!</p>}
           </div>
 
-          <div className="pt-2">
-            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1 mb-2">Your Invite Code</p>
+          <div className="pt-6 border-t border-dashed border-neutral-200">
+            <div className="flex items-center gap-2 mb-3">
+              <Share2 size={14} className="text-orange-500" />
+              <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest italic">Share Invite Bonus</p>
+            </div>
             <div 
               onClick={copyToClipboard}
-              className="flex items-center justify-between bg-neutral-50 border border-neutral-200 p-4 rounded-2xl cursor-pointer group hover:border-orange-500/30 transition-colors"
+              className="flex items-center justify-between bg-neutral-900 border border-neutral-800 p-4 rounded-2xl cursor-pointer group hover:bg-neutral-800 transition-all shadow-xl"
             >
-              <span className="font-mono font-black text-lg tracking-widest text-orange-500">{profile?.inviteCode}</span>
-              <div className="flex items-center gap-2 text-neutral-400 group-hover:text-neutral-600">
-                <span className="text-[10px] font-bold uppercase">{copied ? 'Copied' : 'Copy'}</span>
-                {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+              <span className="font-mono font-black text-xl tracking-widest text-orange-400">{profile?.inviteCode}</span>
+              <div className="flex items-center gap-2 text-neutral-500 group-hover:text-white transition-colors">
+                <span className="text-[10px] font-bold uppercase">{copied ? 'COPIED!' : 'COPY'}</span>
+                {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
               </div>
             </div>
           </div>
