@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { CreditCard, Trophy, AlertCircle, Zap, Shield, Sparkles } from "lucide-react";
+import { formatCurrency } from "../lib/utils";
 import { playSound, stopSound } from "../lib/sounds";
 
 interface ThreeCardSlipperProps {
@@ -221,7 +222,7 @@ export default function ThreeCardSlipper({
                 <p className="text-red-100 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Too many losses</p>
               </div>
               <div className="bg-black/20 px-6 py-3 rounded-2xl">
-                <span className="text-white font-black text-3xl italic">-RS {penaltyAmount}</span>
+                <span className="text-white font-black text-3xl italic">-{formatCurrency(penaltyAmount)}</span>
               </div>
             </div>
           </motion.div>

@@ -117,6 +117,20 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["code", "value", "type", "active"]
+    },
+    "Asset": {
+      "title": "Asset",
+      "description": "Media assets uploaded to Cloudinary",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "url": { "type": "string" },
+        "type": { "type": "string", "enum": ["image", "audio", "video", "icon"] },
+        "uploadedBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "url", "type", "createdAt"]
     }
   },
   "firestore": {
@@ -151,6 +165,10 @@
     "/promo_codes/{code}": {
       "schema": "PromoCode",
       "description": "Promo and reward codes registry"
+    },
+    "/assets/{assetId}": {
+      "schema": "Asset",
+      "description": "Media library assets"
     },
     "/system/config": {
       "schema": {

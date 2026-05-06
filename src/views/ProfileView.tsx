@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { LogOut, Share2, Shield, User as UserIcon, Heart, Globe, Bell, ChevronRight, Copy, Check, ArrowLeft, Languages, Trash2, Zap, Users, Gamepad2, Gift, Trophy, Target, Landmark, Star } from "lucide-react";
+import { LogOut, Share2, Shield, Globe, Bell, ChevronRight, Copy, Check, ArrowLeft, Zap } from "lucide-react";
 import { auth, db } from "../lib/firebase";
 import { signOut } from "firebase/auth";
 import { useState, useEffect } from "react";
@@ -298,41 +298,6 @@ export default function ProfileView({ profile }: { profile: any }) {
     );
   }
 
-  if (activeSection === 'favorites') {
-    return (
-      <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="p-4 space-y-6 pb-24">
-        <header className="flex items-center gap-4">
-          <button onClick={() => setActiveSection('main')} className="p-2 hover:bg-neutral-100 rounded-full transition-colors text-neutral-900">
-            <ArrowLeft size={24} />
-          </button>
-          <h2 className="text-2xl font-black italic uppercase text-neutral-900">Favorites</h2>
-        </header>
-        <div className="space-y-4">
-          {(!profile?.favorites || profile.favorites.length === 0) ? (
-            <div className="bg-white border border-neutral-100 p-12 rounded-3xl text-center space-y-4">
-              <Heart className="mx-auto text-neutral-100" size={48} />
-              <p className="text-neutral-400 font-bold uppercase text-xs">No favorites added yet</p>
-            </div>
-          ) : (
-            profile.favorites.map((fav: string) => (
-              <div key={fav} className="bg-white border border-neutral-100 p-4 rounded-2xl flex items-center justify-between shadow-sm">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-500">
-                    <Zap size={18} />
-                  </div>
-                  <span className="font-bold uppercase text-sm text-neutral-900">{fav}</span>
-                </div>
-                <button className="text-red-500 p-2 hover:bg-red-50 rounded-lg">
-                  <Trash2 size={18} />
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </motion.div>
-    );
-  }
-
   return (
     <motion.div 
       initial={{ opacity: 0, x: 20 }}
@@ -340,143 +305,98 @@ export default function ProfileView({ profile }: { profile: any }) {
       exit={{ opacity: 0, x: -20 }}
       className={`p-4 space-y-6 pb-24 ${profile?.language === 'ur' ? 'font-urdu' : ''}`}
     >
-      <header className="flex flex-col items-center py-8 space-y-4">
+      <header className="flex flex-col items-center py-6 space-y-4">
         <div className="relative">
-          <div className="w-24 h-24 rounded-full border-4 border-orange-500 p-1 shadow-xl shadow-orange-500/10">
+          <div className="w-20 h-20 rounded-2xl border-2 border-neutral-100 p-1 shadow-sm">
             <img 
               src={profile?.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.uid}`} 
               alt="Profile" 
-              className="w-full h-full rounded-full object-cover bg-neutral-100"
+              className="w-full h-full rounded-xl object-cover bg-neutral-50"
               referrerPolicy="no-referrer"
             />
           </div>
-          <div className="absolute bottom-0 right-0 bg-white border border-neutral-200 p-1.5 rounded-full text-green-500">
-            <div className="w-2 h-2 bg-green-500 rounded-full" />
+          <div className="absolute -bottom-1 -right-1 bg-white border border-neutral-100 p-1.5 rounded-full shadow-sm">
+            <div className="w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white" />
           </div>
         </div>
-        <div className="text-center relative">
-          <div className="absolute -top-4 -right-12 bg-yellow-400 text-neutral-900 px-3 py-1 rounded-full font-black text-[8px] uppercase shadow-lg border-2 border-white flex items-center gap-1 z-20 animate-pulse">
-            <Zap size={10} className="fill-current" />
-            <span>2.5X BONUS</span>
-          </div>
-          <h2 className="text-2xl font-black text-neutral-900">{profile?.displayName}</h2>
-          <div className="flex items-center justify-center gap-2">
-            <p className="text-neutral-400 text-xs font-bold uppercase tracking-widest">{profile?.role}</p>
+        <div className="text-center">
+          <h2 className="text-xl font-black text-neutral-900 tracking-tight">{profile?.displayName}</h2>
+          <div className="flex items-center justify-center gap-2 mt-1">
+            <p className="text-neutral-400 text-[10px] font-black uppercase tracking-widest">{profile?.role}</p>
             <div className="w-1 h-1 bg-neutral-300 rounded-full" />
-            <p className="text-orange-500 text-xs font-bold uppercase tracking-widest">RANK #12</p>
+            <p className="text-neutral-400 text-[10px] font-black uppercase tracking-widest">{profile?.email?.split('@')[0]}</p>
           </div>
         </div>
       </header>
 
       {/* Admin Section */}
       {(profile?.role === 'admin' || isAdminEmail) && (
-        <section className="bg-white border border-orange-500/20 rounded-3xl p-6 space-y-4 shadow-sm">
+        <section className="bg-neutral-900 rounded-3xl p-5 space-y-4 shadow-xl">
           <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h3 className="font-bold flex items-center gap-2 text-orange-500">
-                <Shield size={18} /> Admin Dashboard
+            <div className="space-y-0.5">
+              <h3 className="font-black text-white text-xs uppercase tracking-wider flex items-center gap-2">
+                <Shield size={14} className="text-blue-400" /> Admin Access
               </h3>
-              <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-tight">Access platform controls</p>
+              <p className="text-[9px] text-neutral-500 font-bold uppercase tracking-tight">System Management Console</p>
             </div>
           </div>
           <button 
             onClick={() => navigate('/admin')}
-            className="w-full bg-orange-500 text-white py-3 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-orange-500/20 active:scale-95 transition-all"
+            className="w-full bg-blue-600 text-white py-3 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
           >
-            Enter Admin Panel
+            Launch Admin Panel
           </button>
         </section>
       )}
 
-      {/* Gaming Status & Level */}
-      <section className="bg-gradient-to-br from-neutral-900 to-neutral-800 rounded-3xl p-6 relative overflow-hidden shadow-2xl border border-neutral-700">
-        <div className="absolute top-0 right-0 p-8 opacity-5">
-          <Trophy size={120} />
-        </div>
-        <div className="relative z-10 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
-                <Target size={24} />
-              </div>
-              <div>
-                <h4 className="text-white font-black uppercase text-sm tracking-tight">Pro Player Level</h4>
-                <p className="text-orange-400 text-[10px] font-bold uppercase tracking-widest">Premium Rank Status</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-white font-black italic text-xl">LVL 42</p>
-              <div className="flex gap-1 justify-end">
-                {[1, 2, 3].map(i => <Star key={i} size={10} className="text-orange-400 fill-orange-400" />)}
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between text-[8px] font-black uppercase text-neutral-400">
-              <span>Tier Progress</span>
-              <span>85% to Next Reward</span>
-            </div>
-            <div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/10">
-              <div className="h-full bg-orange-500 w-[85%] shadow-[0_0_12px_rgba(249,115,22,0.4)]" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Referral Section - Redesigned as Gaming Quest */}
-      <section className="bg-white border border-neutral-200 rounded-[2.5rem] overflow-hidden shadow-sm">
-        <div className="p-6 bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-between">
-          <div className="space-y-1">
-            <h3 className="font-black text-white italic uppercase flex items-center gap-2">
-              <Gamepad2 size={20} /> Reward Quests
+      {/* Vouchers & Referrals */}
+      <section className="bg-white border border-neutral-200 rounded-[2rem] overflow-hidden shadow-sm">
+        <div className="p-5 bg-neutral-50 border-b border-neutral-200 flex items-center justify-between">
+          <div className="space-y-0.5">
+            <h3 className="font-black text-neutral-900 uppercase text-xs flex items-center gap-2">
+              <Zap size={14} className="text-orange-500" /> Account Rewards
             </h3>
-            <p className="text-[10px] text-blue-100 font-bold uppercase tracking-tight">Unlock special chests with promo codes</p>
           </div>
-          <div className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black text-white uppercase border border-white/30 italic">ACTIVE</div>
+          <div className="px-2 py-0.5 bg-neutral-200 rounded text-[8px] font-black text-neutral-500 uppercase tracking-wider">Verified</div>
         </div>
         
-        <div className="p-6 space-y-8">
+        <div className="p-6 space-y-6">
           <div className="space-y-3">
-             <div className="flex items-center gap-2 px-1">
-                <Zap size={14} className="text-orange-500" />
-                <p className="text-[10px] font-black uppercase text-neutral-500 tracking-widest">Enter Secret Voucher</p>
-             </div>
-             <div className="flex flex-col sm:flex-row gap-2">
-                <div className="flex-1 bg-neutral-50 border-2 border-dashed border-neutral-200 rounded-2xl relative group focus-within:border-blue-500 transition-all">
+             <p className="text-[10px] font-black uppercase text-neutral-400 tracking-widest pl-1">Redeem Voucher Code</p>
+             <div className="flex gap-2">
+                <div className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl focus-within:border-neutral-900 transition-all">
                   <input 
                     type="text" 
                     value={referralCode}
                     onChange={(e) => setReferralCode(e.target.value)}
-                    placeholder="ENTER CODE HERE..."
-                    className="w-full bg-transparent px-6 py-4 font-mono font-black text-lg uppercase placeholder:text-neutral-300 outline-none text-neutral-900"
+                    placeholder="Enter code..."
+                    className="w-full bg-transparent px-4 py-3 font-mono font-black text-sm uppercase placeholder:text-neutral-300 outline-none text-neutral-900"
                   />
                 </div>
                 <button 
                   onClick={submitReferral}
                   disabled={refStatus === 'loading' || (refStatus === 'success' && !!profile?.referredBy)}
-                  className={`w-full sm:w-auto px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-tighter transition-all active:scale-95 flex-shrink-0 shadow-2xl relative overflow-hidden group ${refStatus === 'success' ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'}`}
+                  className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-wider transition-all active:scale-95 flex-shrink-0 ${refStatus === 'success' ? 'bg-green-600 text-white' : 'bg-neutral-900 text-white'}`}
                 >
-                  <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform" />
-                  <span className="relative">{refStatus === 'loading' ? 'CHECKING...' : refStatus === 'success' ? 'CLAIMED! 🎉' : 'CLAIM REWARD'}</span>
+                  {refStatus === 'loading' ? '...' : refStatus === 'success' ? 'Applied' : 'Redeem'}
                 </button>
              </div>
-             {refStatus === 'error' && <p className="text-red-500 text-[10px] font-black uppercase pl-1 animate-bounce">Invalid or expired quest code!</p>}
+             {refStatus === 'error' && <p className="text-red-500 text-[9px] font-black uppercase pl-1">Invalid or expired code</p>}
           </div>
 
-          <div className="pt-6 border-t border-dashed border-neutral-200">
+          <div className="pt-6 border-t border-neutral-100">
             <div className="flex items-center gap-2 mb-3">
-              <Share2 size={14} className="text-orange-500" />
-              <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest italic">Share Invite Bonus</p>
+              <Share2 size={14} className="text-neutral-400" />
+              <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Share Invite Code</p>
             </div>
             <div 
               onClick={copyToClipboard}
-              className="flex items-center justify-between bg-neutral-900 border border-neutral-800 p-4 rounded-2xl cursor-pointer group hover:bg-neutral-800 transition-all shadow-xl"
+              className="flex items-center justify-between border border-neutral-200 p-4 rounded-xl cursor-pointer group hover:border-neutral-900 transition-all"
             >
-              <span className="font-mono font-black text-xl tracking-widest text-orange-400">{profile?.inviteCode}</span>
-              <div className="flex items-center gap-2 text-neutral-500 group-hover:text-white transition-colors">
-                <span className="text-[10px] font-bold uppercase">{copied ? 'COPIED!' : 'COPY'}</span>
-                {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+              <span className="font-mono font-black text-lg tracking-widest text-neutral-900">{profile?.inviteCode}</span>
+              <div className="flex items-center gap-2 text-neutral-400 group-hover:text-neutral-900 transition-colors">
+                <span className="text-[9px] font-black uppercase">{copied ? 'Copied' : 'Copy'}</span>
+                {copied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
               </div>
             </div>
           </div>
@@ -484,30 +404,31 @@ export default function ProfileView({ profile }: { profile: any }) {
       </section>
 
       {/* Settings Grid */}
-      <section className="grid grid-cols-1 gap-2">
-        <h3 className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-4 mb-2">Account Settings</h3>
+      <section className="space-y-2">
+        <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em] pl-2 mb-3">Preferences</h3>
         
         {[
-          { id: 'notifications', icon: Bell, label: "Notifications", color: "text-blue-500", badge: notifications.filter(n => !n.read).length },
-          { id: 'privacy', icon: Shield, label: "Security & Privacy", color: "text-green-500" },
-          { id: 'language', icon: Globe, label: "Language / زبان", color: "text-purple-500" },
-          { id: 'favorites', icon: Heart, label: "Favorites", color: "text-red-500" },
+          { id: 'notifications', icon: Bell, label: "Notification Settings", color: "text-blue-500", badge: notifications.filter(n => !n.read).length },
+          { id: 'privacy', icon: Shield, label: "Security & Privacy", color: "text-neutral-900" },
+          { id: 'language', icon: Globe, label: "Display Language", color: "text-neutral-900" },
         ].map((item) => (
           <button 
             key={item.id} 
             onClick={() => setActiveSection(item.id as ActiveSection)}
-            className="flex items-center justify-between bg-white p-4 rounded-2xl hover:bg-neutral-50 transition-colors group border border-neutral-100 shadow-sm"
+            className="flex items-center justify-between bg-white px-5 py-4 rounded-2xl hover:bg-neutral-50 transition-colors group border border-neutral-100"
           >
             <div className="flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-xl bg-neutral-50 flex items-center justify-center ${item.color} relative`}>
-                <item.icon size={20} />
-                {item.badge ? (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] font-black border-2 border-white">{item.badge}</span>
-                ) : null}
+              <div className={`w-8 h-8 rounded-lg bg-neutral-50 flex items-center justify-center ${item.color}`}>
+                <item.icon size={16} />
               </div>
               <span className="font-bold text-sm text-neutral-900">{item.label}</span>
             </div>
-            <ChevronRight size={18} className="text-neutral-300 group-hover:translate-x-1 transition-transform" />
+            <div className="flex items-center gap-3">
+              {item.badge ? (
+                <span className="bg-red-500 text-white px-2 py-0.5 rounded-md text-[8px] font-black">{item.badge}</span>
+              ) : null}
+              <ChevronRight size={16} className="text-neutral-300 group-hover:translate-x-0.5 transition-transform" />
+            </div>
           </button>
         ))}
       </section>

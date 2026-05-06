@@ -89,7 +89,7 @@ export default function AuthView() {
           </div>
           <div className="flex-1">
             <h4 className="font-black text-sm uppercase italic text-orange-500">Early Access Offer</h4>
-            <p className="text-[10px] text-neutral-600 font-medium">Join now and get $10.00 first deposit bonus!</p>
+            <p className="text-[10px] text-neutral-600 font-medium">Join now and get RS 500 first deposit bonus!</p>
           </div>
         </section>
       </motion.div>

@@ -6,10 +6,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
+  return "RS " + amount.toLocaleString('en-PK', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  });
 }
 
 export function generateInviteCode(): string {

@@ -4,7 +4,6 @@ import {
   CreditCard, 
   TrendingUp, 
   CheckCircle2, 
-  XCircle, 
   Search,
   Bell,
   History,
@@ -22,8 +21,7 @@ import {
   Image as ImageIcon,
   Plus,
   Trash2,
-  Landmark,
-  LayoutGrid
+  Landmark
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { db } from "../lib/firebase";
@@ -45,7 +43,7 @@ type Transaction = {
   transactionId?: string;
 };
 
-type Tab = 'dashboard' | 'users' | 'requests' | 'ledger' | 'broadcast' | 'settings' | 'games' | 'banners' | 'promos';
+type Tab = 'dashboard' | 'users' | 'requests' | 'ledger' | 'broadcast' | 'settings' | 'games' | 'banners' | 'promos' | 'assets';
 
 export default function AdminView() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -72,15 +70,10 @@ export default function AdminView() {
   const [gamesList, setGamesList] = useState<any[]>([]);
   const [promos, setPromos] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
+  const [assetsList, setAssetsList] = useState<any[]>([]);
   const [uploadingGameId, setUploadingGameId] = useState<string | null>(null);
   const [uploadingBannerId, setUploadingBannerId] = useState<string | null>(null);
-  const [uploadingSocialId, setUploadingSocialId] = useState<string | null>(null);
-
-  const deleteSocialIcon = async (key: string) => {
-    if (confirm("Remove this icon?")) {
-      await updateConfig(`${key}Icon`, "");
-    }
-  };
+  const [uploadingAsset, setUploadingAsset] = useState(false);
 
   // ... existing system config unsub
   useEffect(() => {
@@ -179,12 +172,19 @@ export default function AdminView() {
       handleFirestoreError(err, OperationType.GET, "users");
     });
 
+    const unsubAssets = onSnapshot(query(collection(db, "assets"), orderBy("createdAt", "desc")), (snap) => {
+      setAssetsList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, "assets");
+    });
+
     return () => {
       unsubPending();
       unsubLedger();
       unsubConfig();
       unsubGames();
       unsubRecentUsers();
+      unsubAssets();
     };
   }, []);
 
@@ -274,6 +274,7 @@ export default function AdminView() {
     { id: 'broadcast', label: 'Broadcast', icon: Bell },
     { id: 'games', label: 'Game Engine', icon: Gamepad2 },
     { id: 'banners', label: 'Marketing', icon: ImageIcon },
+    { id: 'assets', label: 'Asset Library', icon: Upload },
     { id: 'settings', label: 'Platform Config', icon: Settings2 },
     { id: 'promos', label: 'Vouchers', icon: Trophy },
   ];
@@ -1172,122 +1173,6 @@ export default function AdminView() {
                       Toggle
                     </button>
                   </div>
-
-                {/* Social & Gaming Hub Config */}
-                <div className="bg-white border-2 border-dashed border-blue-200 rounded-3xl p-6 space-y-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
-                      <LayoutGrid size={20} />
-                    </div>
-                    <div>
-                      <h3 className="font-black text-neutral-900 uppercase italic">Gaming Hub Manager</h3>
-                      <p className="text-[10px] text-neutral-400 font-bold uppercase">Manage Home Screen Mini-App Dock</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {['social1', 'social2', 'social3', 'social4'].map((key, idx) => (
-                      <div key={key} className="p-4 bg-neutral-50 rounded-2xl border border-neutral-100 space-y-3 relative overflow-hidden group">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="w-5 h-5 bg-blue-600 text-white rounded-lg flex items-center justify-center text-[10px] font-black">{idx + 1}</span>
-                            <p className="text-[10px] font-black uppercase text-neutral-900">{idx === 0 ? 'Primary Slot' : `Channel Slot ${idx + 1}`}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => updateConfig(`${key}Active`, !(globalConfig as any)[`${key}Active`])}
-                              className={`px-3 py-1 rounded-full text-[8px] font-black uppercase transition-all ${
-                                (globalConfig as any)[`${key}Active`] 
-                                  ? 'bg-green-100 text-green-600 border border-green-200' 
-                                  : 'bg-red-100 text-red-600 border border-red-200'
-                              }`}
-                            >
-                              {(globalConfig as any)[`${key}Active`] ? 'Enabled' : 'Disabled'}
-                            </button>
-                            
-                             {(globalConfig as any)[`${key}Icon`] ? (
-                              <div className="relative group/icon">
-                                <img 
-                                  src={(globalConfig as any)[`${key}Icon`]} 
-                                  className="w-10 h-10 rounded-xl object-cover bg-white shadow-sm border border-neutral-200" 
-                                  alt="preview"
-                                  referrerPolicy="no-referrer"
-                                />
-                                <button 
-                                  onClick={() => deleteSocialIcon(key)}
-                                  className="absolute -top-1 -right-1 bg-red-500 text-white p-0.5 rounded-full opacity-0 group-hover/icon:opacity-100 transition-opacity"
-                                >
-                                  <XCircle size={10} />
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="w-10 h-10 bg-neutral-200 rounded-xl flex items-center justify-center text-neutral-400 border border-dashed border-neutral-300">
-                                <ImageIcon size={16} />
-                              </div>
-                            )}
-                            <div className="flex flex-col gap-1">
-                              <input 
-                                type="file" 
-                                id={`upload-${key}`} 
-                                className="hidden" 
-                                accept="image/*" 
-                                onChange={async (e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    setUploadingSocialId(key);
-                                    try {
-                                      const url = await uploadToCloudinary(file);
-                                      await updateConfig(`${key}Icon`, url);
-                                      // Auto enable on upload
-                                      if (!(globalConfig as any)[`${key}Active`]) {
-                                        await updateConfig(`${key}Active`, true);
-                                      }
-                                    } catch (err) {
-                                      console.error("Upload failed", err);
-                                      alert("Upload failed! Please check console for details.");
-                                    } finally {
-                                      setUploadingSocialId(null);
-                                    }
-                                  }
-                                }} 
-                              />
-                              <label 
-                                htmlFor={`upload-${key}`}
-                                className={`cursor-pointer px-3 py-1.5 rounded-lg font-black uppercase text-[8px] flex items-center gap-1 transition-all ${uploadingSocialId === key ? 'bg-neutral-200 text-neutral-400' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 active:scale-95'}`}
-                              >
-                                {uploadingSocialId === key ? '...' : <><Upload size={10} /> { (globalConfig as any)[`${key}Icon`] ? 'Change' : 'Upload' }</>}
-                              </label>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className="space-y-1">
-                            <p className="text-[8px] font-black text-neutral-400 uppercase tracking-tighter">Button Display Name</p>
-                            <input 
-                              type="text" 
-                              placeholder={idx === 0 ? "e.g. WHATSAPP" : "e.g. JOIN CHANNEL"}
-                              value={(globalConfig as any)[`${key}Label`] || ''}
-                              onChange={(e) => updateConfig(`${key}Label`, e.target.value)}
-                              className="w-full text-[10px] font-bold text-blue-600 bg-white border border-neutral-200 rounded-xl px-3 py-2 outline-none focus:border-blue-500 shadow-sm"
-                            />
-                          </div>
-                          
-                          <div className="space-y-1">
-                            <p className="text-[8px] font-black text-neutral-400 uppercase tracking-tighter">Target Destination (URL)</p>
-                            <input 
-                              type="text" 
-                              placeholder="https://..."
-                              value={(globalConfig as any)[`${key}Link`] || ''}
-                              onChange={(e) => updateConfig(`${key}Link`, e.target.value)}
-                              className="w-full text-[10px] font-medium text-neutral-500 bg-white border border-neutral-200 rounded-xl px-3 py-2 outline-none focus:border-blue-500 shadow-sm"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
                 </div>
               </div>
 
@@ -1404,6 +1289,111 @@ export default function AdminView() {
               <div className="bg-neutral-50 border border-dashed border-neutral-200 p-8 rounded-3xl text-center">
                  <ShieldCheck className="mx-auto text-neutral-100 mb-2" size={32} />
                  <p className="text-neutral-400 font-black uppercase text-[8px] tracking-widest">End-to-End System Synchronization Enabled</p>
+              </div>
+            </motion.div>
+          )}
+          {activeTab === 'assets' && (
+            <motion.div key="assets" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6 pb-20">
+              <div className="bg-white border border-neutral-100 p-6 rounded-3xl space-y-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <h4 className="font-black uppercase italic text-neutral-900">Asset Management</h4>
+                    <p className="text-[9px] font-black text-neutral-400 tracking-widest uppercase">Upload icons, sounds, and media</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <input 
+                      type="file" 
+                      id="asset-upload" 
+                      className="hidden" 
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setUploadingAsset(true);
+                        try {
+                          const url = await uploadToCloudinary(file);
+                          const type = file.type.startsWith('image') ? 'image' : 
+                                       file.type.startsWith('audio') ? 'audio' : 
+                                       file.type.startsWith('video') ? 'video' : 'icon';
+                          
+                          await addDoc(collection(db, "assets"), {
+                            name: file.name,
+                            url,
+                            type,
+                            createdAt: new Date().toISOString(),
+                            uploadedBy: 'admin'
+                          });
+                          alert("Asset Uploaded Successfully!");
+                        } catch (err: any) {
+                          alert(err.message);
+                        } finally {
+                          setUploadingAsset(false);
+                        }
+                      }}
+                    />
+                    <label 
+                      htmlFor="asset-upload"
+                      className={`px-6 py-2.5 rounded-2xl bg-neutral-900 text-white font-black uppercase text-[10px] tracking-widest shadow-xl flex items-center gap-2 cursor-pointer active:scale-95 transition-all ${uploadingAsset ? 'opacity-50 cursor-wait' : ''}`}
+                    >
+                      {uploadingAsset ? <Plus className="animate-spin" size={14} /> : <Plus size={14} />}
+                      Upload New
+                    </label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-4 border-t border-neutral-100">
+                  {assetsList.length === 0 ? (
+                    <div className="col-span-2 py-12 text-center bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
+                      <ImageIcon className="mx-auto text-neutral-200 mb-2" size={32} />
+                      <p className="text-neutral-400 font-black uppercase text-[8px]">No assets in library</p>
+                    </div>
+                  ) : (
+                    assetsList.map(asset => (
+                      <div key={asset.id} className="bg-white border border-neutral-100 p-3 rounded-2xl space-y-2 group relative overflow-hidden shadow-sm">
+                        <div className="aspect-square bg-neutral-50 rounded-xl overflow-hidden flex items-center justify-center border border-neutral-100">
+                          {asset.type === 'image' || asset.type === 'icon' ? (
+                            <img src={asset.url} className="w-full h-full object-cover" alt={asset.name} />
+                          ) : asset.type === 'audio' ? (
+                            <div className="flex flex-col items-center gap-1">
+                              <Bell className="text-orange-500" size={24} />
+                              <span className="text-[8px] font-black uppercase text-neutral-400">Audio File</span>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center gap-1">
+                              <ImageIcon className="text-blue-500" size={24} />
+                              <span className="text-[8px] font-black uppercase text-neutral-400">Media</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="space-y-0.5">
+                          <p className="text-[9px] font-black text-neutral-900 uppercase truncate pr-6">{asset.name}</p>
+                          <p className="text-[7px] font-bold text-neutral-400 uppercase tracking-widest">{asset.type}</p>
+                        </div>
+                        
+                        <div className="flex gap-1 mt-2">
+                           <button 
+                             onClick={() => {
+                               navigator.clipboard.writeText(asset.url);
+                               alert("Link Copied!");
+                             }}
+                             className="flex-1 bg-neutral-900 text-white text-[7px] font-black uppercase py-1 rounded-lg"
+                           >
+                             Copy Link
+                           </button>
+                           <button 
+                             onClick={async () => {
+                               if (confirm("Delete this asset?")) {
+                                 await updateDoc(doc(db, "assets", asset.id), { active: false }); // Or real delete
+                               }
+                             }}
+                             className="p-1 px-2 bg-red-50 text-red-500 rounded-lg"
+                           >
+                             <Trash2 size={10} />
+                           </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </motion.div>
           )}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { RefreshCcw, Zap } from "lucide-react";
+import { formatCurrency } from "../lib/utils";
 import { playSound, stopSound } from "../lib/sounds";
 
 export default function SpinWheel({ onWin, onBet, balance, minBet = 10, winRate = 30, multiplier = 5 }: { 
@@ -16,7 +17,7 @@ export default function SpinWheel({ onWin, onBet, balance, minBet = 10, winRate 
   const [result, setResult] = useState<string | null>(null);
   const BET_COST = minBet;
 
-  const winSegments = [`RS${minBet}`, `RS${minBet * 2}`, `RS${minBet * 5}`, `RS${minBet * 10}`];
+  const winSegments = [`RS ${minBet}`, `RS ${minBet * 2}`, `RS ${minBet * 5}`, `RS ${minBet * 10}`];
   const segments = ["MISS", winSegments[0], "MISS", winSegments[2], "MISS", winSegments[1], "MISS", winSegments[3]];
 
   const spin = async () => {
@@ -61,7 +62,7 @@ export default function SpinWheel({ onWin, onBet, balance, minBet = 10, winRate 
         playSound('lose');
       } else {
         playSound('win');
-        onWin(parseInt(win.replace('RS', '')));
+        onWin(parseInt(win.replace('RS ', '')));
       }
     }, 4000);
   };
@@ -123,7 +124,7 @@ export default function SpinWheel({ onWin, onBet, balance, minBet = 10, winRate 
         disabled={spinning}
         className="w-full bg-orange-600 hover:bg-orange-500 py-4 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-orange-500/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 text-white"
       >
-        {spinning ? <RefreshCcw className="animate-spin" /> : `Spin RS ${BET_COST}`}
+        {spinning ? <RefreshCcw className="animate-spin" /> : `Spin ${formatCurrency(BET_COST)}`}
       </button>
     </div>
   );

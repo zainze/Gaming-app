@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { Gift, TrendingUp, Users, Zap, ExternalLink, Timer, Sparkles, Bell, Trophy, Landmark, Plus, MessageCircle, Target } from "lucide-react";
+import { Gift, TrendingUp, Users, Timer, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, onSnapshot, doc, updateDoc, increment, addDoc, getDoc } from "firebase/firestore";
 import { handleFirestoreError, OperationType } from "../lib/firestore-errors";
@@ -188,7 +188,7 @@ export default function HomeView({ profile }: { profile: any }) {
       });
 
       playSound('win');
-      alert(`Success! Reward logic applied: ${codeData.type === 'balance' ? `RS ${reward} added!` : `24H Double Rewards active!`}`);
+      alert(`Success! Reward logic applied: ${codeData.type === 'balance' ? `${formatCurrency(reward)} added!` : `24H Double Rewards active!`}`);
       setPromoCode("");
     } catch (err: any) {
       handleFirestoreError(err, OperationType.WRITE, "promo_redemption");
@@ -274,59 +274,6 @@ export default function HomeView({ profile }: { profile: any }) {
           <div className="bg-black/20 px-3 py-1 rounded-full text-[8px] font-black uppercase">Active</div>
         </div>
       )}
-
-      {/* Gaming Channels Dock */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <p className="text-[9px] font-black uppercase text-neutral-400 tracking-widest italic">Official Channels</p>
-          <div className="flex gap-1 items-center">
-            <span className="w-1 h-1 bg-green-500 rounded-full animate-ping" />
-            <p className="text-[8px] font-black text-green-500 uppercase">Live Now</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-          {[1, 2, 3, 4].map((i) => {
-            const key = `social${i}`;
-            const label = systemConfig?.[`${key}Label`];
-            const link = systemConfig?.[`${key}Link`];
-            const iconUrl = systemConfig?.[`${key}Icon`];
-            const isActive = systemConfig?.[`${key}Active`];
-            
-            if (!isActive || !label || !link) return null;
-
-            return (
-              <a 
-                key={i}
-                href={link} 
-                target="_blank" 
-                rel="noreferrer"
-                className="flex-shrink-0 flex flex-col items-center gap-1 group"
-              >
-                <div className={`w-12 h-12 ${i === 1 ? 'bg-green-500 shadow-green-500/20 border-green-700' : 'bg-neutral-900 shadow-neutral-900/20 border-black'} rounded-2xl flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform relative overflow-hidden border-b-4`}>
-                   {iconUrl ? (
-                     <img 
-                       src={iconUrl} 
-                       alt={label} 
-                       className="w-full h-full object-cover" 
-                       referrerPolicy="no-referrer" 
-                       onError={(e) => {
-                         // Fallback if image fails to load
-                         (e.target as any).src = "https://cdn-icons-png.flaticon.com/512/3242/3242095.png";
-                       }}
-                     />
-                   ) : (
-                     <Zap size={18} />
-                   )}
-                   <div className="absolute top-0 right-0 p-0.5">
-                     <Sparkles size={8} className="text-white/40" />
-                   </div>
-                </div>
-                <span className={`text-[8px] font-black uppercase transition-colors ${i === 1 ? 'text-green-600' : 'text-neutral-900'} truncate max-w-[48px]`}>{label}</span>
-              </a>
-            );
-          })}
-        </div>
-      </section>
 
       {/* Quick Launch Games */}
       <section className="space-y-4">

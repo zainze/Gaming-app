@@ -150,5 +150,14 @@ service cloud.firestore {
         ));
       allow update, delete: if false;
     }
+
+    match /assets/{assetId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin() && 
+        incoming().keys().hasAll(['name', 'url', 'type', 'createdAt']) &&
+        incoming().type in ['image', 'audio', 'video', 'icon'];
+      allow delete: if isAdmin();
+      allow update: if false;
+    }
   }
 }

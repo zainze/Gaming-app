@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plane, TrendingUp, Wallet, Zap, RotateCcw, AlertTriangle, Trophy, Play } from 'lucide-react';
+import { Info, Menu, X, Coins, Users, Plus, Minus, RotateCcw } from 'lucide-react';
 import { playSound, stopSound } from '../lib/sounds';
 
 interface AviatorProps {
@@ -9,21 +9,35 @@ interface AviatorProps {
   onBet: (amount: number) => void;
 }
 
+interface UserBet {
+  id: string;
+  user: string;
+  amount: number;
+  multiplier?: number;
+  win?: number;
+  status: 'pending' | 'cashed' | 'lost';
+}
+
+const JET_ICON_URL = "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1777971975/air-force_do6cuq.png";
+
 export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet }) => {
   const [gameState, setGameState] = useState<'idle' | 'waiting' | 'running' | 'crashed'>('idle');
   const [multiplier, setMultiplier] = useState(1.0);
-  const [betAmount, setBetAmount] = useState(10);
-  const [hasBet, setHasBet] = useState(false);
+  const [history, setHistory] = useState<number[]>([4.02, 1.00, 1.14, 1.20, 6.72, 1.89, 1.04, 1.00]);
   const [crashPoint, setCrashPoint] = useState(0);
-  const [history, setHistory] = useState<number[]>([]);
   
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [bet, setBet] = useState({ amount: 1.00, active: false });
+  const [bet2, setBet2] = useState({ amount: 1.00, active: false });
+  const [activeTab, setActiveTab] = useState<'all' | 'my' | 'top'>('all');
+  const [localBets, setLocalBets] = useState<UserBet[]>([]);
+
   const requestRef = useRef<number>(null);
   const startTimeRef = useRef<number>(0);
 
   const generateCrashPoint = () => {
     const r = Math.random();
-    return Math.max(1.0, 0.97 / (1.0 - r));
+    if (r < 0.03) return 1.0;
+    return Math.max(1.0, 0.98 / (1.0 - Math.random()));
   };
 
   const startRound = useCallback(() => {
@@ -33,46 +47,77 @@ export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet }) => {
     setMultiplier(1.0);
     playSound('spin');
     startTimeRef.current = performance.now();
+
+    const names = ['User_733', 'LuckyPro', 'Zenith', 'PakWinner', 'GoldDigger', 'ShadowBoxer'];
+    const newBets: UserBet[] = names.map((name, i) => ({
+      id: `social_${Date.now()}_${i}`,
+      user: name,
+      amount: Math.floor(Math.random() * 50) + 10,
+      status: 'pending'
+    }));
+    setLocalBets(newBets);
   }, []);
 
-  const handleBet = () => {
-    if (balance < betAmount) return;
-    playSound('click');
-    onBet(betAmount);
-    setHasBet(true);
-    if (gameState === 'idle' || gameState === 'crashed') {
-      setGameState('waiting');
-      setTimeout(startRound, 2000);
+  const handleAction = (isPanel2: boolean = false) => {
+    const currentBet = isPanel2 ? bet2 : bet;
+    const setBetFn = isPanel2 ? setBet2 : setBet;
+
+    if (currentBet.active) {
+      if (gameState === 'running') {
+        const win = currentBet.amount * multiplier;
+        onWin(win);
+        playSound('win');
+        setBetFn(prev => ({ ...prev, active: false }));
+      } else {
+        setBetFn(prev => ({ ...prev, active: false }));
+      }
+    } else {
+      if (balance < currentBet.amount) return;
+      onBet(currentBet.amount);
+      playSound('click');
+      setBetFn(prev => ({ ...prev, active: true }));
+
+      if (gameState === 'idle' || gameState === 'crashed') {
+        setGameState('waiting');
+        setTimeout(startRound, 3000);
+      }
     }
   };
 
-  const handleCashOut = () => {
-    if (gameState !== 'running' || !hasBet) return;
-    playSound('win');
-    const winAmount = betAmount * multiplier;
-    onWin(winAmount);
-    setHasBet(false);
-  };
-
-  // Game Loop
   useEffect(() => {
     if (gameState === 'running') {
       const update = (time: number) => {
         const elapsed = (time - startTimeRef.current) / 1000;
-        const nextMultiplier = Math.pow(1.15, elapsed);
+        const nextMultiplier = Math.pow(1.12, elapsed);
         
         if (nextMultiplier >= crashPoint) {
           stopSound('spin');
           playSound('lose');
           setGameState('crashed');
-          setHistory(prev => [crashPoint, ...prev].slice(0, 5));
-          setHasBet(false);
+          setHistory(prev => [crashPoint, ...prev].slice(0, 15));
+          setBet(prev => ({ ...prev, active: false }));
+          setBet2(prev => ({ ...prev, active: false }));
+          setLocalBets(prev => prev.map(b => ({ ...b, status: b.status === 'pending' ? 'lost' : b.status })));
           setTimeout(() => setGameState('idle'), 3000);
           return;
         }
 
         setMultiplier(nextMultiplier);
-        draw(nextMultiplier);
+        
+        if (Math.random() < 0.015) {
+          setLocalBets(prev => {
+            const pending = prev.filter(b => b.status === 'pending');
+            if (pending.length === 0) return prev;
+            const target = pending[Math.floor(Math.random() * pending.length)];
+            return prev.map(b => b.id === target.id ? { 
+              ...b, 
+              status: 'cashed', 
+              multiplier: nextMultiplier, 
+              win: b.amount * nextMultiplier 
+            } : b);
+          });
+        }
+
         requestRef.current = requestAnimationFrame(update);
       };
       requestRef.current = requestAnimationFrame(update);
@@ -81,241 +126,258 @@ export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet }) => {
         stopSound('spin');
       };
     }
-  }, [gameState, crashPoint]);
+  }, [gameState, crashPoint, onWin]);
 
-  const draw = (currentMult: number) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+  const graphProgress = useMemo(() => {
+    return Math.min((multiplier - 1) / 4, 1.2);
+  }, [multiplier]);
 
-    const w = canvas.width;
-    const h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
+  const pathD = useMemo(() => {
+    const baseX = 50;
+    const baseY = 550;
+    const x = baseX + (graphProgress * 850 * 0.85);
+    const y = baseY - (Math.pow(graphProgress, 1.2) * 450);
+    const cpX = baseX + (x - baseX) * 0.4;
+    return `M ${baseX} ${baseY} Q ${cpX} ${baseY} ${x} ${y}`;
+  }, [graphProgress]);
 
-    // Draw grid
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 10; i++) {
-      ctx.beginPath();
-      ctx.moveTo(0, (h / 10) * i);
-      ctx.lineTo(w, (h / 10) * i);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo((w / 10) * i, 0);
-      ctx.lineTo((w / 10) * i, h);
-      ctx.stroke();
-    }
-
-    // Draw Curve
-    const progress = Math.min((currentMult - 1) / 5, 1); // Scale curve to 5x
-    ctx.beginPath();
-    ctx.strokeStyle = '#ef4444'; // red-500
-    ctx.lineWidth = 4;
-    ctx.moveTo(50, h - 50);
-    
-    const cp1x = 50 + (w - 100) * 0.5;
-    const cp1y = h - 50;
-    const endX = 50 + (w - 100) * progress;
-    const endY = (h - 50) - (h - 100) * progress;
-
-    ctx.quadraticCurveTo(cp1x * progress, cp1y, endX, endY);
-    ctx.stroke();
-
-    // Fill Under Curve
-    ctx.lineTo(endX, h - 50);
-    ctx.lineTo(50, h - 50);
-    const grad = ctx.createLinearGradient(0, endY, 0, h - 50);
-    grad.addColorStop(0, 'rgba(239, 68, 68, 0.2)');
-    grad.addColorStop(1, 'rgba(239, 68, 68, 0)');
-    ctx.fillStyle = grad;
-    ctx.fill();
-  };
+  const jetPos = useMemo(() => {
+    const baseX = 50;
+    const baseY = 550;
+    const x = baseX + (graphProgress * 850 * 0.85);
+    const y = baseY - (Math.pow(graphProgress, 1.2) * 450);
+    return { x, y };
+  }, [graphProgress]);
 
   return (
-    <div className="bg-white p-4 space-y-6 relative overflow-hidden h-full">
-      {/* Decorative background elements for "proper graphics" feel */}
-      <div className="absolute top-20 left-0 w-full h-px bg-neutral-100" />
-      <div className="absolute top-40 left-0 w-full h-px bg-neutral-100" />
-      <div className="absolute top-60 left-0 w-full h-px bg-neutral-100" />
-      
-      {/* Header / History */}
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-3 border-b border-neutral-50 relative z-10 px-2 bg-neutral-50/50 rounded-2xl">
-        <TrendingUp size={14} className="text-orange-500 shrink-0 mx-2" />
-        {history.map((h, i) => (
-          <span 
-            key={i} 
-            className={`px-3 py-1 rounded-full text-[10px] font-black italic border shrink-0 ${h >= 2 ? 'bg-orange-500 text-white border-orange-600 shadow-sm' : 'bg-white border-neutral-100 text-neutral-400'}`}
-          >
-            {h.toFixed(2)}x
-          </span>
-        ))}
-      </div>
+    <div className="flex flex-col h-full bg-[#101112] text-[#9EA0A3] font-sans">
+      <header className="flex items-center justify-between px-4 h-12 bg-[#1B1C1D] border-b border-[#2C2D2E] flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="text-[#D92121] font-black italic tracking-tighter text-xl uppercase">Aviator Pro</span>
+          <div className="w-5 h-5 rounded-full border border-[#494B4D] flex items-center justify-center text-[#9EA0A3] cursor-pointer">
+            <span className="text-[10px] font-bold">i</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="bg-black rounded-full px-3 py-1 flex items-center gap-2 h-8 border border-[#2C2D2E]">
+            <div className="w-3.5 h-3.5 rounded-full bg-[#FBCB35] flex items-center justify-center">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#141516]" />
+            </div>
+            <span className="text-[#32D74B] font-black text-xs leading-none">RS {balance.toFixed(0)}</span>
+          </div>
+          <button className="w-7 h-7 bg-[#FBCB35] rounded-md flex items-center justify-center text-black active:scale-95 transition-transform">
+            <Plus size={18} strokeWidth={4} />
+          </button>
+          <div className="flex items-center gap-2 ml-1">
+            <Menu size={22} className="text-[#9EA0A3] cursor-pointer hover:text-white" />
+            <X size={22} className="text-[#9EA0A3] cursor-pointer hover:text-white" />
+          </div>
+        </div>
+      </header>
 
-      {/* Main Game Screen */}
-      <div className="relative aspect-[4/3] bg-neutral-50 rounded-[3rem] border border-neutral-100 overflow-hidden shadow-inner group">
-        <canvas 
-          ref={canvasRef} 
-          width={600} 
-          height={450} 
-          className="w-full h-full"
-        />
-        
-        {/* Sky gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white via-neutral-50 to-orange-100/20 pointer-events-none" />
-
-        {/* Multiplier Overlay */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-20">
-          <AnimatePresence mode="wait">
-            {gameState === 'running' && (
-              <motion.div 
-                key="mult"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="flex flex-col items-center"
-              >
-                <span className="text-8xl font-black italic text-neutral-900 tracking-tighter drop-shadow-sm">
-                  {multiplier.toFixed(2)}x
-                </span>
-                <div className="flex items-center gap-2 px-3 py-1 bg-white/40 backdrop-blur-md rounded-full border border-white/50">
-                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />
-                    <p className="text-[8px] font-black uppercase tracking-widest text-neutral-500">In Flight</p>
-                </div>
-              </motion.div>
-            )}
-            {gameState === 'crashed' && (
-              <motion.div 
-                key="crash"
-                initial={{ scale: 1.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="flex flex-col items-center"
-              >
-                <div className="bg-red-500 text-white px-6 py-2 rounded-2xl rotate-[-2deg] shadow-xl shadow-red-500/20">
-                    <p className="font-black italic text-4xl uppercase tracking-tighter">Flew Away!</p>
-                </div>
-                <p className="text-neutral-400 text-sm font-black mt-4 uppercase tracking-[0.3em]">Crashed at {multiplier.toFixed(2)}x</p>
-              </motion.div>
-            )}
-            {gameState === 'waiting' && (
-              <motion.div 
-                key="waiting"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex flex-col items-center gap-4"
-              >
-                <div className="relative">
-                    <div className="w-20 h-20 border-4 border-neutral-100 rounded-full" />
-                    <div className="absolute inset-0 w-20 h-20 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-                    <Plane className="absolute inset-0 m-auto text-orange-500" size={24} fill="currentColor" />
-                </div>
-                <div className="text-center">
-                    <p className="text-neutral-900 font-black italic text-2xl uppercase tracking-tight">Preparing Run</p>
-                    <p className="text-neutral-400 font-black uppercase text-[8px] tracking-widest mt-1">Engines Spooling up...</p>
-                </div>
-              </motion.div>
-            )}
-            {gameState === 'idle' && (
-                <motion.div 
-                   key="idle"
-                   initial={{ opacity: 0 }}
-                   animate={{ opacity: 1 }}
-                   className="flex flex-col items-center gap-4"
-                >
-                    <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg border border-neutral-50">
-                        <Zap size={32} className="text-orange-500" fill="currentColor" />
-                    </div>
-                     <div className="text-center">
-                        <p className="text-neutral-900 font-black italic text-2xl uppercase tracking-tight">Ready for Takeoff</p>
-                        <p className="text-neutral-400 font-black uppercase text-[8px] tracking-widest mt-1">Deploy bet to begin sequence</p>
-                    </div>
-                </motion.div>
-            )}
-          </AnimatePresence>
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {/* 1. History Bar (Fixed) */}
+        <div className="flex items-center justify-between px-4 py-1.5 bg-[#141516] border-b border-[#2C2D2E] h-10 flex-shrink-0">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-1">
+            {history.map((val, idx) => (
+              <span key={idx} className={`px-3 py-0.5 rounded-full text-[9px] font-black border transition-all ${val < 2 ? 'text-[#3498db] bg-[#1a2b3c] border-[#3498db]/30' : val < 10 ? 'text-[#9b59b6] bg-[#2a1b3c] border-[#9b59b6]/30' : 'text-[#f1c40f] bg-[#3c361b] border-[#f1c40f]/30'}`}>
+                {val.toFixed(2)}x
+              </span>
+            ))}
+          </div>
+          <div className="flex items-center justify-center w-6 h-6 rounded-md bg-[#2C2D2E]/50 cursor-pointer">
+            <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-[#6B6D6F]" />
+          </div>
         </div>
 
-        {/* Plane Icon following the curve */}
-        {gameState === 'running' && (
-           <motion.div 
-             className="absolute bottom-12 left-12 text-orange-500 z-10"
-             animate={{ 
-               x: Math.min((multiplier - 1) * 60, 240),
-               y: Math.max(-(multiplier - 1) * 40, -160),
-               rotate: -15
-             }}
-             transition={{ duration: 0.1, ease: "linear" }}
-           >
-             <div className="relative">
-                <Plane size={48} fill="currentColor" className="drop-shadow-xl" />
-                {/* Engine exhaust effect */}
-                <div className="absolute right-full top-1/2 -translate-y-1/2 flex gap-1 mr-2">
-                    <motion.div animate={{ opacity: [0.2, 0.5, 0.2] }} transition={{ repeat: Infinity, duration: 0.2 }} className="w-4 h-1 bg-orange-400 rounded-full blur-sm" />
-                    <motion.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ repeat: Infinity, duration: 0.15 }} className="w-2 h-1 bg-orange-300 rounded-full blur-sm" />
-                </div>
-             </div>
-           </motion.div>
-        )}
-      </div>
+        {/* 2. Scrollable Game Content */}
+        <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col bg-[#101112]">
+          {/* Flight Area */}
+          <section className="relative w-full aspect-[16/10] bg-black border-b border-[#141516] overflow-hidden flex-shrink-0">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,_rgba(217,33,33,0.15),_transparent_70%)]" />
+            
+            <svg viewBox="0 0 1000 600" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
+              <defs>
+                <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#D92121" stopOpacity="0.4" />
+                  <stop offset="100%" stopColor="#D92121" stopOpacity="0" />
+                </linearGradient>
+              </defs>
 
-      {/* Control Panel */}
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-            {/* Bet Amount Selector */}
-            <div className="bg-neutral-50 p-4 rounded-3xl border border-neutral-100 flex flex-col justify-center">
-               <div className="flex items-center justify-between mb-2">
-                    <span className="text-[8px] font-black uppercase text-neutral-400 tracking-widest">Wager Space</span>
-                    <div className="flex gap-1">
-                        <button onClick={() => setBetAmount(a => Math.max(10, a/2))} className="w-6 h-6 rounded-lg bg-white border border-neutral-200 text-[8px] font-black">½</button>
-                        <button onClick={() => setBetAmount(a => a*2)} className="w-6 h-6 rounded-lg bg-white border border-neutral-200 text-[8px] font-black">2x</button>
-                    </div>
-               </div>
-               <div className="flex items-baseline gap-1">
-                 <span className="text-[10px] font-black text-orange-500">RS</span>
-                 <input 
-                    type="number" 
-                    value={betAmount || 0} 
-                    onChange={(e) => setBetAmount(Number(e.target.value) || 0)}
-                    className="bg-transparent text-3xl font-black italic text-neutral-900 outline-none w-full"
-                 />
-               </div>
-            </div>
+              <g opacity="0.3">
+                {[...Array(10)].map((_, i) => (
+                  <circle key={i} cx={100 + i * 85} cy="500" r="1.5" fill="#2C2D2E" />
+                ))}
+              </g>
 
-            {/* Action Button */}
-            <div className="flex flex-col h-full">
-              {hasBet && gameState === 'running' ? (
-                <button 
-                  onClick={handleCashOut}
-                  className="h-full bg-orange-500 hover:bg-orange-600 text-white rounded-[2rem] font-black flex flex-col items-center justify-center shadow-xl shadow-orange-500/20 active:scale-95 transition-all group"
-                >
-                  <span className="text-[10px] uppercase font-bold text-orange-200 mb-1 group-hover:scale-110 transition-transform">Collect Profits</span>
-                  <div className="flex items-center gap-1">
-                    <Trophy size={14} className="text-white" />
-                    <span className="text-2xl italic tracking-tighter">RS {(betAmount * multiplier).toFixed(1)}</span>
-                  </div>
-                </button>
-              ) : (
-                <button 
-                  onClick={handleBet}
-                  disabled={hasBet || gameState === 'running' || gameState === 'waiting' || balance < betAmount}
-                  className="h-full bg-neutral-900 hover:bg-black disabled:bg-neutral-100 disabled:text-neutral-400 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all"
-                >
-                  {hasBet ? 'Deployment Confirmed' : 'Initiate Mission'}
-                  {!hasBet && <Play size={14} className="fill-current" />}
-                </button>
+              {gameState === 'running' && (
+                <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <motion.path d={pathD} fill="none" stroke="#D92121" strokeWidth="6" strokeLinecap="round" />
+                  <motion.path d={`${pathD} L ${jetPos.x} 550 L 50 550 Z`} fill="url(#grad)" />
+                  <motion.image href={JET_ICON_URL} width="140" height="140" x={jetPos.x - 70} y={jetPos.y - 70} animate={{ rotate: -(graphProgress * 15) }} />
+                </motion.g>
               )}
+            </svg>
+
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <AnimatePresence mode="wait">
+                {gameState === 'running' && (
+                  <motion.div key="mult" initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="flex flex-col items-center">
+                    <span className="text-7xl font-black text-white tracking-tighter drop-shadow-[0_0_25px_rgba(255,255,255,0.4)]">{multiplier.toFixed(2)}x</span>
+                  </motion.div>
+                )}
+                {gameState === 'crashed' && (
+                  <motion.div key="crash" initial={{ scale: 1.1 }} animate={{ scale: 1 }} className="text-center">
+                    <div className="bg-[#D92121] px-10 py-2 rounded-full mb-2"><p className="text-white text-3xl font-black uppercase italic tracking-widest">Flew Away!</p></div>
+                    <p className="text-white text-6xl font-black">{multiplier.toFixed(2)}x</p>
+                  </motion.div>
+                )}
+                {gameState === 'waiting' && (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-12 h-12 border-4 border-t-[#D92121] border-[#2C2D2E] rounded-full animate-spin" />
+                    <div className="text-white text-[12px] font-black uppercase tracking-[0.2em] italic opacity-60">Wait for next round</div>
+                  </div>
+                )}
+              </AnimatePresence>
             </div>
+          </section>
+
+          {/* Betting Section (VITAL: Always visible and scrollable) */}
+          <div className="px-4 py-4 bg-[#101112] flex flex-col gap-4 items-center flex-shrink-0 min-h-0">
+            <div className="w-full max-w-sm">
+              <BetPanel 
+                data={bet} 
+                gameState={gameState} 
+                multiplier={multiplier} 
+                onAction={() => handleAction(false)} 
+                onAmountChange={(val: number) => setBet(p => ({ ...p, amount: Number(val.toFixed(2)) }))} 
+              />
+            </div>
+            <div className="w-full max-w-sm">
+              <BetPanel 
+                data={bet2} 
+                gameState={gameState} 
+                multiplier={multiplier} 
+                onAction={() => handleAction(true)} 
+                onAmountChange={(val: number) => setBet2(p => ({ ...p, amount: Number(val.toFixed(2)) }))} 
+              />
+            </div>
+          </div>
+
+          {/* Statistics Section */}
+          <section className="bg-[#1B1C1D] rounded-t-[2.5rem] border-t border-[#2C2D2E] flex flex-col p-4 flex-shrink-0 min-h-[400px]">
+               <div className="pb-2">
+                  <div className="flex bg-[#141516] p-1 rounded-full shadow-inner">
+                    {['All Bets', 'My Bets', 'Top'].map((l, i) => {
+                      const t = ['all', 'my', 'top'][i] as any;
+                      return <button key={t} onClick={() => setActiveTab(t)} className={`flex-1 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${activeTab === t ? 'bg-[#494B4D] text-white shadow-lg' : 'text-[#6B6D6F] hover:text-white'}`}>{l}</button>;
+                    })}
+                  </div>
+               </div>
+               
+               <div className="px-0 pt-2">
+                  <div className="flex justify-between items-center text-[7px] font-black uppercase text-[#6B6D6F] tracking-widest border-b border-[#2C2D2E] pb-2 mb-2">
+                     <span className="w-1/3">User</span>
+                     <span className="w-1/4 text-right">Bet USD</span>
+                     <span className="w-1/4 text-right">Mult</span>
+                     <span className="w-1/4 text-right">Cashout</span>
+                  </div>
+                  <div className="space-y-1.5 pb-10">
+                    {localBets.map(b => (
+                      <div key={b.id} className={`flex items-center text-[10px] py-2 px-3 rounded-xl border transition-all ${b.status === 'cashed' ? 'bg-[#273523]/50 border-[#32D74B]/20' : 'bg-[#141516]/50 border-transparent'}`}>
+                         <div className="w-1/3 flex items-center gap-2"><div className="w-6 h-6 rounded-lg bg-[#2C2D2E] flex items-center justify-center text-[9px] font-black text-white">{b.user[0]}</div><span className="truncate text-[#9EA0A3] font-medium">{b.user}</span></div>
+                         <div className="w-1/4 text-right font-black text-white">{b.amount.toFixed(2)}</div>
+                         <div className="w-1/4 text-right">{b.status === 'cashed' && <span className="px-2 py-0.5 rounded-full font-bold bg-[#3498db]/10 text-[#3498db] border border-[#3498db]/20">{b.multiplier?.toFixed(2)}x</span>}</div>
+                         <div className="w-1/4 text-right font-black text-[#32D74B]">{b.status === 'cashed' ? (b.win?.toFixed(2)) : ''}</div>
+                      </div>
+                    ))}
+                  </div>
+               </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const BetPanel: React.FC<any> = ({ data, gameState, multiplier, onAction, onAmountChange }) => {
+  const isCashingOut = data.active && gameState === 'running';
+  return (
+    <div className="bg-[#1B1C1D] p-4 rounded-[1.5rem] border border-[#2C2D2E] space-y-4 shadow-2xl relative overflow-hidden flex flex-col items-stretch">
+      <div className="flex justify-center border-b border-[#2C2D2E] -mx-4 pb-2">
+         <div className="flex bg-[#141516] p-0.5 rounded-full gap-4 px-6 border border-[#2C2D2E]">
+            <span className="text-[10px] font-black uppercase text-white border-b-2 border-[#D92121] pb-0.5">Bet</span>
+            <span className="text-[10px] font-black uppercase text-[#6B6D6F]">Auto</span>
+         </div>
+      </div>
+
+      <div className="space-y-4">
+        {/* Top: Controls */}
+        <div className="space-y-2">
+          <div className="bg-[#141516] border border-[#2C2D2E] rounded-full flex items-center p-1 shadow-inner h-11">
+            <button 
+              onClick={() => onAmountChange(Math.max(1, data.amount - 1))} 
+              className="w-9 h-9 rounded-full border border-[#2C2D2E] flex items-center justify-center text-[#9EA0A3] active:scale-95 bg-[#1B1C1D]/50"
+            >
+              <Minus size={16} />
+            </button>
+            <input 
+              type="number" 
+              value={data.amount} 
+              onChange={(e) => onAmountChange(Number(e.target.value))} 
+              className="flex-1 bg-transparent text-center font-black text-white text-xl outline-none" 
+            />
+            <button 
+              onClick={() => onAmountChange(data.amount + 1)} 
+              className="w-9 h-9 rounded-full border border-[#2C2D2E] flex items-center justify-center text-[#9EA0A3] active:scale-95 bg-[#1B1C1D]/50"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+          
+          <div className="flex justify-between gap-1.5">
+            {[10, 20, 50, 100].map(v => (
+              <button 
+                key={v} 
+                onClick={() => onAmountChange(v)} 
+                className="flex-1 bg-[#242526] hover:bg-[#2C2D2E] rounded-xl py-2 text-[10px] font-black text-[#6B6D6F] border border-[#2C2D2E] transition-colors"
+              >
+                {v}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Footer Info */}
-        <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-2 text-neutral-400 bg-neutral-50 px-4 py-2 rounded-2xl border border-neutral-100">
-                <Wallet size={14} className="text-green-500" />
-                <span className="text-[9px] font-black uppercase">Vault: RS {balance.toFixed(2)}</span>
-            </div>
-            <div className="flex items-center gap-2 text-neutral-400 bg-neutral-50 px-4 py-2 rounded-2xl border border-neutral-100">
-                <RotateCcw size={14} className="text-orange-500" />
-                <span className="text-[9px] font-black uppercase">Instant Payouts</span>
-            </div>
-        </div>
+        {/* Bottom: Action Button */}
+        <button 
+          onClick={onAction} 
+          disabled={data.active && gameState === 'waiting'} 
+          className={`w-full py-4 rounded-2xl flex flex-col items-center justify-center gap-0.5 font-black uppercase shadow-xl transition-all active:scale-95 border-b-[5px] ${
+            isCashingOut 
+              ? 'bg-[#FFB000] border-[#D69200] text-white' 
+              : data.active 
+                ? 'bg-[#D92121] border-[#A81A1A] text-white' 
+                : 'bg-[#28A745] border-[#1E7E34] text-white shadow-green-500/20'
+          }`}
+        >
+          {isCashingOut ? (
+            <>
+              <span className="text-[12px] opacity-80">CASHOUT</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl leading-none">{(data.amount * multiplier).toFixed(2)}</span>
+                <span className="text-[10px] opacity-60">USD</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <span className="text-lg leading-none">{data.active ? 'CANCEL' : 'BET'}</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl leading-none">{data.amount.toFixed(2)}</span>
+                <span className="text-[10px] opacity-60">USD</span>
+              </div>
+            </>
+          )}
+        </button>
       </div>
     </div>
   );

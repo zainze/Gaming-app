@@ -117,7 +117,7 @@ export default function GamesView({ profile }: { profile: any }) {
         type: 'win',
         status: 'completed',
         createdAt: new Date().toISOString(),
-        note: isDoubleActive ? "Double Rewards Applied" : undefined
+        note: isDoubleActive ? "Double Rewards Applied" : ""
       }).catch(err => {
         handleFirestoreError(err, OperationType.WRITE, "transactions");
         throw err;

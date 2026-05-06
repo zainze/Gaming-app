@@ -122,14 +122,14 @@ export default function LiveStream({
               onClick={() => placeBet('red')}
               className="bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white py-3 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 transition-all shadow-red-500/20"
             >
-              BET RED (RS 20)
+              BET RED ({formatCurrency(20)})
             </button>
             <button 
               disabled={betLoading}
               onClick={() => placeBet('black')}
               className="bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white py-3 rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg active:scale-95 transition-all shadow-neutral-900/20"
             >
-              BET BLACK (RS 20)
+              BET BLACK ({formatCurrency(20)})
             </button>
 
             <AnimatePresence>
@@ -140,7 +140,7 @@ export default function LiveStream({
                   exit={{ opacity: 0 }}
                   className={`absolute inset-0 flex items-center justify-center rounded-2xl z-10 font-black italic text-xl border-2 ${betResult.win ? 'bg-green-500 text-white border-green-400' : 'bg-red-500/90 text-white border-red-400'}`}
                 >
-                  {betResult.win ? `WIN +RS ${betResult.amount}` : 'LOSE - RS 20'}
+                  {betResult.win ? `WIN +${formatCurrency(betResult.amount)}` : `LOSE - ${formatCurrency(20)}`}
                 </motion.div>
               )}
               {betLoading && (

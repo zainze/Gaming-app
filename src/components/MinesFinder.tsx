@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Bomb, Diamond, Play, Shield, Trophy } from 'lucide-react';
+import { formatCurrency } from '../lib/utils';
 import { playSound } from '../lib/sounds';
 
 interface MinesProps {
@@ -86,7 +87,7 @@ export const MinesFinder: React.FC<MinesProps> = ({ onWin, onLoss, balance, conf
             <p className="text-[10px] font-black uppercase text-neutral-400 tracking-[0.2em]">Return Value</p>
             <div className="flex items-center gap-2">
               <Trophy size={18} className="text-orange-500" />
-              <p className="text-2xl font-black italic text-neutral-900">¢{cashoutAmount}</p>
+              <p className="text-2xl font-black italic text-neutral-900">{formatCurrency(cashoutAmount)}</p>
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">
@@ -188,7 +189,7 @@ export const MinesFinder: React.FC<MinesProps> = ({ onWin, onLoss, balance, conf
               className="w-full h-16 bg-gradient-to-r from-orange-600 to-orange-400 text-white rounded-[2rem] font-black uppercase tracking-widest text-sm shadow-xl shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-3"
             >
               <Trophy size={20} className="drop-shadow-md" /> 
-              <span>Secure Earnings ¢{cashoutAmount}</span>
+              <span>Secure Earnings {formatCurrency(cashoutAmount)}</span>
             </button>
           )}
         </div>
@@ -211,7 +212,7 @@ export const MinesFinder: React.FC<MinesProps> = ({ onWin, onLoss, balance, conf
               className="p-4 bg-green-50 rounded-2xl border border-green-100 flex items-center gap-3"
             >
               <Shield size={16} className="text-green-600" />
-              <p className="text-green-600 font-black uppercase italic text-[10px] tracking-widest leading-none">Extraction Successful! Profit: ¢{cashoutAmount - betAmount}</p>
+              <p className="text-green-600 font-black uppercase italic text-[10px] tracking-widest leading-none">Extraction Successful! Profit: {formatCurrency(cashoutAmount - betAmount)}</p>
             </motion.div>
           )}
         </AnimatePresence>
