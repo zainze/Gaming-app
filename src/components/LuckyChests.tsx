@@ -114,27 +114,25 @@ export const LuckyChests: React.FC<LuckyChestsProps> = ({
       </div>
 
       {/* Full Screen Header */}
-      <header className="grid grid-cols-3 items-center px-4 h-14 bg-[#14171A] border-b border-[#23262B] relative z-20 shrink-0">
+      <header className="flex items-center justify-between px-3 h-14 bg-[#14171A] border-b border-[#23262B] relative z-20 shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-purple-500 font-black italic tracking-tighter text-xl uppercase whitespace-nowrap">Lucky Chests</span>
+          <span className="text-purple-500 font-black italic tracking-tighter text-lg uppercase whitespace-nowrap">Lucky Chests</span>
         </div>
-        <div className="flex justify-center">
-          <div className="bg-black rounded-full px-4 py-1.5 flex items-center gap-2 h-9 border border-[#23262B]">
-            <div className="w-4 h-4 rounded-full bg-[#FBCB35] flex items-center justify-center">
-              <div className="w-2 h-2 rounded-full bg-[#14171A]" />
-            </div>
-            <span className="text-[#32D74B] font-black text-sm">RS {balance.toFixed(0)}</span>
+        
+        <div className="flex items-center gap-2 bg-black/60 rounded-full px-3 py-1.5 border border-[#23262B] shadow-lg">
+          <div className="w-3.5 h-3.5 rounded-full bg-[#FBCB35] flex items-center justify-center shadow-[0_0_10px_rgba(251,203,53,0.3)]">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#14171A]" />
           </div>
+          <span className="text-[#32D74B] font-black text-xs leading-none">RS {balance.toFixed(0)}</span>
         </div>
-        <div className="flex justify-end">
-          <button 
-            onClick={onExit}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 text-red-500 rounded-lg border border-red-500/20 active:scale-95 transition-all hover:bg-red-500/20"
-          >
-            <LogOut size={16} />
-            <span className="text-[10px] font-black uppercase">Quit</span>
-          </button>
-        </div>
+
+        <button 
+          onClick={onExit}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 text-red-500 rounded-lg border border-red-500/20 active:scale-95 transition-all hover:bg-red-500/20 shadow-lg"
+        >
+          <LogOut size={14} />
+          <span className="text-[10px] font-black uppercase tracking-widest">Quit</span>
+        </button>
       </header>
 
       {/* Main Game Interface */}

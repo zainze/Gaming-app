@@ -183,30 +183,28 @@ export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet, onExit 
 
   return (
     <div className="flex flex-col h-full bg-[#101112] text-[#9EA0A3] font-sans">
-      <header className="grid grid-cols-3 items-center px-4 h-12 bg-[#1B1C1D] border-b border-[#2C2D2E] flex-shrink-0">
+      <header className="flex items-center justify-between px-3 h-14 bg-[#1B1C1D] border-b border-[#2C2D2E] flex-shrink-0 relative z-50">
         <div className="flex items-center gap-2">
-          <span className="text-[#D92121] font-black italic tracking-tighter text-xl uppercase whitespace-nowrap">Aviator Pro</span>
-          <div className="w-5 h-5 rounded-full border border-[#494B4D] flex items-center justify-center text-[#9EA0A3] cursor-pointer">
+          <span className="text-[#D92121] font-black italic tracking-tighter text-lg uppercase whitespace-nowrap">Aviator Pro</span>
+          <div className="w-5 h-5 rounded-full border border-[#494B4D] flex items-center justify-center text-[#9EA0A3] cursor-pointer hover:bg-white/5 transition-colors hidden sm:flex">
             <span className="text-[10px] font-bold">i</span>
           </div>
         </div>
-        <div className="flex justify-center">
-          <div className="bg-black rounded-full px-3 py-1 flex items-center gap-2 h-8 border border-[#2C2D2E]">
-            <div className="w-3.5 h-3.5 rounded-full bg-[#FBCB35] flex items-center justify-center">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#141516]" />
-            </div>
-            <span className="text-[#32D74B] font-black text-xs leading-none">RS {balance.toFixed(0)}</span>
+        
+        <div className="flex items-center gap-2 bg-black/60 rounded-full px-3 py-1.5 border border-[#2C2D2E] shadow-inner">
+          <div className="w-3.5 h-3.5 rounded-full bg-[#FBCB35] flex items-center justify-center">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#141516]" />
           </div>
+          <span className="text-[#32D74B] font-black text-xs leading-none">RS {balance.toFixed(0)}</span>
         </div>
-        <div className="flex justify-end">
-          <button 
-            onClick={onExit}
-            className="flex items-center gap-1.5 px-3 py-1 bg-[#D92121]/10 text-[#D92121] rounded-lg border border-[#D92121]/20 active:scale-95 transition-all hover:bg-[#D92121]/20"
-          >
-            <LogOut size={14} />
-            <span className="text-[10px] font-black uppercase">Quit</span>
-          </button>
-        </div>
+
+        <button 
+          onClick={onExit}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#D92121]/10 text-[#D92121] rounded-lg border border-[#D92121]/20 active:scale-95 transition-all hover:bg-[#D92121]/20 shadow-lg"
+        >
+          <LogOut size={14} />
+          <span className="text-[10px] font-black uppercase">Quit</span>
+        </button>
       </header>
 
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">

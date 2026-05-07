@@ -66,7 +66,7 @@ export default function GamesView({ profile }: { profile: any }) {
   const defaultGamesMeta: Record<string, any> = {
     slipper: { title: "Slipper Monte", category: "Skill", image: "https://images.unsplash.com/photo-1626775238053-4315516ebaec?q=80&w=400&auto=format&fit=crop" },
     spin: { title: "Spin Wheel", category: "Classic", image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
-    coin: { title: "Coin Flip", category: "Classic", image: "https://cdn-icons-png.flaticon.com/512/550/550614.png" },
+    coin: { title: "Coin Flip", category: "Classic", image: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778146981/game-coin-a-good-investment_lqjtaj.webp" },
     swipe: { title: "Swipe Master", category: "Skill", image: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" },
     chests: { title: "Lucky Chests", category: "Classic", image: "https://cdn-icons-png.flaticon.com/512/3233/3233483.png" },
     dice: { title: "Dice Pro", category: "Classic", image: "https://cdn-icons-png.flaticon.com/512/3533/3533966.png" },
@@ -265,21 +265,18 @@ export default function GamesView({ profile }: { profile: any }) {
         {activeGame === 'coin' && (
           <motion.div 
             key="coin"
-            initial={{ opacity: 0, x: 20, scale: 0.95 }} 
-            animate={{ opacity: 1, x: 0, scale: 1 }} 
-            exit={{ opacity: 0, x: -20, scale: 0.95 }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="p-4 space-y-4"
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-[#050B14]"
           >
-            <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-neutral-400 font-bold uppercase text-xs mb-4 hover:text-black transition-colors group">
-              <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Lobby
-            </button>
             <CoinFlip 
               onWin={handleWin} 
               onBet={handleBet} 
               balance={profile?.balance || 0} 
               minBet={gamesConfig['coin']?.minBet || minBet} 
               winRate={gamesConfig['coin']?.winRate || 50}
+              onExit={() => setActiveGame(null)}
             />
           </motion.div>
         )}
@@ -367,15 +364,11 @@ export default function GamesView({ profile }: { profile: any }) {
         {activeGame === 'dice' && (
           <motion.div 
             key="dice"
-            initial={{ opacity: 0, rotateY: 90 }} 
-            animate={{ opacity: 1, rotateY: 0 }} 
-            exit={{ opacity: 0, rotateY: -90 }}
-            transition={{ duration: 0.4 }}
-            className="p-4 space-y-4 [perspective:1000px]"
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-[#0B0E11]"
           >
-            <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-neutral-400 font-bold uppercase text-xs mb-4 hover:text-black transition-colors group">
-              <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Lobby
-            </button>
             <DiceRoll 
               onWin={handleWin} 
               onBet={handleBet} 
@@ -383,6 +376,7 @@ export default function GamesView({ profile }: { profile: any }) {
               minBet={gamesConfig['dice']?.minBet || minBet} 
               winRate={gamesConfig['dice']?.winRate || 45}
               multiplier={gamesConfig['dice']?.multiplier || 2}
+              onExit={() => setActiveGame(null)}
             />
           </motion.div>
         )}
