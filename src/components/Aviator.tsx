@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Info, Menu, X, Coins, Users, Plus, Minus, RotateCcw } from 'lucide-react';
+import { Info, Plus, Minus, LogOut } from 'lucide-react';
 import { playSound, stopSound } from '../lib/sounds';
 
 interface AviatorProps {
   balance: number;
   onWin: (amount: number) => void;
   onBet: (amount: number) => void;
+  onExit: () => void;
 }
 
 interface UserBet {
@@ -20,14 +21,14 @@ interface UserBet {
 
 const JET_ICON_URL = "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1777971975/air-force_do6cuq.png";
 
-export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet }) => {
+export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet, onExit }) => {
   const [gameState, setGameState] = useState<'idle' | 'waiting' | 'running' | 'crashed'>('idle');
   const [multiplier, setMultiplier] = useState(1.0);
   const [history, setHistory] = useState<number[]>([4.02, 1.00, 1.14, 1.20, 6.72, 1.89, 1.04, 1.00]);
   const [crashPoint, setCrashPoint] = useState(0);
   
-  const [bet, setBet] = useState({ amount: 1.00, active: false });
-  const [bet2, setBet2] = useState({ amount: 1.00, active: false });
+  const [bet, setBet] = useState({ amount: 1.00, active: false, activeInRound: false, hasFinished: false });
+  const [bet2, setBet2] = useState({ amount: 1.00, active: false, activeInRound: false, hasFinished: false });
   const [activeTab, setActiveTab] = useState<'all' | 'my' | 'top'>('all');
   const [localBets, setLocalBets] = useState<UserBet[]>([]);
 
@@ -44,9 +45,13 @@ export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet }) => {
     const cp = generateCrashPoint();
     setCrashPoint(cp);
     setGameState('running');
-    setMultiplier(1.0);
+    setMultiplier(1.00);
     playSound('spin');
     startTimeRef.current = performance.now();
+
+    // Mark current bets as active for this specific round
+    setBet(prev => ({ ...prev, activeInRound: prev.active, hasFinished: false }));
+    setBet2(prev => ({ ...prev, activeInRound: prev.active, hasFinished: false }));
 
     const names = ['User_733', 'LuckyPro', 'Zenith', 'PakWinner', 'GoldDigger', 'ShadowBoxer'];
     const newBets: UserBet[] = names.map((name, i) => ({
@@ -63,18 +68,30 @@ export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet }) => {
     const setBetFn = isPanel2 ? setBet2 : setBet;
 
     if (currentBet.active) {
-      if (gameState === 'running') {
+      // If round is running and user is participating in IT, they can cash out
+      if (gameState === 'running' && currentBet.activeInRound) {
         const win = currentBet.amount * multiplier;
         onWin(win);
         playSound('win');
-        setBetFn(prev => ({ ...prev, active: false }));
-      } else {
+        setBetFn(prev => ({ ...prev, active: false, activeInRound: false, hasFinished: true }));
+      } else if (gameState !== 'running') {
+        // Can cancel bet if round hasn't started
+        setBetFn(prev => ({ ...prev, active: false, activeInRound: false }));
+      }
+      // If gameState is running but NOT activeInRound, it's a bet for NEXT round, 
+      // so clicking button again should just cancel that future bet
+      else if (gameState === 'running' && !currentBet.activeInRound) {
         setBetFn(prev => ({ ...prev, active: false }));
       }
     } else {
+      // Prevent betting if already finished this specific round
+      if (gameState === 'running' && currentBet.hasFinished) return;
+
       if (balance < currentBet.amount) return;
       onBet(currentBet.amount);
       playSound('click');
+      
+      // If we bet during waiting/idle, it will be picked up by startRound
       setBetFn(prev => ({ ...prev, active: true }));
 
       if (gameState === 'idle' || gameState === 'crashed') {
@@ -95,8 +112,23 @@ export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet }) => {
           playSound('lose');
           setGameState('crashed');
           setHistory(prev => [crashPoint, ...prev].slice(0, 15));
-          setBet(prev => ({ ...prev, active: false }));
-          setBet2(prev => ({ ...prev, active: false }));
+          
+          // Reset round participation. 
+          // If they were active in THIS round, they lost, so set active to false.
+          // If they were just 'active' (bet for next round), they stay 'active'.
+          setBet(prev => ({ 
+            ...prev, 
+            active: prev.activeInRound ? false : prev.active,
+            activeInRound: false, 
+            hasFinished: false 
+          }));
+          setBet2(prev => ({ 
+            ...prev, 
+            active: prev.activeInRound ? false : prev.active,
+            activeInRound: false, 
+            hasFinished: false 
+          }));
+          
           setLocalBets(prev => prev.map(b => ({ ...b, status: b.status === 'pending' ? 'lost' : b.status })));
           setTimeout(() => setGameState('idle'), 3000);
           return;
@@ -151,27 +183,29 @@ export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet }) => {
 
   return (
     <div className="flex flex-col h-full bg-[#101112] text-[#9EA0A3] font-sans">
-      <header className="flex items-center justify-between px-4 h-12 bg-[#1B1C1D] border-b border-[#2C2D2E] flex-shrink-0">
+      <header className="grid grid-cols-3 items-center px-4 h-12 bg-[#1B1C1D] border-b border-[#2C2D2E] flex-shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-[#D92121] font-black italic tracking-tighter text-xl uppercase">Aviator Pro</span>
+          <span className="text-[#D92121] font-black italic tracking-tighter text-xl uppercase whitespace-nowrap">Aviator Pro</span>
           <div className="w-5 h-5 rounded-full border border-[#494B4D] flex items-center justify-center text-[#9EA0A3] cursor-pointer">
             <span className="text-[10px] font-bold">i</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex justify-center">
           <div className="bg-black rounded-full px-3 py-1 flex items-center gap-2 h-8 border border-[#2C2D2E]">
             <div className="w-3.5 h-3.5 rounded-full bg-[#FBCB35] flex items-center justify-center">
               <div className="w-1.5 h-1.5 rounded-full bg-[#141516]" />
             </div>
             <span className="text-[#32D74B] font-black text-xs leading-none">RS {balance.toFixed(0)}</span>
           </div>
-          <button className="w-7 h-7 bg-[#FBCB35] rounded-md flex items-center justify-center text-black active:scale-95 transition-transform">
-            <Plus size={18} strokeWidth={4} />
+        </div>
+        <div className="flex justify-end">
+          <button 
+            onClick={onExit}
+            className="flex items-center gap-1.5 px-3 py-1 bg-[#D92121]/10 text-[#D92121] rounded-lg border border-[#D92121]/20 active:scale-95 transition-all hover:bg-[#D92121]/20"
+          >
+            <LogOut size={14} />
+            <span className="text-[10px] font-black uppercase">Quit</span>
           </button>
-          <div className="flex items-center gap-2 ml-1">
-            <Menu size={22} className="text-[#9EA0A3] cursor-pointer hover:text-white" />
-            <X size={22} className="text-[#9EA0A3] cursor-pointer hover:text-white" />
-          </div>
         </div>
       </header>
 
@@ -301,7 +335,10 @@ export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet }) => {
 };
 
 const BetPanel: React.FC<any> = ({ data, gameState, multiplier, onAction, onAmountChange }) => {
-  const isCashingOut = data.active && gameState === 'running';
+  const isCashingOut = data.activeInRound && gameState === 'running';
+  const isWaitingForNext = data.active && !data.activeInRound && gameState === 'running';
+  const isFinished = data.hasFinished && gameState === 'running';
+
   return (
     <div className="bg-[#1B1C1D] p-4 rounded-[1.5rem] border border-[#2C2D2E] space-y-4 shadow-2xl relative overflow-hidden flex flex-col items-stretch">
       <div className="flex justify-center border-b border-[#2C2D2E] -mx-4 pb-2">
@@ -317,19 +354,22 @@ const BetPanel: React.FC<any> = ({ data, gameState, multiplier, onAction, onAmou
           <div className="bg-[#141516] border border-[#2C2D2E] rounded-full flex items-center p-1 shadow-inner h-11">
             <button 
               onClick={() => onAmountChange(Math.max(1, data.amount - 1))} 
-              className="w-9 h-9 rounded-full border border-[#2C2D2E] flex items-center justify-center text-[#9EA0A3] active:scale-95 bg-[#1B1C1D]/50"
+              disabled={data.active || isFinished}
+              className="w-9 h-9 rounded-full border border-[#2C2D2E] flex items-center justify-center text-[#9EA0A3] active:scale-95 bg-[#1B1C1D]/50 disabled:opacity-30"
             >
               <Minus size={16} />
             </button>
             <input 
               type="number" 
               value={data.amount} 
+              disabled={data.active || isFinished}
               onChange={(e) => onAmountChange(Number(e.target.value))} 
-              className="flex-1 bg-transparent text-center font-black text-white text-xl outline-none" 
+              className="flex-1 bg-transparent text-center font-black text-white text-xl outline-none disabled:text-[#6B6D6F]" 
             />
             <button 
               onClick={() => onAmountChange(data.amount + 1)} 
-              className="w-9 h-9 rounded-full border border-[#2C2D2E] flex items-center justify-center text-[#9EA0A3] active:scale-95 bg-[#1B1C1D]/50"
+              disabled={data.active || isFinished}
+              className="w-9 h-9 rounded-full border border-[#2C2D2E] flex items-center justify-center text-[#9EA0A3] active:scale-95 bg-[#1B1C1D]/50 disabled:opacity-30"
             >
               <Plus size={16} />
             </button>
@@ -340,7 +380,8 @@ const BetPanel: React.FC<any> = ({ data, gameState, multiplier, onAction, onAmou
               <button 
                 key={v} 
                 onClick={() => onAmountChange(v)} 
-                className="flex-1 bg-[#242526] hover:bg-[#2C2D2E] rounded-xl py-2 text-[10px] font-black text-[#6B6D6F] border border-[#2C2D2E] transition-colors"
+                disabled={data.active || isFinished}
+                className="flex-1 bg-[#242526] hover:bg-[#2C2D2E] rounded-xl py-2 text-[10px] font-black text-[#6B6D6F] border border-[#2C2D2E] transition-colors disabled:opacity-30"
               >
                 {v}
               </button>
@@ -351,13 +392,17 @@ const BetPanel: React.FC<any> = ({ data, gameState, multiplier, onAction, onAmou
         {/* Bottom: Action Button */}
         <button 
           onClick={onAction} 
-          disabled={data.active && gameState === 'waiting'} 
+          disabled={(data.active && gameState === 'waiting') || isFinished} 
           className={`w-full py-4 rounded-2xl flex flex-col items-center justify-center gap-0.5 font-black uppercase shadow-xl transition-all active:scale-95 border-b-[5px] ${
             isCashingOut 
               ? 'bg-[#FFB000] border-[#D69200] text-white' 
-              : data.active 
-                ? 'bg-[#D92121] border-[#A81A1A] text-white' 
-                : 'bg-[#28A745] border-[#1E7E34] text-white shadow-green-500/20'
+              : isWaitingForNext
+                ? 'bg-[#D92121] border-[#A81A1A] text-white opacity-80'
+                : isFinished
+                   ? 'bg-[#141516] border-[#2C2D2E] text-[#6B6D6F] cursor-not-allowed'
+                   : data.active 
+                     ? 'bg-[#D92121] border-[#A81A1A] text-white' 
+                     : 'bg-[#28A745] border-[#1E7E34] text-white shadow-green-500/20'
           }`}
         >
           {isCashingOut ? (
@@ -367,6 +412,16 @@ const BetPanel: React.FC<any> = ({ data, gameState, multiplier, onAction, onAmou
                 <span className="text-2xl leading-none">{(data.amount * multiplier).toFixed(2)}</span>
                 <span className="text-[10px] opacity-60">USD</span>
               </div>
+            </>
+          ) : isWaitingForNext ? (
+            <>
+              <span className="text-sm opacity-80">WAITING...</span>
+              <span className="text-xs leading-none opacity-60">NEXT ROUND</span>
+            </>
+          ) : isFinished ? (
+            <>
+              <span className="text-sm">WAIT FOR</span>
+              <span className="text-xs">NEXT ROUND</span>
             </>
           ) : (
             <>

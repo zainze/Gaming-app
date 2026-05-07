@@ -347,15 +347,11 @@ export default function GamesView({ profile }: { profile: any }) {
         {activeGame === 'chests' && (
           <motion.div 
             key="chests"
-            initial={{ opacity: 0, scale: 0.8 }} 
-            animate={{ opacity: 1, scale: 1 }} 
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="p-4 space-y-4"
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-[#0B0E11]"
           >
-            <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-neutral-400 font-bold uppercase text-xs mb-4 hover:text-black transition-colors group">
-              <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Lobby
-            </button>
             <LuckyChests 
               onWin={handleWin} 
               onLoss={(bet) => handleBet(bet)} 
@@ -363,6 +359,7 @@ export default function GamesView({ profile }: { profile: any }) {
               balance={profile?.balance || 0} 
               winRate={gamesConfig['chests']?.winRate || 33}
               multiplier={gamesConfig['chests']?.multiplier || 3}
+              onExit={() => setActiveGame(null)}
             />
           </motion.div>
         )}
@@ -419,26 +416,14 @@ export default function GamesView({ profile }: { profile: any }) {
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-white"
+            className="fixed inset-0 z-[100] bg-[#101112]"
           >
-            <div className="h-full flex flex-col pointer-events-auto">
-              <div className="p-4 flex items-center justify-between border-b border-neutral-100 shrink-0 bg-white">
-                <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-neutral-400 font-black uppercase text-[10px] hover:text-black transition-colors">
-                  <ChevronLeft size={16} /> Exit Game
-                </button>
-                <div className="flex flex-col items-end">
-                   <span className="text-[8px] font-black uppercase text-neutral-400 tracking-widest">Active Game</span>
-                   <span className="text-xs font-black italic">Aviator Pro</span>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto no-scrollbar pb-6 bg-white">
-                <Aviator 
-                  onWin={handleWin} 
-                  onBet={handleBet} 
-                  balance={profile?.balance || 0} 
-                />
-              </div>
-            </div>
+            <Aviator 
+              onWin={handleWin} 
+              onBet={handleBet} 
+              balance={profile?.balance || 0} 
+              onExit={() => setActiveGame(null)}
+            />
           </motion.div>
         )}
 
