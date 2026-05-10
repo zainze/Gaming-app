@@ -1293,7 +1293,7 @@ export default function AdminView() {
                 </div>
 
                 <div className="space-y-6 pt-4 border-t border-neutral-100">
-                  {[1, 2, 3, 4, 5].map((num) => (
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
                     <div key={num} className="bg-neutral-50 p-5 rounded-2xl border border-neutral-100 space-y-4">
                        <div className="flex items-center justify-between">
                           <span className="bg-orange-500 text-white w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black">#{num}</span>

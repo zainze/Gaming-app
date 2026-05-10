@@ -27,7 +27,6 @@ import {
 import Navigation from "./components/Navigation";
 import HomeView from "./views/HomeView";
 import GamesView from "./views/GamesView";
-import MoreGamesView from "./views/MoreGamesView";
 import WalletView from "./views/WalletView";
 import ProfileView from "./views/ProfileView";
 import AdminView from "./views/AdminView";
@@ -220,25 +219,25 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-neutral-100 text-neutral-900 font-sans selection:bg-orange-500/30">
-        <div className="pb-24 max-w-lg mx-auto bg-white border-x border-neutral-100 min-h-screen relative shadow-sm overflow-x-hidden">
-          {/* Top Bar */}
-          <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-neutral-100 p-4 flex items-center justify-between">
+      <div className="min-h-screen bg-[#0b0e11] text-white font-sans selection:bg-orange-500/30">
+        <div className="pb-24 max-w-lg mx-auto bg-[#1b2a5c] border-x border-white/5 min-h-screen relative shadow-2xl overflow-x-hidden">
+          {/* Top Bar - Only show if not in a game/auth or if specifically needed */}
+          <header className="sticky top-0 z-50 bg-[#14254f] border-b border-white/5 p-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {systemConfig?.appLogo ? (
-                <img 
-                  src={systemConfig.appLogo} 
-                  alt="Logo" 
-                  className="w-10 h-10 object-contain p-0.5" 
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center font-black text-white shadow-lg shadow-neutral-500/20">h</div>
-              )}
-              <span className="font-black text-xl tracking-tighter uppercase italic">h<span className="text-orange-500">666</span></span>
+              <div className="bg-orange-500 p-1 rounded-md">
+                 <Gamepad2 className="text-white" size={20} />
+              </div>
+              <h1 className="text-2xl font-black tracking-tighter italic text-white leading-none">988<span className="text-orange-500 italic">win</span></h1>
             </div>
-            <div className="flex items-center gap-4">
-              <Search size={20} className="text-neutral-400 hover:text-orange-500 transition-colors cursor-pointer" />
+            <div className="flex items-center gap-2">
+              {profile?.balance !== undefined ? (
+                <div className="bg-[#0b0e11] px-3 py-1 rounded-full border border-white/10 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <span className="text-xs font-black italic">RS {profile.balance.toLocaleString()}</span>
+                </div>
+              ) : (
+                <Search size={20} className="text-neutral-400 hover:text-orange-500 transition-colors cursor-pointer" />
+              )}
             </div>
           </header>
 
@@ -246,7 +245,6 @@ export default function App() {
             <Routes>
               <Route path="/" element={user ? <HomeView profile={profile} /> : <Navigate to="/auth" />} />
               <Route path="/games" element={user ? <GamesView profile={profile} /> : <Navigate to="/auth" />} />
-              <Route path="/more-games" element={user ? <MoreGamesView profile={profile} /> : <Navigate to="/auth" />} />
               <Route path="/wallet" element={user ? <WalletView profile={profile} /> : <Navigate to="/auth" />} />
               <Route path="/profile" element={user ? <ProfileView profile={profile} /> : <Navigate to="/auth" />} />
               <Route path="/admin" element={(user && (profile?.role === 'admin' || profile?.email === 'zainzeb333@gmail.com')) ? <AdminView /> : <Navigate to="/" />} />

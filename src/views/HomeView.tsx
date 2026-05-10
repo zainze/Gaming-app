@@ -202,109 +202,158 @@ export default function HomeView({ profile }: { profile: any }) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className={`p-4 space-y-6 pb-24 ${profile?.language === 'ur' ? 'font-urdu' : ''}`}
+      className={`space-y-8 pb-24 ${profile?.language === 'ur' ? 'font-urdu' : ''} text-white`}
     >
-      {/* Welcome Section */}
-      <section className="space-y-1">
-        <h2 className="text-sm font-bold text-neutral-500 uppercase tracking-widest">
-          {profile?.language === 'ur' ? 'خوش آمدید' : 'Welcome Back'}
-        </h2>
-        <div className="flex items-center justify-between">
-          <p className="text-3xl font-black truncate max-w-[200px]">{profile?.displayName}</p>
-          <div className="bg-white border border-neutral-200 rounded-full px-4 py-1.5 flex items-center gap-2 shadow-sm">
-            <TrendingUp size={16} className="text-green-500" />
-            <span className="font-bold text-xs uppercase tracking-tighter text-neutral-600">Level {stats.level}</span>
-          </div>
+      {/* Welcome Hero Section */}
+      <section className="px-6 pt-4">
+        <div className="flex items-center justify-between gap-4">
+           <div className="space-y-1">
+              <h2 className="text-xs font-black text-orange-500 uppercase tracking-[0.3em] pl-0.5">
+                {profile?.language === 'ur' ? 'خوش آمدید' : 'Live Status'}
+              </h2>
+              <p className="text-4xl font-black italic tracking-tighter uppercase leading-none truncate max-w-[220px]">
+                {profile?.displayName?.split(' ')[0]}
+              </p>
+           </div>
+           <div className="bg-[#14254f] border border-white/10 rounded-2xl p-2 px-4 shadow-xl">
+              <div className="flex items-center gap-2 mb-1">
+                 <TrendingUp size={12} className="text-green-400" />
+                 <span className="font-black text-[10px] uppercase text-white/40 tracking-wider">Standing</span>
+              </div>
+              <p className="text-xl font-black italic tracking-tighter text-white">Level {stats.level}</p>
+           </div>
         </div>
       </section>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white border border-neutral-200 rounded-2xl p-4 space-y-2 relative overflow-hidden group shadow-sm">
-          <div className="absolute -top-1 -right-1 opacity-5 group-hover:scale-110 transition-transform">
-            <Sparkles size={40} className="text-orange-500" />
+      {/* Stats Quick Cards */}
+      <div className="grid grid-cols-2 gap-4 px-6">
+        <div className="bg-[#14254f] border border-white/5 rounded-3xl p-5 space-y-4 relative overflow-hidden group shadow-2xl">
+          <div className="absolute -top-2 -right-2 opacity-10 group-hover:scale-110 transition-transform duration-700">
+            <Sparkles size={60} className="text-orange-500" />
           </div>
-          <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-500">
-            <Gift size={20} />
+          <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
+            <Gift size={24} />
           </div>
-          <div className="space-y-1">
-            <p className="text-[10px] font-bold text-neutral-400 uppercase">
-              {profile?.language === 'ur' ? 'ڈیلی بونس' : 'Daily Bonus'}
+          <div className="space-y-2">
+            <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.15em]">
+              {profile?.language === 'ur' ? 'ڈیلی بونس' : 'Daily Rewards'}
             </p>
             {bonusCooldown ? (
-              <div className="flex items-center gap-1.5 text-neutral-400 text-xs font-bold uppercase tracking-tighter">
-                <Timer size={12} /> {bonusCooldown}
+              <div className="flex items-center gap-2 text-white/60 text-xs font-black uppercase tracking-tight">
+                <Timer size={14} className="text-orange-500" /> {bonusCooldown}
               </div>
             ) : (
               <button 
                 onClick={handleClaimBonus}
                 disabled={bonusLoading}
-                className="text-xs font-black text-white bg-orange-500 px-3 py-1 rounded-lg shadow-lg shadow-orange-500/20 active:scale-95 transition-all"
+                className="w-full text-[10px] font-black text-white bg-orange-500 py-2.5 rounded-xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all hover:bg-orange-400"
               >
                 {bonusLoading ? '...' : `CLAIM RS ${bonusAmount}`}
               </button>
             )}
           </div>
         </div>
-        <div className="bg-white border border-neutral-200 rounded-2xl p-4 space-y-2 shadow-sm">
-          <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500">
-            <Users size={20} />
+        <div className="bg-[#14254f] border border-white/5 rounded-3xl p-5 space-y-4 shadow-2xl relative overflow-hidden group">
+          <div className="absolute -top-2 -right-2 opacity-10 group-hover:scale-110 transition-transform duration-700">
+            <Users size={60} className="text-blue-400" />
           </div>
-          <div>
-            <p className="text-[10px] font-bold text-neutral-400 uppercase">
-              {profile?.language === 'ur' ? 'کل ریفرلز' : 'Total Referrals'}
+          <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+            <Users size={24} />
+          </div>
+          <div className="space-y-2">
+            <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.15em]">
+              {profile?.language === 'ur' ? 'کل ریفرلز' : 'Active Referrals'}
             </p>
-            <p className="text-xl font-black text-neutral-900">{stats.referrals}</p>
+            <p className="text-2xl font-black text-white italic truncate">{stats.referrals}</p>
           </div>
         </div>
       </div>
 
-      {/* Active Boost Banner */}
+      {/* Active Multiplier Banner */}
       {profile?.doubleRewardsUntil && new Date(profile.doubleRewardsUntil) > new Date() && (
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-4 rounded-3xl text-white flex items-center justify-between shadow-lg shadow-orange-500/20">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-              <Sparkles size={20} className="animate-pulse" />
+        <div className="mx-6 p-6 rounded-[2.5rem] bg-gradient-to-r from-orange-500 to-orange-600 text-white flex items-center justify-between shadow-2xl shadow-orange-500/20 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-2 opacity-20">
+             <Sparkles size={80} className="animate-pulse" />
+          </div>
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/30 shadow-inner">
+              <Sparkles size={28} className="text-white drop-shadow-md" />
             </div>
             <div>
-              <p className="text-xs font-black uppercase italic italic">{profile?.rewardMultiplier || 2}X Rewards Active</p>
-              <p className="text-[8px] font-bold uppercase opacity-80">All winnings are being multiplied! Ends soon.</p>
+              <p className="text-sm font-black uppercase italic tracking-tight">{profile?.rewardMultiplier || 2}X Protocol Engaged</p>
+              <p className="text-[9px] font-bold uppercase opacity-80 tracking-tight">Hyper-Loot Multiplier Enabled</p>
             </div>
           </div>
-          <div className="bg-black/20 px-3 py-1 rounded-full text-[8px] font-black uppercase">Active</div>
+          <div className="bg-black/20 px-4 py-1.5 rounded-full text-[10px] font-black uppercase italic relative z-10 border border-white/10">Active</div>
         </div>
       )}
 
-      {/* Quick Launch Games */}
-      <section className="space-y-4">
-        <h3 className="font-bold text-lg text-neutral-900">{profile?.language === 'ur' ? 'تیزی سے کھیلیں' : 'Quick Launch'}</h3>
-        <div className="space-y-3">
+      {/* Quick Launch Games Section */}
+      <section className="space-y-6 px-6">
+        <div className="flex items-center justify-between pl-1">
+           <h3 className="font-black text-2xl italic tracking-tighter uppercase text-white">
+             {profile?.language === 'ur' ? 'تیزی سے کھیلیں' : 'Top Selection'}
+           </h3>
+           <div className="px-2 py-0.5 bg-orange-500 text-white text-[8px] font-black uppercase rounded shadow-lg shadow-orange-500/20">Live</div>
+        </div>
+        
+        <div className="grid grid-cols-1 gap-4">
           {[
-            { id: 'aviator', name: 'Aviator', img: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=400&auto=format&fit=crop" },
-            { id: 'spin', name: 'Spin Wheel', img: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
-            { id: 'coin', name: 'Coin Flip', img: "https://cdn-icons-png.flaticon.com/512/550/550614.png" },
+            { id: 'aviator', name: 'Aviator', img: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778147101/aviator_banner_z0j7v8.png", category: "Hot" },
+            { id: 'spin', name: 'Spin Wheel', img: "https://images.unsplash.com/photo-1553481187-be93c21490a9?q=80&w=400&auto=format&fit=crop", category: "Slot" },
+            { id: 'coin', name: 'Coin Flip', img: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778146981/game-coin-a-good-investment_lqjtaj.webp", category: "Blockchain" },
           ].map((game) => {
             const config = gamesConfig[game.id] || {};
             const displayImage = config.image || game.img;
             
             return (
-              <div key={game.name} className="bg-white border border-neutral-200 p-3 rounded-2xl flex items-center justify-between group cursor-pointer hover:border-orange-500/30 transition-colors shadow-sm">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-neutral-50 rounded-xl overflow-hidden shadow-sm border border-neutral-100">
-                    <img src={displayImage} alt={game.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+              <div 
+                key={game.name} 
+                className="bg-[#14254f] border border-white/5 p-4 rounded-[2rem] flex items-center justify-between group cursor-pointer hover:border-orange-500/50 transition-all shadow-xl hover:shadow-orange-500/5"
+              >
+                <div className="flex items-center gap-5">
+                  <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-2xl border border-white/5 bg-[#0b0e11]">
+                    <img src={displayImage} alt={game.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" referrerPolicy="no-referrer" />
                   </div>
-                  <div>
-                    <p className="font-bold uppercase tracking-tight text-sm text-neutral-900">{game.name}</p>
-                    <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">Min Bet: RS {config.minBet || minBet}</p>
+                  <div className="space-y-1">
+                    <p className="font-black italic uppercase tracking-tighter text-xl text-white leading-none">{game.name}</p>
+                    <div className="flex items-center gap-2">
+                       <span className="text-[9px] font-black uppercase text-orange-500 tracking-wider font-mono">{game.category}</span>
+                       <div className="w-1 h-1 bg-white/20 rounded-full" />
+                       <p className="text-[9px] text-white/40 font-black uppercase tracking-widest leading-none">Min Bet: RS {config.minBet || minBet}</p>
+                    </div>
                   </div>
                 </div>
-                <button className="bg-neutral-50 px-4 py-2 rounded-xl text-neutral-400 group-hover:text-orange-500 group-hover:bg-orange-500/10 transition-colors font-bold text-[10px] uppercase tracking-widest border border-neutral-100">
-                  Launch
-                </button>
+                <div className="bg-[#0b0e11] px-5 py-2.5 rounded-2xl text-white/40 group-hover:text-white group-hover:bg-orange-500 transition-all font-black text-[10px] uppercase tracking-[0.2em] shadow-inner border border-white/5">
+                  Enter
+                </div>
               </div>
             );
           })}
         </div>
+      </section>
+
+      {/* Promo Code Section */}
+      <section className="px-6">
+         <div className="bg-[#14254f] border border-white/10 p-6 rounded-[2.5rem] shadow-2xl space-y-4">
+            <h4 className="font-black text-xs uppercase tracking-[0.3em] text-white/60 pl-1">Voucher Redemption</h4>
+            <div className="relative">
+               <input 
+                 type="text"
+                 value={promoCode}
+                 onChange={(e) => setPromoCode(e.target.value)}
+                 placeholder="INPUT VOUCHER CODE"
+                 className="w-full bg-[#0b0e11] border border-white/5 focus:border-orange-500 outline-none rounded-2xl p-4 text-sm font-black uppercase tracking-widest placeholder:text-white/20 transition-all shadow-inner"
+               />
+               <button 
+                 onClick={handleRedeemPromo}
+                 disabled={promoLoading}
+                 className="absolute right-2 top-2 bottom-2 bg-orange-500 hover:bg-orange-400 px-6 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20 active:scale-95 transition-all text-white"
+               >
+                 {promoLoading ? '...' : 'Process'}
+               </button>
+            </div>
+         </div>
       </section>
     </motion.main>
   );

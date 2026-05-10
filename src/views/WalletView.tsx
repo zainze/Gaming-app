@@ -165,337 +165,321 @@ export default function WalletView({ profile }: { profile: any }) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="p-4 space-y-6 pb-24"
+      className="space-y-8 pb-24 text-white"
     >
-      <header className="flex justify-between items-end">
-        <div className="space-y-1">
-          <h2 className="text-3xl font-black italic uppercase text-neutral-900">Wallet</h2>
-          <p className="text-neutral-400 text-sm font-medium">Safe & Secure transactions</p>
+      <header className="px-6 pt-4 flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+           <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+           <span className="text-[10px] font-black uppercase text-white/40 tracking-[0.4em]">Vault Security active</span>
         </div>
+        <h2 className="text-5xl font-black italic tracking-tighter uppercase text-white leading-none">Wallet<span className="text-orange-500">.</span></h2>
+        
         {message && (
           <motion.div 
             initial={{ opacity: 0, y: -10 }} 
             animate={{ opacity: 1, y: 0 }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold ${message.type === 'success' ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'}`}
+            className={`mt-4 flex items-center gap-3 px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-tight ${message.type === 'success' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20' : 'bg-red-500 text-white shadow-lg shadow-red-500/20'}`}
           >
-            {message.type === 'success' ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+            {message.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
             {message.text}
           </motion.div>
         )}
       </header>
 
-      {/* Main Balance Card */}
-      <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-[2.5rem] p-8 shadow-xl shadow-orange-500/20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-10">
-          <CreditCard size={120} />
-        </div>
-        <div className="relative z-10 space-y-4">
-          <div className="flex justify-between items-start">
-            <span className="text-white/70 text-xs font-bold uppercase tracking-widest">Total Balance</span>
-            <div className="bg-white/20 backdrop-blur rounded-full px-3 py-1 text-[10px] uppercase font-black text-white">Verified</div>
+      {/* Main Balance Card - Dark Premium Version */}
+      <div className="px-6">
+        <div className="bg-[#14254f] border border-white/10 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform duration-1000">
+            <CreditCard size={140} className="text-white" />
           </div>
-          <div className="text-5xl font-black tracking-tighter text-white">
-            {formatCurrency(profile?.balance || 0)}
-          </div>
-          <div className="flex gap-4 pt-4">
-            <div className="flex-1 bg-white/10 border border-white/20 rounded-2xl p-3">
-              <p className="text-[10px] text-white/60 font-bold uppercase">Total Wins</p>
-              <p className="font-bold text-green-200">
-                {formatCurrency(transactions.filter(t => t.type === 'win').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0))}
-              </p>
+          <div className="relative z-10 space-y-6">
+            <div className="flex justify-between items-center">
+              <div className="flex flex-col">
+                <span className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Engaged Capital</span>
+                <div className="w-8 h-0.5 bg-orange-500 rounded-full" />
+              </div>
+              <div className="bg-orange-500 px-3 py-1 text-[9px] uppercase font-black text-white italic rounded-lg">Verified</div>
             </div>
-            <div className="flex-1 bg-white/10 border border-white/20 rounded-2xl p-3">
-              <p className="text-[10px] text-white/60 font-bold uppercase">Pending</p>
-              <p className="font-bold text-orange-100">
-                {formatCurrency(transactions.filter(t => t.status === 'pending' && t.type === 'withdraw').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0))}
-              </p>
+            <div className="text-6xl font-black tracking-tighter text-white italic truncate pr-4 leading-none">
+              {formatCurrency(profile?.balance || 0).replace('RS ', '')}<span className="text-2xl not-italic ml-1 opacity-40">RS</span>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl p-4 shadow-inner">
+                <p className="text-[10px] text-white/40 font-black uppercase tracking-widest mb-1">Yields</p>
+                <p className="font-black text-lg text-green-400 italic">
+                  +{formatCurrency(transactions.filter(t => t.type === 'win').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0)).replace('RS ', '')}
+                </p>
+              </div>
+              <div className="flex-1 bg-white/5 border border-white/10 rounded-2xl p-4 shadow-inner">
+                <p className="text-[10px] text-white/40 font-black uppercase tracking-widest mb-1">Transit</p>
+                <p className="font-black text-lg text-orange-400 italic">
+                  {formatCurrency(transactions.filter(t => t.status === 'pending' && t.type === 'withdraw').reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0)).replace('RS ', '')}
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-neutral-100 p-1 rounded-3xl flex border border-neutral-200">
-        {(['deposit', 'withdraw', 'history'] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => { setTab(t); setMessage(null); }}
-            className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all duration-300 ${
-              tab === t ? 'bg-white text-orange-500 shadow-md border border-neutral-100' : 'text-neutral-400 hover:text-neutral-600'
-            }`}
-          >
-            {t}
-          </button>
-        ))}
+      {/* Modern Tabs */}
+      <div className="px-6">
+        <div className="bg-[#14254f] p-1.5 rounded-[2.5rem] flex border border-white/5 shadow-2xl">
+          {(['deposit', 'withdraw', 'history'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => { setTab(t); setMessage(null); }}
+              className={`flex-1 py-4 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 relative ${
+                tab === t ? 'bg-orange-500 text-white shadow-xl translate-y-[-2px]' : 'text-white/40 hover:text-white'
+              }`}
+            >
+              {t}
+              {tab === t && (
+                <motion.div layoutId="tab-pill" className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-white/40 rounded-full" />
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tab Content */}
-    <div className="space-y-4">
+      <div className="px-6">
         {tab === 'deposit' && (
-          <form onSubmit={handleDeposit} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-white border border-neutral-200 rounded-3xl p-6 space-y-6 shadow-sm">
-              <div className="space-y-3">
+          <form onSubmit={handleDeposit} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="bg-[#14254f] border border-white/10 rounded-[2.5rem] p-8 space-y-8 shadow-2xl">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between pl-1">
-                  <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Payment Protocol</label>
-                  <span className="text-[8px] font-black text-green-500 uppercase flex items-center gap-1">
-                    <span className="w-1 h-1 bg-green-500 rounded-full" /> Instant Processing
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Channel Protocol</label>
+                  <span className="text-[9px] font-black text-green-400 uppercase flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.5)]" /> Realtime
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-4">
                   {[
                     { id: 'EasyPaisa', name: 'EasyPaisa', icon: paymentConfig?.easypaisaLogo || 'https://cdn-icons-png.flaticon.com/512/3039/3039431.png' },
                     { id: 'JazzCash', name: 'JazzCash', icon: paymentConfig?.jazzcashLogo || 'https://cdn-icons-png.flaticon.com/512/1041/1041844.png' },
-                    { id: 'Bank', name: 'Bank Transfer', icon: 'https://cdn-icons-png.flaticon.com/512/2830/2830284.png' }
+                    { id: 'Bank', name: 'Bank', icon: 'https://cdn-icons-png.flaticon.com/512/2830/2830284.png' }
                   ].map((m) => (
                     <button 
                       type="button"
                       key={m.id} 
                       onClick={() => setDepositMethod(m.id as any)}
-                      className={`relative p-4 rounded-3xl border flex flex-col items-center gap-3 transition-all group ${
+                      className={`relative p-5 rounded-3xl border flex flex-col items-center gap-4 transition-all group ${
                         depositMethod === m.id 
-                        ? 'border-orange-500 bg-orange-50 shadow-lg shadow-orange-500/5' 
-                        : 'border-neutral-100 bg-neutral-50 hover:bg-neutral-100'
+                        ? 'border-orange-500 bg-orange-500/10 shadow-2xl' 
+                        : 'border-white/5 bg-[#0b0e11] hover:bg-white/5'
                       }`}
                     >
-                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center p-2 transition-transform duration-500 ${depositMethod === m.id ? 'scale-110' : 'group-hover:scale-105'}`}>
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center p-2.5 transition-transform duration-700 ${depositMethod === m.id ? 'scale-110' : 'group-hover:scale-105 opacity-40'}`}>
                          <img 
                            src={m.icon} 
                            alt={m.name} 
                            className={`w-full h-full object-contain ${depositMethod === m.id ? '' : 'grayscale'}`} 
                          />
                       </div>
-                      <span className={`text-[8px] font-black uppercase tracking-tighter ${depositMethod === m.id ? 'text-orange-600' : 'text-neutral-400'}`}>{m.name}</span>
-                      {depositMethod === m.id && (
-                        <motion.div 
-                          layoutId="activeMethod"
-                          className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 border-2 border-white rounded-full flex items-center justify-center"
-                        >
-                          <CheckCircle2 size={8} className="text-white" />
-                        </motion.div>
-                      )}
+                      <span className={`text-[9px] font-black uppercase tracking-tighter ${depositMethod === m.id ? 'text-white' : 'text-white/20'}`}>{m.name}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="p-4 bg-neutral-50 rounded-2xl border border-neutral-100 space-y-2">
-                <p className="text-[10px] font-black uppercase text-neutral-400 text-center mb-2">Send Funds to</p>
-                <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-neutral-100">
-                    <span className="text-[8px] font-black uppercase text-neutral-400">Account #</span>
-                    <span className="text-xs font-black italic select-all">
-                      {depositMethod === 'EasyPaisa' ? paymentConfig?.easypaisaNumber || "0300 0000000" : 
-                       depositMethod === 'JazzCash' ? paymentConfig?.jazzcashNumber || "0300 0000000" : 
-                       paymentConfig?.bankNumber || "Not Set"}
-                    </span>
-                </div>
-                <div className="flex justify-between items-center bg-white p-3 rounded-xl border border-neutral-100">
-                    <span className="text-[8px] font-black uppercase text-neutral-400">Title</span>
-                    <span className="text-xs font-black italic">
-                      {depositMethod === 'EasyPaisa' ? paymentConfig?.easypaisaName || "ADMIN" : 
-                       depositMethod === 'JazzCash' ? paymentConfig?.jazzcashName || "ADMIN" : 
-                       paymentConfig?.bankName || "ADMIN"}
-                    </span>
+              <div className="bg-[#0b0e11] rounded-3xl p-6 border border-white/5 space-y-4 shadow-inner">
+                <p className="text-[10px] font-black uppercase text-white/20 text-center tracking-[0.2em]">Deployment Destination</p>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/5">
+                      <span className="text-[9px] font-black uppercase text-white/30 tracking-widest">Account ID</span>
+                      <span className="text-sm font-black italic text-white select-all">
+                        {depositMethod === 'EasyPaisa' ? paymentConfig?.easypaisaNumber || "0300 0000000" : 
+                         depositMethod === 'JazzCash' ? paymentConfig?.jazzcashNumber || "0300 0000000" : 
+                         paymentConfig?.bankNumber || "Not Set"}
+                      </span>
+                  </div>
+                  <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/5">
+                      <span className="text-[9px] font-black uppercase text-white/30 tracking-widest">Descriptor</span>
+                      <span className="text-sm font-black italic text-white">
+                        {depositMethod === 'EasyPaisa' ? paymentConfig?.easypaisaName || "ADMIN" : 
+                         depositMethod === 'JazzCash' ? paymentConfig?.jazzcashName || "ADMIN" : 
+                         paymentConfig?.bankName || "ADMIN"}
+                      </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1">Amount</label>
-                  <input 
-                    type="number" 
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Enter Amount" 
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl p-4 text-xl font-black focus:ring-1 focus:ring-orange-500 outline-none text-neutral-900" 
-                  />
+              <div className="grid gap-6">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] pl-1">Amount Units</label>
+                  <div className="relative">
+                     <input 
+                      type="number" 
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="ENTER UNITS" 
+                      className="w-full bg-[#0b0e11] border border-white/10 rounded-2xl p-5 text-2xl font-black italic tracking-tighter focus:border-orange-500 outline-none text-white shadow-inner" 
+                    />
+                    <div className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-white/20 italic">RS</div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1">Account Number</label>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] pl-1">Source Account</label>
                   <input 
                     type="text" 
                     value={accountNumber}
                     onChange={(e) => setAccountNumber(e.target.value)}
-                    placeholder="Phone or Account #" 
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl p-4 text-sm font-bold focus:ring-1 focus:ring-orange-500 outline-none text-neutral-900" 
+                    placeholder="SENDER NUMBER" 
+                    className="w-full bg-[#0b0e11] border border-white/10 rounded-2xl p-4 text-sm font-black uppercase tracking-widest focus:border-orange-500 outline-none text-white shadow-inner" 
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1">Account Holder Name</label>
-                  <input 
+                <div className="space-y-3">
+                   <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] pl-1">Legal Identity</label>
+                   <input 
                     type="text" 
                     value={accountName}
                     onChange={(e) => setAccountName(e.target.value)}
-                    placeholder="Full Name" 
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl p-4 text-sm font-bold focus:ring-1 focus:ring-orange-500 outline-none text-neutral-900" 
+                    placeholder="SENDER NAME" 
+                    className="w-full bg-[#0b0e11] border border-white/10 rounded-2xl p-4 text-sm font-black uppercase tracking-widest focus:border-orange-500 outline-none text-white shadow-inner" 
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1">Transaction ID</label>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] pl-1">Proof Protocol ID</label>
                   <input 
                     type="text" 
                     value={transactionId}
                     onChange={(e) => setTransactionId(e.target.value)}
-                    placeholder="Proof of Payment TID" 
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl p-4 text-sm font-bold focus:ring-1 focus:ring-orange-500 outline-none font-mono text-neutral-900" 
+                    placeholder="TID / TRANSACTION HASH" 
+                    className="w-full bg-[#0b0e11] border border-white/10 rounded-2xl p-4 text-sm font-black uppercase tracking-[0.2em] focus:border-orange-500 outline-none font-mono text-white shadow-inner" 
                   />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1">Payment Screenshot (Optional)</label>
-                  <div className="relative">
-                    <input 
-                      type="file" 
-                      accept="image/*"
-                      onChange={(e) => setProofFile(e.target.files?.[0] || null)}
-                      className="hidden" 
-                      id="proof-upload"
-                    />
-                    <label 
-                      htmlFor="proof-upload"
-                      className="w-full bg-neutral-50 border border-neutral-200 border-dashed rounded-2xl p-4 flex items-center justify-center gap-3 cursor-pointer hover:bg-neutral-100 transition-colors"
-                    >
-                      <Upload size={18} className="text-neutral-400" />
-                      <span className="text-xs font-bold text-neutral-500 uppercase tracking-tight">
-                        {proofFile ? proofFile.name : "Upload Receipt Screenshot"}
-                      </span>
-                    </label>
-                  </div>
                 </div>
               </div>
 
               <button 
                 disabled={loading}
-                className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-orange-500/20 active:scale-95 transition-all"
+                className="w-full bg-orange-500 hover:bg-orange-400 disabled:opacity-50 text-white py-5 rounded-[2rem] font-black uppercase tracking-[0.3em] shadow-2xl shadow-orange-500/20 active:scale-95 transition-all text-xs"
               >
-                {loading ? "Processing..." : "Submit Deposit Request"}
+                {loading ? "PROCESSING..." : "COMMIT DEPOSIT"}
               </button>
             </div>
           </form>
         )}
 
         {tab === 'withdraw' && (
-          <form onSubmit={handleWithdraw} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-             <div className="bg-white border border-neutral-200 rounded-3xl p-6 space-y-6 shadow-sm">
-              <div className="space-y-3">
+          <form onSubmit={handleWithdraw} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+             <div className="bg-[#14254f] border border-white/10 rounded-[2.5rem] p-8 space-y-8 shadow-2xl">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between pl-1">
-                  <label className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Select Receiving Method</label>
-                   <span className="text-[8px] font-black text-orange-500 uppercase flex items-center gap-1">
-                    <span className="w-1 h-1 bg-orange-500 rounded-full animate-pulse" /> Verified Channels Only
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Vault Exit Protocol</label>
+                   <span className="text-[9px] font-black text-orange-500 uppercase flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(249,115,22,0.5)]" /> Verified Only
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-4">
                   {[
                     { id: 'EasyPaisa', name: 'EasyPaisa', icon: paymentConfig?.easypaisaLogo || 'https://cdn-icons-png.flaticon.com/512/3039/3039431.png' },
                     { id: 'JazzCash', name: 'JazzCash', icon: paymentConfig?.jazzcashLogo || 'https://cdn-icons-png.flaticon.com/512/1041/1041844.png' },
-                    { id: 'Bank', name: 'Bank Transfer', icon: 'https://cdn-icons-png.flaticon.com/512/2830/2830284.png' }
+                    { id: 'Bank', name: 'Bank', icon: 'https://cdn-icons-png.flaticon.com/512/2830/2830284.png' }
                   ].map((m) => (
                     <button 
                       type="button"
                       key={m.id} 
                       onClick={() => setWithdrawMethod(m.id as any)}
-                      className={`relative p-4 rounded-3xl border flex flex-col items-center gap-3 transition-all group ${
+                      className={`relative p-5 rounded-3xl border flex flex-col items-center gap-4 transition-all group ${
                         withdrawMethod === m.id 
-                        ? 'border-orange-500 bg-orange-50 shadow-lg shadow-orange-500/5' 
-                        : 'border-neutral-100 bg-neutral-50 hover:bg-neutral-100'
+                        ? 'border-orange-500 bg-orange-500/10 shadow-2xl' 
+                        : 'border-white/5 bg-[#0b0e11] hover:bg-white/5'
                       }`}
                     >
-                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center p-2 transition-transform duration-500 ${withdrawMethod === m.id ? 'scale-110' : 'group-hover:scale-105'}`}>
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center p-2.5 transition-transform duration-700 ${withdrawMethod === m.id ? 'scale-110' : 'group-hover:scale-105 opacity-40'}`}>
                          <img 
                            src={m.icon} 
                            alt={m.name} 
                            className={`w-full h-full object-contain ${withdrawMethod === m.id ? '' : 'grayscale'}`} 
                          />
                       </div>
-                      <span className={`text-[8px] font-black uppercase tracking-tighter ${withdrawMethod === m.id ? 'text-orange-600' : 'text-neutral-400'}`}>{m.name}</span>
-                      {withdrawMethod === m.id && (
-                        <motion.div 
-                          layoutId="activeWithdrawMethod"
-                          className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 border-2 border-white rounded-full flex items-center justify-center"
-                        >
-                          <CheckCircle2 size={8} className="text-white" />
-                        </motion.div>
-                      )}
+                      <span className={`text-[9px] font-black uppercase tracking-tighter ${withdrawMethod === m.id ? 'text-white' : 'text-white/20'}`}>{m.name}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1">Withdraw Amount</label>
-                  <input 
-                    type="number" 
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="0.00" 
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl p-4 text-xl font-black focus:ring-1 focus:ring-orange-500 outline-none text-neutral-900" 
-                  />
-                  <p className="text-[9px] text-neutral-400 text-right px-1">Available: {formatCurrency(profile?.balance || 0)}</p>
+              <div className="grid gap-6">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] pl-1">Egress Amount</label>
+                  <div className="relative">
+                    <input 
+                      type="number" 
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="0.00" 
+                      className="w-full bg-[#0b0e11] border border-white/10 rounded-2xl p-5 text-2xl font-black italic tracking-tighter focus:border-orange-500 outline-none text-white shadow-inner" 
+                    />
+                    <div className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-white/20 italic">RS</div>
+                  </div>
+                  <p className="text-[9px] text-white/30 text-right px-1 font-black uppercase tracking-widest">Available Flux: {formatCurrency(profile?.balance || 0)}</p>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1">Target Account Number</label>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] pl-1">Target Account ID</label>
                   <input 
                     type="text" 
                     value={accountNumber}
                     onChange={(e) => setAccountNumber(e.target.value)}
-                    placeholder="Receipt Number/IBAN" 
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl p-4 text-sm font-bold focus:ring-1 focus:ring-orange-500 outline-none text-neutral-900" 
+                    placeholder="RECEIVER NUMBER / IBAN" 
+                    className="w-full bg-[#0b0e11] border border-white/10 rounded-2xl p-4 text-sm font-black uppercase tracking-widest focus:border-orange-500 outline-none text-white shadow-inner" 
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest pl-1">Target Account Name</label>
-                  <input 
+                <div className="space-y-3">
+                   <label className="text-[10px] font-black text-white/30 uppercase tracking-[0.4em] pl-1">Target Identity</label>
+                   <input 
                     type="text" 
                     value={accountName}
                     onChange={(e) => setAccountName(e.target.value)}
-                    placeholder="Full Name as on Account" 
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl p-4 text-sm font-bold focus:ring-1 focus:ring-orange-500 outline-none text-neutral-900" 
+                    placeholder="RECEIVER LEGAL NAME" 
+                    className="w-full bg-[#0b0e11] border border-white/10 rounded-2xl p-4 text-sm font-black uppercase tracking-widest focus:border-orange-500 outline-none text-white shadow-inner" 
                   />
                 </div>
               </div>
 
               <button 
                 disabled={loading}
-                className="w-full bg-neutral-900 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all disabled:opacity-50"
+                className="w-full bg-white text-[#0b0e11] py-5 rounded-[2rem] font-black uppercase tracking-[0.3em] shadow-2xl active:scale-95 transition-all disabled:opacity-50 text-xs"
               >
-                {loading ? "Processing..." : "Submit Withdrawal"}
+                {loading ? "PROCESSING..." : "REQUEST WITHDRAWAL"}
               </button>
-              <p className="text-[10px] text-neutral-400 text-center font-bold italic">Withdrawals are processed within 2-24 hours</p>
+              <p className="text-[9px] text-white/20 text-center font-black uppercase tracking-widest leading-relaxed">Processing Cycle: 2-24 Hours via Secured Channels</p>
             </div>
           </form>
         )}
 
         {tab === 'history' && (
-          <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {transactions.length === 0 ? (
-              <div className="text-center py-12 space-y-4">
-                <History className="mx-auto text-neutral-200" size={48} />
-                <p className="text-neutral-400 font-bold uppercase text-[10px] tracking-widest">No transaction history found</p>
+              <div className="text-center py-20 bg-[#14254f] rounded-[2.5rem] border border-white/5 shadow-2xl space-y-6">
+                <History className="mx-auto text-white/10" size={80} />
+                <p className="text-white/20 font-black uppercase text-[10px] tracking-[0.4em]">Empty Transaction Stream</p>
               </div>
             ) : (
               transactions.map((tx) => (
-                <div key={tx.id} className="bg-white border border-neutral-100 p-4 rounded-2xl flex items-center justify-between shadow-sm">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tx.amount > 0 ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                      {tx.amount > 0 ? <ArrowDownCircle size={18} /> : <ArrowUpCircle size={18} />}
+                <div key={tx.id} className="bg-[#14254f] border border-white/5 p-5 rounded-3xl flex items-center justify-between shadow-xl relative overflow-hidden group">
+                  <div className="absolute inset-y-0 left-0 w-1 bg-orange-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="flex items-center gap-5">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner ${tx.amount > 0 ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                      {tx.amount > 0 ? <ArrowDownCircle size={24} /> : <ArrowUpCircle size={24} />}
                     </div>
-                    <div>
-                      <p className="font-bold text-sm uppercase flex items-center gap-2 text-neutral-900">
+                    <div className="space-y-1">
+                      <p className="font-black text-sm uppercase tracking-tight flex items-center gap-3 text-white italic">
                         {tx.type} 
-                        {tx.method && <span className="text-[8px] bg-neutral-100 px-1 rounded text-neutral-500">{tx.method}</span>}
+                        {tx.method && <span className="text-[8px] bg-white/5 px-2 py-0.5 rounded text-white/40 tracking-widest">{tx.method}</span>}
                       </p>
-                      <p className="text-[10px] text-neutral-400 font-medium uppercase font-mono">
+                      <p className="text-[10px] text-white/20 font-black uppercase tracking-widest font-mono">
                         {new Date(tx.createdAt).toLocaleString()}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className={`font-black ${tx.amount > 0 ? 'text-green-500' : 'text-neutral-900'}`}>
-                      {tx.amount > 0 ? '+' : ''}{formatCurrency(tx.amount)}
+                  <div className="text-right space-y-1">
+                    <p className={`font-black text-lg italic tracking-tighter ${tx.amount > 0 ? 'text-green-500' : 'text-white'}`}>
+                      {tx.amount > 0 ? '+' : ''}{formatCurrency(tx.amount).replace('RS ', '')}
                     </p>
-                    <p className={`text-[8px] font-black uppercase ${
-                      tx.status === 'completed' ? 'text-green-500' : 
-                      tx.status === 'pending' ? 'text-orange-500' : 'text-red-500'
-                    }`}>{tx.status}</p>
+                    <div className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded inline-block ${
+                      tx.status === 'completed' ? 'bg-green-500/20 text-green-400' : 
+                      tx.status === 'pending' ? 'bg-orange-500/20 text-orange-400' : 'bg-red-500/20 text-red-400'
+                    }`}>{tx.status}</div>
                   </div>
                 </div>
               ))
