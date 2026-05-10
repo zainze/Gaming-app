@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
-import { db } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 
 interface Banner {
   id: string;

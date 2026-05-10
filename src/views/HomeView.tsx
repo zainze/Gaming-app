@@ -2,7 +2,7 @@ import { motion } from "motion/react";
 import { Gift, TrendingUp, Users, Timer, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, onSnapshot, doc, updateDoc, increment, addDoc, getDoc } from "firebase/firestore";
-import { handleFirestoreError, OperationType } from "../lib/firestore-errors";
+import { handleFirestoreError, OperationType } from "../lib/firebase";
 import { db } from "../lib/firebase";
 import { formatCurrency } from "../lib/utils";
 import { playSound } from "../lib/sounds";

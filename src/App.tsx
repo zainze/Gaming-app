@@ -7,8 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from "react
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "./lib/firebase";
-import { doc, getDoc, setDoc, getDocFromServer, onSnapshot, writeBatch } from "firebase/firestore";
-import { handleFirestoreError, OperationType } from "./lib/firestore-errors";
+import { doc, getDoc, setDoc, getDocFromServer, onSnapshot, writeBatch, updateDoc, increment, deleteField, addDoc, collection } from "firebase/firestore";
+import { handleFirestoreError, OperationType } from "./lib/firebase";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   Home, 
@@ -27,6 +27,7 @@ import {
 import Navigation from "./components/Navigation";
 import HomeView from "./views/HomeView";
 import GamesView from "./views/GamesView";
+import MoreGamesView from "./views/MoreGamesView";
 import WalletView from "./views/WalletView";
 import ProfileView from "./views/ProfileView";
 import AdminView from "./views/AdminView";
@@ -39,6 +40,53 @@ export default function App() {
   const [systemConfig, setSystemConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [splashVisible, setSplashVisible] = useState(true);
+
+  // Background Arcade Reward Processing
+  useEffect(() => {
+    if (profile?.arcadeSession?.status === 'active' && user) {
+      const session = profile.arcadeSession;
+      const startTime = new Date(session.startTime).getTime();
+      const now = Date.now();
+      const durationMs = (Number(session.duration) || 60) * 1000;
+      const timeElapsed = now - startTime;
+
+      const creditReward = async () => {
+        try {
+          // Verify session still exists and is active before crediting
+          const userRef = doc(db, "users", user.uid);
+          const freshSnap = await getDoc(userRef);
+          if (freshSnap.exists() && freshSnap.data()?.arcadeSession?.status === 'active') {
+             await updateDoc(userRef, {
+               balance: increment(Number(session.reward) || 0),
+               xp: increment((Number(session.reward) || 0) * 2),
+               arcadeSession: deleteField()
+             });
+
+             await addDoc(collection(db, "transactions"), {
+                userId: user.uid,
+                amount: Number(session.reward) || 0,
+                type: 'win',
+                status: 'completed',
+                method: 'Arcade Reward',
+                accountName: profile.displayName || profile.email,
+                createdAt: new Date().toISOString()
+             });
+
+             console.log(`Arcade Reward Credited: RS ${session.reward} for ${session.title}`);
+          }
+        } catch (err) {
+          console.error("Failed to credit background arcade reward:", err);
+        }
+      };
+
+      if (timeElapsed >= durationMs) {
+        creditReward();
+      } else {
+        const timer = setTimeout(creditReward, durationMs - timeElapsed);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [profile?.arcadeSession, user]);
 
   useEffect(() => {
     // Connection test (silent)
@@ -198,6 +246,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={user ? <HomeView profile={profile} /> : <Navigate to="/auth" />} />
               <Route path="/games" element={user ? <GamesView profile={profile} /> : <Navigate to="/auth" />} />
+              <Route path="/more-games" element={user ? <MoreGamesView profile={profile} /> : <Navigate to="/auth" />} />
               <Route path="/wallet" element={user ? <WalletView profile={profile} /> : <Navigate to="/auth" />} />
               <Route path="/profile" element={user ? <ProfileView profile={profile} /> : <Navigate to="/auth" />} />
               <Route path="/admin" element={(user && (profile?.role === 'admin' || profile?.email === 'zainzeb333@gmail.com')) ? <AdminView /> : <Navigate to="/" />} />

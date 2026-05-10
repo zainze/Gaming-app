@@ -24,9 +24,8 @@ import {
   Landmark
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { db } from "../lib/firebase";
+import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { collection, query, where, onSnapshot, doc, updateDoc, increment, getDocs, orderBy, addDoc, limit, setDoc, getDoc } from "firebase/firestore";
-import { handleFirestoreError, OperationType } from "../lib/firestore-errors";
 import { formatCurrency } from "../lib/utils";
 import { uploadToCloudinary } from "../lib/cloudinary";
 
@@ -1283,6 +1282,106 @@ export default function AdminView() {
                        />
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Multi-Game Arcade Configuration */}
+              <div className="bg-white border border-neutral-100 p-6 rounded-3xl space-y-6 shadow-sm">
+                <div className="space-y-1">
+                  <h4 className="font-black uppercase italic text-neutral-900">Arcade Portal Config</h4>
+                  <p className="text-[9px] font-black text-neutral-400 tracking-widest uppercase">Manage the thumbnails and links for the "More Games" section</p>
+                </div>
+
+                <div className="space-y-6 pt-4 border-t border-neutral-100">
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <div key={num} className="bg-neutral-50 p-5 rounded-2xl border border-neutral-100 space-y-4">
+                       <div className="flex items-center justify-between">
+                          <span className="bg-orange-500 text-white w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black">#{num}</span>
+                          <div className="flex-1 ml-3 h-px bg-neutral-200" />
+                       </div>
+                       
+                       <div className="grid grid-cols-1 gap-3">
+                          <div className="space-y-1">
+                             <label className="text-[8px] font-black uppercase text-neutral-400">Game Title</label>
+                             <input 
+                               type="text" 
+                               value={(globalConfig as any)[`moreGame${num}Title`] || ''}
+                               onChange={(e) => updateConfig(`moreGame${num}Title`, e.target.value)}
+                               placeholder={`e.g. Game Name ${num}`}
+                               className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-orange-500"
+                             />
+                          </div>
+                          <div className="space-y-1">
+                             <label className="text-[8px] font-black uppercase text-neutral-400">Application URL</label>
+                             <input 
+                               type="text" 
+                               value={(globalConfig as any)[`moreGame${num}Url`] || ''}
+                               onChange={(e) => updateConfig(`moreGame${num}Url`, e.target.value)}
+                               placeholder="https://game-url.com"
+                               className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-orange-500"
+                             />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                             <div className="space-y-1">
+                                <label className="text-[8px] font-black uppercase text-neutral-400">Play Time (Seconds)</label>
+                                <input 
+                                  type="number" 
+                                  value={(globalConfig as any)[`moreGame${num}Time`] || 60}
+                                  onChange={(e) => updateConfig(`moreGame${num}Time`, parseInt(e.target.value))}
+                                  className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-orange-500"
+                                />
+                             </div>
+                             <div className="space-y-1">
+                                <label className="text-[8px] font-black uppercase text-neutral-400">Reward (RS)</label>
+                                <input 
+                                  type="number" 
+                                  value={(globalConfig as any)[`moreGame${num}Reward`] || 10}
+                                  onChange={(e) => updateConfig(`moreGame${num}Reward`, parseFloat(e.target.value))}
+                                  className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-orange-500 font-mono"
+                                />
+                             </div>
+                          </div>
+                          <div className="space-y-2">
+                             <label className="text-[8px] font-black uppercase text-neutral-400">Thumbnail Asset</label>
+                             <div className="flex gap-4">
+                                <div className="w-24 aspect-video bg-white rounded-xl overflow-hidden border border-neutral-200 shadow-inner flex-shrink-0">
+                                   {(globalConfig as any)[`moreGame${num}Thumbnail`] ? (
+                                     <img src={(globalConfig as any)[`moreGame${num}Thumbnail`]} className="w-full h-full object-cover" alt="Thumb" />
+                                   ) : (
+                                     <div className="w-full h-full flex items-center justify-center text-neutral-300">
+                                        <ImageIcon size={24} />
+                                     </div>
+                                   )}
+                                </div>
+                                <div className="flex-1 space-y-2">
+                                   <input 
+                                     type="file" 
+                                     id={`arcade-upload-${num}`} 
+                                     className="hidden" 
+                                     onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                          try {
+                                            const url = await uploadToCloudinary(file);
+                                            await updateConfig(`moreGame${num}Thumbnail`, url);
+                                          } catch (err) {
+                                            alert("Upload failed! Check network.");
+                                          }
+                                        }
+                                     }}
+                                   />
+                                   <label 
+                                     htmlFor={`arcade-upload-${num}`}
+                                     className="block w-full bg-neutral-900 text-white text-center py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest cursor-pointer active:scale-95 transition-all shadow-md"
+                                   >
+                                     Upload Image
+                                   </label>
+                                </div>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 

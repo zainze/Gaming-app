@@ -2,8 +2,7 @@ import { motion } from "motion/react";
 import { Plus, Minus, History, CreditCard, ArrowDownCircle, ArrowUpCircle, QrCode, Smartphone, Landmark, CheckCircle2, AlertCircle, Upload } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { formatCurrency } from "../lib/utils";
-import { db, auth } from "../lib/firebase";
-import { handleFirestoreError, OperationType } from "../lib/firestore-errors";
+import { db, auth, handleFirestoreError, OperationType } from "../lib/firebase";
 import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, getDoc } from "firebase/firestore";
 import { uploadToCloudinary } from "../lib/cloudinary";
 

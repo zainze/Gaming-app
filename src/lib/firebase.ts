@@ -1,20 +1,28 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore, doc, getDocFromServer } from "firebase/firestore";
+import { initializeFirestore, doc, getDocFromServer } from "firebase/firestore";
 import firebaseConfig from "../../firebase-applet-config.json";
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
+// Initialize Firestore with long-polling to handle sandboxed environment connectivity issues
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+}, firebaseConfig.firestoreDatabaseId);
+
 export const auth = getAuth(app);
 
-// Connectivity Test
+// Test Connection logic
 async function testConnection() {
   try {
-    await getDocFromServer(doc(db, 'system', 'config'));
-    console.log("Firestore connection verified.");
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration or internet connection.");
+    // Attempt to reach server once to verify configuration
+    await getDocFromServer(doc(db, 'system', 'connection_test'));
+    console.log("Firestore connection test: SUCCESS");
+  } catch (error: any) {
+    if (error?.code === 'unavailable' || (error instanceof Error && error.message.includes('offline'))) {
+      console.error("Firebase connection test failed: The client is offline or backend is unreachable. Please verify your Firebase project and database availability.");
+    } else {
+      console.error("Firestore connectivity check error:", error);
     }
   }
 }
@@ -29,7 +37,7 @@ export enum OperationType {
   WRITE = 'write',
 }
 
-export interface FirestoreErrorInfo {
+interface FirestoreErrorInfo {
   error: string;
   operationType: OperationType;
   path: string | null;

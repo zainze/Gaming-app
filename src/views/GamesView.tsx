@@ -2,8 +2,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Gamepad2, Sparkles, Trophy, Users, Play, Radio, ChevronLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { doc, updateDoc, increment, addDoc, collection, onSnapshot } from "firebase/firestore";
-import { handleFirestoreError, OperationType } from "../lib/firestore-errors";
-import { db } from "../lib/firebase";
+import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 
 // Game Components
 import CoinFlip from "../components/CoinFlip";
@@ -11,12 +10,12 @@ import SpinWheel from "../components/SpinWheel";
 import SwipeMaster from "../components/SwipeMaster";
 import { LuckyChests } from "../components/LuckyChests";
 import { DiceRoll } from "../components/DiceRoll";
-import { ScratchCard } from "../components/ScratchCard";
 import ThreeCardSlipper from "../components/ThreeCardSlipper";
 import { Aviator } from "../components/Aviator";
 import { BannerSlider } from "../components/BannerSlider";
 import { PlinkoPro } from "../components/PlinkoPro";
 import { MinesFinder } from "../components/MinesFinder";
+import { GoldScratch } from "../components/GoldScratch";
 
 export default function GamesView({ profile }: { profile: any }) {
   const [activeGame, setActiveGame] = useState<string | null>(null);
@@ -70,7 +69,7 @@ export default function GamesView({ profile }: { profile: any }) {
     swipe: { title: "Swipe Master", category: "Skill", image: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" },
     chests: { title: "Lucky Chests", category: "Classic", image: "https://cdn-icons-png.flaticon.com/512/3233/3233483.png" },
     dice: { title: "Dice Pro", category: "Classic", image: "https://cdn-icons-png.flaticon.com/512/3533/3533966.png" },
-    scratch: { title: "Gold Scratch", category: "Skill", image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
+    scratch: { title: "Gold Scratch", category: "Classic", image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop" },
     aviator: { title: "Aviator", category: "Classic", image: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=400&auto=format&fit=crop" },
     plinko: { title: "Plinko Pro", category: "Skill", image: "https://images.unsplash.com/photo-1553481187-be93c21490a9?q=80&w=400&auto=format&fit=crop" },
     mines: { title: "Mines Finder", category: "Skill", image: "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=400&auto=format&fit=crop" },
@@ -230,7 +229,7 @@ export default function GamesView({ profile }: { profile: any }) {
     }
   };
 
-  const isFullScreen = activeGame === 'aviator' || activeGame === 'mines' || activeGame === 'plinko';
+  const isFullScreen = activeGame === 'aviator' || activeGame === 'mines' || activeGame === 'plinko' || activeGame === 'scratch' || activeGame === 'coin';
 
   return (
     <div className={`relative w-full h-full ${isFullScreen ? 'overflow-hidden' : ''}`}>
@@ -384,19 +383,16 @@ export default function GamesView({ profile }: { profile: any }) {
         {activeGame === 'scratch' && (
           <motion.div 
             key="scratch"
-            initial={{ opacity: 0, scale: 1.1 }} 
-            animate={{ opacity: 1, scale: 1 }} 
-            exit={{ opacity: 0, scale: 1.1 }}
-            transition={{ duration: 0.3 }}
-            className="p-4 space-y-4"
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-[#050B14]"
           >
-            <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-neutral-400 font-bold uppercase text-xs mb-4 hover:text-black transition-colors group">
-              <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Lobby
-            </button>
-            <ScratchCard 
+            <GoldScratch 
               onWin={handleWin} 
               onBet={handleBet} 
               balance={profile?.balance || 0} 
+              onExit={() => setActiveGame(null)}
               minBet={gamesConfig['scratch']?.minBet || minBet} 
               winRate={gamesConfig['scratch']?.winRate || 40}
               multiplier={gamesConfig['scratch']?.multiplier || 4}
@@ -427,29 +423,16 @@ export default function GamesView({ profile }: { profile: any }) {
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-white"
+            className="fixed inset-0 z-[100] bg-[#050B14]"
           >
-             <div className="h-full flex flex-col pointer-events-auto">
-              <div className="p-4 flex items-center justify-between border-b border-neutral-100 shrink-0 bg-white">
-                <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-neutral-400 font-black uppercase text-[10px] hover:text-black transition-colors">
-                  <ChevronLeft size={16} /> Exit Game
-                </button>
-                <div className="flex flex-col items-end">
-                   <span className="text-[8px] font-black uppercase text-neutral-400 tracking-widest">Active Game</span>
-                   <span className="text-xs font-black italic">Plinko Pro</span>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto no-scrollbar pb-6 bg-white">
-                <div className="p-4">
-                  <PlinkoPro 
-                    onWin={handleWin} 
-                    onLoss={handleLoss} 
-                    balance={profile?.balance || 0} 
-                    config={gamesConfig['plinko'] || { minBet: 10, winRate: 45 }}
-                  />
-                </div>
-              </div>
-            </div>
+            <PlinkoPro 
+              onWin={handleWin} 
+              onBet={handleBet} 
+              balance={profile?.balance || 0} 
+              onExit={() => setActiveGame(null)}
+              minBet={gamesConfig['plinko']?.minBet || minBet}
+              winRate={gamesConfig['plinko']?.winRate || 45}
+            />
           </motion.div>
         )}
 
@@ -459,29 +442,16 @@ export default function GamesView({ profile }: { profile: any }) {
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-white"
+            className="fixed inset-0 z-[100] bg-[#0B0E11]"
           >
-             <div className="h-full flex flex-col pointer-events-auto">
-              <div className="p-4 flex items-center justify-between border-b border-neutral-100 shrink-0 bg-white">
-                <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-neutral-400 font-black uppercase text-[10px] hover:text-black transition-colors">
-                  <ChevronLeft size={16} /> Exit Game
-                </button>
-                <div className="flex flex-col items-end">
-                   <span className="text-[8px] font-black uppercase text-neutral-400 tracking-widest">Active Game</span>
-                   <span className="text-xs font-black italic">Mines Finder</span>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto no-scrollbar pb-6 bg-white">
-                <div className="p-4">
-                  <MinesFinder 
-                    onWin={handleWin} 
-                    onLoss={handleLoss} 
-                    balance={profile?.balance || 0} 
-                    config={gamesConfig['mines'] || { minBet: 10, winRate: 35 }}
-                  />
-                </div>
-              </div>
-            </div>
+            <MinesFinder 
+              onWin={handleWin} 
+              onBet={handleBet} 
+              balance={profile?.balance || 0} 
+              onExit={() => setActiveGame(null)}
+              minBet={gamesConfig['mines']?.minBet || minBet}
+              winRate={gamesConfig['mines']?.winRate || 70}
+            />
           </motion.div>
         )}
 

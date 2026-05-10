@@ -1,11 +1,10 @@
 import { motion } from "motion/react";
 import { LogOut, Share2, Shield, Globe, Bell, ChevronRight, Copy, Check, ArrowLeft, Zap } from "lucide-react";
-import { auth, db } from "../lib/firebase";
+import { auth, db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { signOut } from "firebase/auth";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, where, onSnapshot, orderBy, updateDoc, doc, getDocs, limit, increment, addDoc, writeBatch, getDoc, setDoc } from "firebase/firestore";
-import { handleFirestoreError, OperationType } from "../lib/firestore-errors";
 import PrivacyView from "./PrivacyView";
 
 type ActiveSection = 'main' | 'notifications' | 'privacy' | 'language' | 'favorites';
