@@ -61,9 +61,10 @@ export default function GamesView({ profile }: { profile: any }) {
           const image = data[`moreGame${i}Thumbnail`] || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=400&auto=format&fit=crop";
           const time = parseInt(data[`moreGame${i}Time`]) || 60;
           const reward = parseFloat(data[`moreGame${i}Reward`]) || 10;
+          const cost = parseFloat(data[`moreGame${i}Cost`]) || 0;
           
           if (url) {
-            moreGames.push({ id: `arcade_${i}`, title, url, image, time, reward, category: "Arcade" });
+            moreGames.push({ id: `arcade_${i}`, title, url, image, time, reward, cost, category: "Arcade" });
           }
         }
         
@@ -239,11 +240,35 @@ export default function GamesView({ profile }: { profile: any }) {
 
   const handleLaunchWebGame = async (game: any) => {
     if (!profile) return;
+    
+    // Check if session already active for this game
+    if (profile.arcadeSession?.status === 'active' && profile.arcadeSession?.gameId === game.id) {
+       window.open(game.url, '_blank');
+       return;
+    }
+
+    const cost = game.cost || 0;
+    if (profile.balance < cost) {
+       alert(`Insufficient balance! You need RS ${cost} to play this game.`);
+       return;
+    }
+
     try {
       const userId = profile.uid || profile.id;
       const userRef = doc(db, "users", userId);
+      
+      // Deduct bet if > 0
+      if (cost > 0) {
+        const success = await handleBet(cost);
+        if (!success) {
+           alert("Transactional error! Please try again.");
+           return;
+        }
+      }
+
       await updateDoc(userRef, {
         arcadeSession: {
+          gameId: game.id,
           title: game.title,
           startTime: new Date().toISOString(),
           duration: game.time,
@@ -252,6 +277,36 @@ export default function GamesView({ profile }: { profile: any }) {
         }
       });
       window.open(game.url, '_blank');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleClaimArcadeReward = async () => {
+    if (!profile || !profile.arcadeSession || profile.arcadeSession.status !== 'active') return;
+    
+    const { startTime, duration, reward } = profile.arcadeSession;
+    const elapsed = (new Date().getTime() - new Date(startTime).getTime()) / 1000;
+    
+    if (elapsed < duration) {
+      alert(`Please play for ${Math.ceil(duration - elapsed)} more seconds to claim your reward!`);
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, "users", profile.uid), {
+        balance: increment(reward),
+        arcadeSession: { status: 'completed', claimedAt: new Date().toISOString() }
+      });
+      await addDoc(collection(db, "transactions"), {
+        userId: profile.uid,
+        amount: reward,
+        type: 'win',
+        status: 'completed',
+        createdAt: new Date().toISOString(),
+        note: `Arcade Reward: ${profile.arcadeSession.title}`
+      });
+      alert(`Success! You earned RS ${reward}`);
     } catch (err) {
       console.error(err);
     }
@@ -439,27 +494,46 @@ export default function GamesView({ profile }: { profile: any }) {
                       {/* Game Info Overlay */}
                       {isArcade ? (
                         <>
-                          {/* Floating Title - Bottom Left */}
-                          <div className="absolute bottom-2 left-2 max-w-[50%]">
-                             <div className="bg-black/60 backdrop-blur-md px-2 py-1.5 rounded-lg border border-white/10 shadow-lg">
-                               <p className="text-[10px] font-black uppercase tracking-tight truncate leading-none text-white">{game.title}</p>
-                               <p className="text-[6px] font-bold text-orange-500/80 uppercase tracking-widest mt-0.5">Arcade Mode</p>
+                          {/* Minimal Top Header - Title */}
+                          <div className="absolute top-2 left-2 flex items-center gap-2">
+                             <div className="bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded border border-white/5">
+                               <p className="text-[9px] font-black uppercase tracking-tight text-white">{game.title}</p>
                              </div>
+                             {profile?.arcadeSession?.status === 'active' && profile?.arcadeSession?.gameId === game.id && (
+                               <div className="bg-orange-500 px-2 py-0.5 rounded text-[8px] font-black animate-pulse uppercase">Active</div>
+                             )}
                           </div>
 
-                          {/* Floating Stats - Bottom Right */}
+                          {/* Minimal Bottom Bar - Stats */}
                           <div className="absolute bottom-2 right-2">
-                             <div className="flex items-center gap-2 border border-white/10 bg-black/60 backdrop-blur-md px-2 py-1.5 rounded-xl shadow-lg">
-                                <div className="flex items-center gap-1">
-                                  <Radio size={8} className="text-orange-500 animate-pulse" />
-                                  <span className="text-[8px] font-black text-orange-500 uppercase tracking-widest">{game.time}S</span>
-                                </div>
-                                <div className="w-[1px] h-3 bg-white/10" />
-                                <div className="flex items-center gap-1">
-                                  <Trophy size={8} className="text-green-400" />
-                                  <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">RS {game.reward}</span>
-                                </div>
-                             </div>
+                             {profile?.arcadeSession?.status === 'active' && profile?.arcadeSession?.gameId === game.id ? (
+                               <button 
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   handleClaimArcadeReward();
+                                 }}
+                                 className="bg-green-500 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase shadow-lg shadow-green-500/20 active:scale-95 transition-all"
+                               >
+                                 Claim RS {game.reward}
+                               </button>
+                             ) : (
+                               <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-lg border border-white/5">
+                                  <div className="flex items-center gap-1">
+                                    <Coins size={7} className="text-yellow-400" />
+                                    <span className="text-[7px] font-black text-yellow-400 uppercase">{game.cost || 0}</span>
+                                  </div>
+                                  <div className="w-px h-2 bg-white/10" />
+                                  <div className="flex items-center gap-1">
+                                    <Radio size={7} className="text-orange-500" />
+                                    <span className="text-[7px] font-black text-orange-500 uppercase">{game.time}s</span>
+                                  </div>
+                                  <div className="w-px h-2 bg-white/10" />
+                                  <div className="flex items-center gap-1">
+                                    <Trophy size={7} className="text-green-400" />
+                                    <span className="text-[7px] font-black text-green-400 uppercase">RS {game.reward}</span>
+                                  </div>
+                               </div>
+                             )}
                           </div>
                         </>
                       ) : (

@@ -1321,9 +1321,9 @@ export default function AdminView() {
                                className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-orange-500"
                              />
                           </div>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-3 gap-3">
                              <div className="space-y-1">
-                                <label className="text-[8px] font-black uppercase text-neutral-400">Play Time (Seconds)</label>
+                                <label className="text-[8px] font-black uppercase text-neutral-400">Play Time (Sec)</label>
                                 <input 
                                   type="number" 
                                   value={(globalConfig as any)[`moreGame${num}Time`] || 60}
@@ -1337,6 +1337,15 @@ export default function AdminView() {
                                   type="number" 
                                   value={(globalConfig as any)[`moreGame${num}Reward`] || 10}
                                   onChange={(e) => updateConfig(`moreGame${num}Reward`, parseFloat(e.target.value))}
+                                  className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-orange-500 font-mono"
+                                />
+                             </div>
+                             <div className="space-y-1">
+                                <label className="text-[8px] font-black uppercase text-neutral-400">Play Cost (RS)</label>
+                                <input 
+                                  type="number" 
+                                  value={(globalConfig as any)[`moreGame${num}Cost`] || 0}
+                                  onChange={(e) => updateConfig(`moreGame${num}Cost`, parseFloat(e.target.value))}
                                   className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-orange-500 font-mono"
                                 />
                              </div>
@@ -1354,28 +1363,38 @@ export default function AdminView() {
                                    )}
                                 </div>
                                 <div className="flex-1 space-y-2">
-                                   <input 
-                                     type="file" 
-                                     id={`arcade-upload-${num}`} 
-                                     className="hidden" 
-                                     onChange={async (e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                          try {
-                                            const url = await uploadToCloudinary(file);
-                                            await updateConfig(`moreGame${num}Thumbnail`, url);
-                                          } catch (err) {
-                                            alert("Upload failed! Check network.");
-                                          }
-                                        }
-                                     }}
-                                   />
-                                   <label 
-                                     htmlFor={`arcade-upload-${num}`}
-                                     className="block w-full bg-neutral-900 text-white text-center py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest cursor-pointer active:scale-95 transition-all shadow-md"
-                                   >
-                                     Upload Image
-                                   </label>
+                                   <div className="flex gap-2">
+                                      <input 
+                                        type="text" 
+                                        value={(globalConfig as any)[`moreGame${num}Thumbnail`] || ''}
+                                        onChange={(e) => updateConfig(`moreGame${num}Thumbnail`, e.target.value)}
+                                        placeholder="Image URL..."
+                                        className="flex-1 bg-white border border-neutral-200 rounded-xl px-3 py-1.5 text-[10px] font-bold outline-none focus:border-orange-500"
+                                      />
+                                      <input 
+                                        type="file" 
+                                        id={`arcade-upload-${num}`} 
+                                        className="hidden" 
+                                        onChange={async (e) => {
+                                           const file = e.target.files?.[0];
+                                           if (file) {
+                                             try {
+                                               const url = await uploadToCloudinary(file);
+                                               await updateConfig(`moreGame${num}Thumbnail`, url);
+                                             } catch (err) {
+                                               alert("Upload failed!");
+                                             }
+                                           }
+                                        }}
+                                      />
+                                      <label 
+                                        htmlFor={`arcade-upload-${num}`}
+                                        className="bg-neutral-900 text-white px-3 py-1.5 rounded-xl font-black uppercase text-[8px] tracking-widest cursor-pointer active:scale-95 transition-all shadow-md flex items-center justify-center shrink-0"
+                                      >
+                                        Upload
+                                      </label>
+                                   </div>
+                                   <p className="text-[7px] text-neutral-400 uppercase font-black px-1">Paste URL or upload image file</p>
                                 </div>
                              </div>
                           </div>
