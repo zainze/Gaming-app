@@ -399,11 +399,13 @@ export default function GamesView({ profile }: { profile: any }) {
                <button onClick={() => setActiveCategory("All")} className="text-xs font-bold text-neutral-400 uppercase tracking-widest hover:text-white transition-colors">All &gt;</button>
             </div>
 
-            {/* Enhanced Game Grid (2 Columns) */}
+            {/* Enhanced Game Grid */}
             <div className="grid grid-cols-2 gap-3 px-4 pb-24">
               {filteredGames.map((game, idx) => {
                 const config = gamesConfig[game.id] || {};
                 const displayImage = config.image || game.image;
+                const isArcade = game.category === "Arcade";
+                
                 return (
                   <motion.div 
                     key={game.id} 
@@ -411,16 +413,16 @@ export default function GamesView({ profile }: { profile: any }) {
                     animate={{ opacity: 1, y: 0 }} 
                     transition={{ delay: idx * 0.05 }} 
                     onClick={() => game.url ? handleLaunchWebGame(game) : setActiveGame(game.id)} 
-                    className="relative group cursor-pointer"
+                    className={`relative group cursor-pointer ${isArcade ? 'col-span-2' : ''}`}
                   >
-                    <div className="aspect-[3/4] rounded-2xl overflow-hidden border border-white/10 bg-[#14254f] shadow-xl relative">
+                    <div className={`${isArcade ? 'aspect-[24/9]' : 'aspect-[3/4]'} rounded-2xl overflow-hidden border border-white/10 bg-[#14254f] shadow-xl relative`}>
                       <img 
                         src={displayImage} 
                         alt={game.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700" 
                         referrerPolicy="no-referrer" 
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
+                      <div className={`absolute inset-0 bg-gradient-to-t ${isArcade ? 'from-black/80 via-transparent' : 'from-black via-transparent'} to-transparent opacity-60`} />
                       
                       {/* Badges from Screenshot */}
                       <div className="absolute top-2 left-2 flex flex-col gap-1">
@@ -433,21 +435,41 @@ export default function GamesView({ profile }: { profile: any }) {
                            <Star size={10} className="text-yellow-500" fill="currentColor" />
                         </div>
                       </div>
+ 
+                      {/* Game Info Overlay */}
+                      {isArcade ? (
+                        <>
+                          {/* Floating Title - Bottom Left */}
+                          <div className="absolute bottom-2 left-2 max-w-[50%]">
+                             <div className="bg-black/60 backdrop-blur-md px-2 py-1.5 rounded-lg border border-white/10 shadow-lg">
+                               <p className="text-[10px] font-black uppercase tracking-tight truncate leading-none text-white">{game.title}</p>
+                               <p className="text-[6px] font-bold text-orange-500/80 uppercase tracking-widest mt-0.5">Arcade Mode</p>
+                             </div>
+                          </div>
 
-                      {/* Game Title Bar */}
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-md p-2 text-center border-t border-white/5 space-y-1">
-                         <div className="flex flex-col items-center">
-                            <p className="text-[10px] font-black uppercase tracking-tight truncate leading-none text-white">{game.title}</p>
-                            {game.category === "Arcade" && (
-                              <div className="mt-1 flex items-center justify-center gap-2 border border-white/10 bg-black/20 px-2 py-0.5 rounded-sm">
-                                <span className="text-[7px] font-black text-orange-500 uppercase tracking-tighter">{game.time}S</span>
-                                <div className="w-[1px] h-2 bg-white/10" />
-                                <span className="text-[7px] font-black text-green-400 uppercase tracking-tighter">RS {game.reward}</span>
-                              </div>
-                            )}
-                         </div>
-                         <p className="text-[8px] font-bold text-orange-400 uppercase tracking-widest leading-none">{game.category}</p>
-                      </div>
+                          {/* Floating Stats - Bottom Right */}
+                          <div className="absolute bottom-2 right-2">
+                             <div className="flex items-center gap-2 border border-white/10 bg-black/60 backdrop-blur-md px-2 py-1.5 rounded-xl shadow-lg">
+                                <div className="flex items-center gap-1">
+                                  <Radio size={8} className="text-orange-500 animate-pulse" />
+                                  <span className="text-[8px] font-black text-orange-500 uppercase tracking-widest">{game.time}S</span>
+                                </div>
+                                <div className="w-[1px] h-3 bg-white/10" />
+                                <div className="flex items-center gap-1">
+                                  <Trophy size={8} className="text-green-400" />
+                                  <span className="text-[8px] font-black text-green-400 uppercase tracking-widest">RS {game.reward}</span>
+                                </div>
+                             </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-md p-2 text-center border-t border-white/5">
+                           <div className="flex flex-col items-center space-y-1">
+                              <p className="text-[10px] font-black uppercase tracking-tight truncate leading-none text-white">{game.title}</p>
+                              <p className="text-[8px] font-bold text-orange-400 uppercase tracking-widest leading-none">{game.category}</p>
+                           </div>
+                        </div>
+                      )}
 
                       {/* Hover Overlay */}
                       <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity">
