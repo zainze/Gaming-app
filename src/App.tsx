@@ -222,21 +222,32 @@ export default function App() {
       <div className="min-h-screen bg-[#0b0e11] text-white font-sans selection:bg-orange-500/30">
         <div className="pb-24 max-w-lg mx-auto bg-[#1b2a5c] border-x border-white/5 min-h-screen relative shadow-2xl overflow-x-hidden">
           {/* Top Bar - Only show if not in a game/auth or if specifically needed */}
-          <header className="sticky top-0 z-50 bg-[#14254f] border-b border-white/5 p-4 flex items-center justify-between">
+          <header className="sticky top-0 z-50 bg-[#14254f]/90 backdrop-blur-2xl border-b border-white/5 p-4 flex items-center justify-between shadow-lg">
             <div className="flex items-center gap-2">
-              <div className="bg-orange-500 p-1 rounded-md">
-                 <Gamepad2 className="text-white" size={20} />
-              </div>
-              <h1 className="text-2xl font-black tracking-tighter italic text-white leading-none">988<span className="text-orange-500 italic">win</span></h1>
+              {systemConfig?.appLogo ? (
+                <img 
+                  src={systemConfig.appLogo} 
+                  alt="Logo" 
+                  className="h-8 w-auto object-contain"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <>
+                  <div className="bg-gradient-to-br from-orange-400 to-orange-600 p-1.5 rounded-lg shadow-inner">
+                     <Gamepad2 className="text-white drop-shadow-md" size={18} />
+                  </div>
+                  <h1 className="text-xl font-black tracking-tighter italic text-white leading-none">Dream<span className="text-orange-500 italic">Win</span></h1>
+                </>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {profile?.balance !== undefined ? (
-                <div className="bg-[#0b0e11] px-3 py-1 rounded-full border border-white/10 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span className="text-xs font-black italic">RS {profile.balance.toLocaleString()}</span>
+                <div className="bg-[#0b0e11]/60 px-3 py-1.5 rounded-2xl border border-white/10 flex items-center gap-2 shadow-inner">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                  <span className="text-[10px] font-black italic tracking-tight">PKR {profile.balance.toLocaleString()}</span>
                 </div>
               ) : (
-                <Search size={20} className="text-neutral-400 hover:text-orange-500 transition-colors cursor-pointer" />
+                <Search size={18} className="text-neutral-400 hover:text-orange-500 transition-colors cursor-pointer" />
               )}
             </div>
           </header>

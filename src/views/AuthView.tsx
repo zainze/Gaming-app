@@ -50,7 +50,7 @@ export default function AuthView() {
             )}
           </motion.div>
           <div className="space-y-1">
-            <h1 className="text-5xl font-black tracking-tighter uppercase italic text-neutral-900">h<span className="text-orange-500">666</span></h1>
+            <h1 className="text-5xl font-black tracking-tighter uppercase italic text-neutral-900">Dream<span className="text-orange-500">Win</span></h1>
             <p className="text-neutral-400 text-sm font-bold uppercase tracking-[0.3em]">The Ultimate Game Hub</p>
           </div>
         </div>
