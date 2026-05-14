@@ -131,6 +131,41 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "url", "type", "createdAt"]
+    },
+    "InvestmentPlan": {
+      "title": "Investment Plan",
+      "description": "Daily/Weekly/Monthly earning models.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "rewardType": { "type": "string", "enum": ["daily", "weekly", "monthly"] },
+        "rewardRate": { "type": "number", "description": "Percentage profit per period" },
+        "durationDays": { "type": "number" },
+        "minAmount": { "type": "number" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "rewardType", "rewardRate", "minAmount", "active"]
+    },
+    "UserInvestment": {
+      "title": "User Investment",
+      "description": "Tracks a user's active investment.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "planId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "completed"] },
+        "startDate": { "type": "string", "format": "date-time" },
+        "nextPayoutDate": { "type": "string", "format": "date-time" },
+        "totalEarned": { "type": "number" },
+        "lastPayoutDate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "planId", "amount", "status", "startDate"]
     }
   },
   "firestore": {
@@ -169,6 +204,14 @@
     "/assets/{assetId}": {
       "schema": "Asset",
       "description": "Media library assets"
+    },
+    "/investment_plans/{planId}": {
+      "schema": "InvestmentPlan",
+      "description": "Available investment tiers."
+    },
+    "/user_investments/{invId}": {
+      "schema": "UserInvestment",
+      "description": "Active user investments."
     },
     "/system/config": {
       "schema": {

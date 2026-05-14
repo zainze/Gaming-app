@@ -256,7 +256,9 @@ export default function App() {
           <AnimatePresence mode="wait">
             <Routes>
               <Route path="/" element={user ? <HomeView profile={profile} /> : <Navigate to="/auth" />} />
-              <Route path="/games" element={user ? <GamesView profile={profile} /> : <Navigate to="/auth" />} />
+              <Route path="/games" element={user ? (
+                <ViewConnector view="games" profile={profile} />
+              ) : <Navigate to="/auth" />} />
               <Route path="/wallet" element={user ? <WalletView profile={profile} /> : <Navigate to="/auth" />} />
               <Route path="/profile" element={user ? <ProfileView profile={profile} /> : <Navigate to="/auth" />} />
               <Route path="/admin" element={(user && (profile?.role === 'admin' || profile?.email === 'zainzeb333@gmail.com')) ? <AdminView /> : <Navigate to="/" />} />
@@ -286,4 +288,13 @@ export default function App() {
       </div>
     </BrowserRouter>
   );
+}
+
+function ViewConnector({ view, profile }: { view: string, profile: any }) {
+  const navigate = (path: string) => {
+    window.location.href = '/' + path;
+  };
+
+  if (view === 'games') return <GamesView profile={profile} onNavigate={navigate} />;
+  return null;
 }

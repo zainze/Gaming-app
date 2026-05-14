@@ -47,6 +47,23 @@ service cloud.firestore {
         && data.active is bool;
     }
 
+    function isValidInvestmentPlan(data) {
+      return data.keys().hasAll(['title', 'rewardType', 'rewardRate', 'minAmount', 'active'])
+        && data.title is string && data.title.size() <= 100
+        && data.rewardType in ['daily', 'weekly', 'monthly']
+        && data.rewardRate is number
+        && data.minAmount is number
+        && data.active is bool;
+    }
+
+    function isValidUserInvestment(data) {
+      return data.keys().hasAll(['userId', 'planId', 'amount', 'status', 'startDate'])
+        && data.userId == request.auth.uid
+        && data.amount is number
+        && data.status in ['active', 'completed']
+        && data.startDate is string;
+    }
+
     // --- Collections ---
 
     match /admins/{adminId} {
@@ -158,6 +175,23 @@ service cloud.firestore {
         incoming().type in ['image', 'audio', 'video', 'icon'];
       allow delete: if isAdmin();
       allow update: if false;
+    }
+
+    match /investment_plans/{planId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /user_investments/{invId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidUserInvestment(incoming());
+      allow update: if isAdmin() || (
+        isSignedIn() && resource.data.userId == request.auth.uid
+        && incoming().diff(existing()).affectedKeys().hasOnly(['totalEarned', 'lastPayoutDate', 'nextPayoutDate', 'status'])
+        && incoming().userId == existing().userId
+      );
+      allow delete: if isAdmin();
     }
   }
 }

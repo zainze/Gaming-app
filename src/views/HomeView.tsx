@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
-import { Gift, TrendingUp, Users, Timer, Sparkles } from "lucide-react";
+import { Gift, TrendingUp, Users, Timer, Sparkles, CheckCircle2, AlertCircle, Trophy } from "lucide-react";
 import { useState, useEffect } from "react";
-import { collection, query, where, getDocs, onSnapshot, doc, updateDoc, increment, addDoc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, onSnapshot, doc, updateDoc, increment, addDoc, getDoc, arrayUnion } from "firebase/firestore";
 import { handleFirestoreError, OperationType } from "../lib/firebase";
 import { db } from "../lib/firebase";
 import { formatCurrency } from "../lib/utils";
@@ -62,6 +62,7 @@ export default function HomeView({ profile }: { profile: any }) {
   const [gamesConfig, setGamesConfig] = useState<Record<string, any>>({});
   const [promoCode, setPromoCode] = useState("");
   const [promoLoading, setPromoLoading] = useState(false);
+  const [promoStatus, setPromoStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: "" });
   const [systemConfig, setSystemConfig] = useState<any>(null);
 
   useEffect(() => {
@@ -139,13 +140,14 @@ export default function HomeView({ profile }: { profile: any }) {
   const handleRedeemPromo = async () => {
     if (!profile || !promoCode || promoLoading) return;
     setPromoLoading(true);
+    setPromoStatus({ type: null, message: "" });
     playSound('click');
     try {
       const codeRef = doc(db, "promo_codes", promoCode.toUpperCase().trim());
       const codeSnap = await getDoc(codeRef);
       
       if (!codeSnap.exists() || !codeSnap.data().active) {
-        alert("Invalid or expired promo code!");
+        setPromoStatus({ type: 'error', message: "Invalid or expired code!" });
         return;
       }
 
@@ -153,12 +155,9 @@ export default function HomeView({ profile }: { profile: any }) {
       const usedBy = codeData.usedBy || [];
       
       if (usedBy.includes(profile.uid)) {
-        alert("You have already used this promo code!");
+        setPromoStatus({ type: 'error', message: "Already redeemed by you!" });
         return;
       }
-
-      // If it's a daily code, we might need a separate check for today
-      // For now, standard one-time use per user per code as defined in admin
       
       const reward = Number(codeData.value) || 0;
 
@@ -170,7 +169,7 @@ export default function HomeView({ profile }: { profile: any }) {
           userId: profile.uid,
           amount: reward,
           type: 'bonus',
-          method: 'Promo Code: ' + promoCode,
+          method: 'Voucher: ' + promoCode.toUpperCase().trim(),
           status: 'completed',
           createdAt: new Date().toISOString()
         });
@@ -184,14 +183,21 @@ export default function HomeView({ profile }: { profile: any }) {
       }
 
       await updateDoc(codeRef, {
-        usedBy: [...usedBy, profile.uid]
+        usedBy: arrayUnion(profile.uid)
       });
 
       playSound('win');
-      alert(`Success! Reward logic applied: ${codeData.type === 'balance' ? `${formatCurrency(reward)} added!` : `24H Double Rewards active!`}`);
+      setPromoStatus({ 
+        type: 'success', 
+        message: codeData.type === 'balance' ? `RS ${reward} Added to Wallet!` : `24H Double Rewards Activated!` 
+      });
       setPromoCode("");
+      
+      // Auto-clear success message after 5s
+      setTimeout(() => setPromoStatus({ type: null, message: "" }), 5000);
     } catch (err: any) {
       handleFirestoreError(err, OperationType.WRITE, "promo_redemption");
+      setPromoStatus({ type: 'error', message: "System error. Try again." });
     } finally {
       setPromoLoading(false);
     }
@@ -333,26 +339,49 @@ export default function HomeView({ profile }: { profile: any }) {
         </div>
       </section>
 
-      {/* Promo Code Section */}
+      {/* Voucher Redemption Section */}
       <section className="px-6">
-         <div className="bg-[#14254f] border border-white/10 p-6 rounded-[2.5rem] shadow-2xl space-y-4">
-            <h4 className="font-black text-xs uppercase tracking-[0.3em] text-white/60 pl-1">Voucher Redemption</h4>
+         <div className="bg-[#14254f] border border-white/10 p-6 rounded-[2.5rem] shadow-2xl space-y-4 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
+               <Trophy size={60} className="text-orange-500" />
+            </div>
+            
+            <div className="flex items-center justify-between pl-1">
+               <h4 className="font-black text-xs uppercase tracking-[0.3em] text-white/60">Voucher Redemption</h4>
+               {promoStatus.type && (
+                 <motion.div 
+                   initial={{ opacity: 0, x: 10 }}
+                   animate={{ opacity: 1, x: 0 }}
+                   className={`flex items-center gap-1.5 ${promoStatus.type === 'success' ? 'text-green-400' : 'text-red-400'}`}
+                 >
+                   {promoStatus.type === 'success' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                   <span className="text-[9px] font-black uppercase tracking-tight">{promoStatus.message}</span>
+                 </motion.div>
+               )}
+            </div>
+
             <div className="relative">
                <input 
                  type="text"
                  value={promoCode}
                  onChange={(e) => setPromoCode(e.target.value)}
+                 disabled={promoLoading}
                  placeholder="INPUT VOUCHER CODE"
-                 className="w-full bg-[#0b0e11] border border-white/5 focus:border-orange-500 outline-none rounded-2xl p-4 text-sm font-black uppercase tracking-widest placeholder:text-white/20 transition-all shadow-inner"
+                 className={`w-full bg-[#0b0e11] border ${promoStatus.type === 'error' ? 'border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : promoStatus.type === 'success' ? 'border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.1)]' : 'border-white/5 focus:border-orange-500'} outline-none rounded-2xl p-4 text-sm font-black uppercase tracking-widest placeholder:text-white/20 transition-all shadow-inner`}
                />
                <button 
                  onClick={handleRedeemPromo}
                  disabled={promoLoading}
-                 className="absolute right-2 top-2 bottom-2 bg-orange-500 hover:bg-orange-400 px-6 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20 active:scale-95 transition-all text-white"
+                 className="absolute right-2 top-2 bottom-2 bg-orange-500 hover:bg-orange-400 px-6 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20 active:scale-95 transition-all text-white flex items-center justify-center min-w-[100px]"
                >
-                 {promoLoading ? '...' : 'Process'}
+                 {promoLoading ? (
+                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                 ) : 'Redeem'}
                </button>
             </div>
+            <p className="text-[8px] font-bold text-white/20 uppercase italic tracking-wider pl-1">
+               * Codes are shared in our WhatsApp community
+            </p>
          </div>
       </section>
     </motion.main>

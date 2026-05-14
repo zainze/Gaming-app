@@ -21,11 +21,13 @@ import {
   Coins,
   Gem,
   ExternalLink,
-  MessageCircleMore
+  MessageCircleMore,
+  User
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { doc, updateDoc, increment, addDoc, collection, onSnapshot } from "firebase/firestore";
+import { doc, updateDoc, increment, addDoc, collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
+import InvestmentView from "./InvestmentView";
 
 // Game Components
 import CoinFlip from "../components/CoinFlip";
@@ -40,15 +42,23 @@ import { PlinkoPro } from "../components/PlinkoPro";
 import { MinesFinder } from "../components/MinesFinder";
 import { GoldScratch } from "../components/GoldScratch";
 
-export default function GamesView({ profile }: { profile: any }) {
+export default function GamesView({ profile, onNavigate }: { profile: any, onNavigate: (view: string) => void }) {
   const [activeGame, setActiveGame] = useState<string | null>(null);
   const [arcadeGames, setArcadeGames] = useState<any[]>([]);
   const [minBet, setMinBet] = useState(10);
   const [gamesConfig, setGamesConfig] = useState<Record<string, any>>({});
   const [gamesList, setGamesList] = useState<any[]>([]);
   const [activeCategory, setActiveCategory] = useState("All");
+  const [showVIP, setShowVIP] = useState(false);
+  const [latestPlayers, setLatestPlayers] = useState<any[]>([]);
 
   useEffect(() => {
+    // Listen for new players
+    const qPlayers = query(collection(db, "users"), orderBy("createdAt", "desc"), limit(10));
+    const unsubPlayers = onSnapshot(qPlayers, (snap) => {
+      setLatestPlayers(snap.docs.map(d => d.data()));
+    });
+
     const unsubGlobal = onSnapshot(doc(db, "system", "config"), (snap) => {
       if (snap.exists()) {
         const data = snap.data();
@@ -114,11 +124,11 @@ export default function GamesView({ profile }: { profile: any }) {
   ];
 
   const quickLinks = [
-    { name: "Invitation", icon: UserPlus, color: "from-green-400 to-green-600" },
-    { name: "Newplayer", icon: Gift, color: "from-blue-400 to-blue-600" },
-    { name: "Deposit", icon: Coins, color: "from-yellow-400 to-yellow-600" },
-    { name: "Spins", icon: Radio, color: "from-orange-400 to-orange-600" },
-    { name: "VIP", icon: Gem, color: "from-purple-400 to-purple-600" },
+    { name: "Invitation", icon: UserPlus, color: "from-green-400 to-green-600", action: () => onNavigate('profile') },
+    { name: "Newplayer", icon: Gift, color: "from-blue-400 to-blue-600", action: () => setActiveCategory('All') },
+    { name: "Deposit", icon: Coins, color: "from-yellow-400 to-yellow-600", action: () => onNavigate('wallet') },
+    { name: "Spins", icon: Radio, color: "from-orange-400 to-orange-600", action: () => setActiveGame('spin') },
+    { name: "VIP", icon: Gem, color: "from-purple-400 to-purple-600", action: () => setShowVIP(true) },
   ];
 
   const defaultGamesMeta: Record<string, any> = {
@@ -317,6 +327,10 @@ export default function GamesView({ profile }: { profile: any }) {
   return (
     <div className={`relative w-full h-full bg-[#1b2a5c] ${isFullScreen ? 'overflow-hidden' : ''} text-white`}>
       <AnimatePresence mode="wait">
+        {showVIP && (
+           <InvestmentView profile={profile} onBack={() => setShowVIP(false)} />
+        )}
+
         {activeGame === 'slipper' && (
           <motion.div key="slipper" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="fixed inset-0 z-[100] bg-[#050B14] p-4 flex flex-col">
             <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-neutral-400 font-bold uppercase text-xs mb-4 hover:text-white transition-colors group">
@@ -399,13 +413,37 @@ export default function GamesView({ profile }: { profile: any }) {
             {/* Quick Links Row */}
             <div className="grid grid-cols-5 gap-2 px-4 py-6 bg-[#1a2c5a]">
                {quickLinks.map((link) => (
-                 <div key={link.name} className="flex flex-col items-center gap-2">
+                 <button 
+                  key={link.name} 
+                  onClick={link.action}
+                  className="flex flex-col items-center gap-2 active:scale-90 transition-transform"
+                 >
                     <div className={`w-14 h-14 rounded-full bg-gradient-to-tr ${link.color} flex items-center justify-center border-4 border-[#14254f] shadow-lg`}>
                        <link.icon className="text-white" size={24} />
                     </div>
                     <span className="text-[9px] font-bold text-white/80 uppercase tracking-tighter text-center">{link.name}</span>
-                 </div>
+                 </button>
                ))}
+            </div>
+
+            {/* New Player Ticker Display */}
+            <div className="px-4 py-2 bg-black/20 flex items-center gap-4 overflow-hidden border-y border-white/5">
+                <div className="flex items-center gap-1 shrink-0">
+                  <Sparkles size={12} className="text-yellow-400" />
+                  <span className="text-[9px] font-black uppercase text-white/40">New:</span>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                   <div className="flex gap-6 animate-marquee">
+                      {latestPlayers.map((u, i) => (
+                        <div key={i} className="flex items-center gap-2 shrink-0">
+                           <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center overflow-hidden">
+                              {u.photoURL ? <img src={u.photoURL} className="w-full h-full object-cover" /> : <User size={8} />}
+                           </div>
+                           <span className="text-[10px] font-bold text-blue-200">{u.displayName?.split(' ')[0] || 'Player'} Joined!</span>
+                        </div>
+                      ))}
+                   </div>
+                </div>
             </div>
 
             {/* Banner Section */}
@@ -555,18 +593,6 @@ export default function GamesView({ profile }: { profile: any }) {
                   </motion.div>
                 );
               })}
-            </div>
-
-            {/* Floating Action Button (WhatsApp) */}
-            <div className="fixed right-4 bottom-28 z-40 space-y-4">
-               <motion.button
-                 whileHover={{ scale: 1.1 }}
-                 whileTap={{ scale: 0.9 }}
-                 className="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center shadow-2xl border-4 border-white/20 relative"
-               >
-                 <MessageCircleMore className="text-white" size={32} />
-                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white animate-bounce">2</span>
-               </motion.button>
             </div>
           </motion.div>
         )}

@@ -21,7 +21,8 @@ import {
   Image as ImageIcon,
   Plus,
   Trash2,
-  Landmark
+  Landmark,
+  Copy
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
@@ -42,7 +43,7 @@ type Transaction = {
   transactionId?: string;
 };
 
-type Tab = 'dashboard' | 'users' | 'requests' | 'ledger' | 'broadcast' | 'settings' | 'games' | 'banners' | 'promos' | 'assets';
+type Tab = 'dashboard' | 'users' | 'requests' | 'ledger' | 'broadcast' | 'settings' | 'games' | 'banners' | 'promos' | 'assets' | 'investments';
 
 export default function AdminView() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -70,6 +71,8 @@ export default function AdminView() {
   const [promos, setPromos] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
   const [assetsList, setAssetsList] = useState<any[]>([]);
+  const [investmentPlans, setInvestmentPlans] = useState<any[]>([]);
+  const [userInvestments, setUserInvestments] = useState<any[]>([]);
   const [uploadingGameId, setUploadingGameId] = useState<string | null>(null);
   const [uploadingBannerId, setUploadingBannerId] = useState<string | null>(null);
   const [uploadingAsset, setUploadingAsset] = useState(false);
@@ -177,6 +180,18 @@ export default function AdminView() {
       handleFirestoreError(err, OperationType.GET, "assets");
     });
 
+    const unsubInvestmentPlans = onSnapshot(query(collection(db, "investment_plans"), orderBy("createdAt", "desc")), (snap) => {
+      setInvestmentPlans(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, "investment_plans");
+    });
+
+    const unsubUserInvestments = onSnapshot(query(collection(db, "user_investments"), orderBy("startDate", "desc"), limit(50)), (snap) => {
+      setUserInvestments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, "user_investments");
+    });
+
     return () => {
       unsubPending();
       unsubLedger();
@@ -184,6 +199,8 @@ export default function AdminView() {
       unsubGames();
       unsubRecentUsers();
       unsubAssets();
+      unsubInvestmentPlans();
+      unsubUserInvestments();
     };
   }, []);
 
@@ -276,6 +293,7 @@ export default function AdminView() {
     { id: 'assets', label: 'Asset Library', icon: Upload },
     { id: 'settings', label: 'Platform Config', icon: Settings2 },
     { id: 'promos', label: 'Vouchers', icon: Trophy },
+    { id: 'investments', label: 'Investments', icon: TrendingUp },
   ];
 
   return (
@@ -302,6 +320,154 @@ export default function AdminView() {
 
       <main className="flex-1 p-4 pb-24 overflow-y-auto">
         <AnimatePresence mode="wait">
+          {activeTab === 'investments' && (
+            <motion.div key="investments" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
+              {/* Create/Edit Plan */}
+              <div className="bg-white border border-neutral-100 p-6 rounded-3xl space-y-4 shadow-sm">
+                <div className="space-y-1">
+                  <h4 className="font-black uppercase italic text-neutral-900">Investment Architect</h4>
+                  <p className="text-[9px] font-black text-neutral-400 tracking-widest uppercase">Configure high-yield investment models</p>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-neutral-100">
+                   <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5 col-span-2">
+                        <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Plan Title</label>
+                        <input id="plan-title" type="text" placeholder="Quantum Growth Tier 1" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-bold text-xs" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Earning Type</label>
+                        <select id="plan-type" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs uppercase">
+                          <option value="daily">Daily Profit</option>
+                          <option value="weekly">Weekly Profit</option>
+                          <option value="monthly">Monthly Profit</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Profit Rate (%)</label>
+                        <input id="plan-rate" type="number" placeholder="5" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Min Investment (RS)</label>
+                        <input id="plan-min" type="number" placeholder="1000" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Duration (Days)</label>
+                        <input id="plan-duration" type="number" placeholder="30" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs" />
+                      </div>
+                   </div>
+                   
+                   <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Plan Image (Cloudinary)</label>
+                      <div className="flex gap-2">
+                         <input id="plan-img-url" type="text" placeholder="https://..." className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 text-[10px] font-bold" />
+                         <input type="file" id="plan-img-file" className="hidden" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                               try {
+                                  const url = await uploadToCloudinary(file);
+                                  (document.getElementById('plan-img-url') as HTMLInputElement).value = url;
+                               } catch (err) { alert("Upload failed"); }
+                            }
+                         }} />
+                         <label htmlFor="plan-img-file" className="bg-neutral-900 text-white px-4 py-2 rounded-xl text-[8px] font-black uppercase flex items-center justify-center cursor-pointer">Upload</label>
+                      </div>
+                   </div>
+
+                   <button 
+                     onClick={async () => {
+                        const title = (document.getElementById('plan-title') as HTMLInputElement).value;
+                        const type = (document.getElementById('plan-type') as HTMLSelectElement).value;
+                        const rate = parseFloat((document.getElementById('plan-rate') as HTMLInputElement).value);
+                        const min = parseFloat((document.getElementById('plan-min') as HTMLInputElement).value);
+                        const duration = parseFloat((document.getElementById('plan-duration') as HTMLInputElement).value);
+                        const imageUrl = (document.getElementById('plan-img-url') as HTMLInputElement).value;
+                        
+                        if (!title || isNaN(rate) || isNaN(min)) return;
+                        
+                        await addDoc(collection(db, "investment_plans"), {
+                          title,
+                          rewardType: type,
+                          rewardRate: rate,
+                          minAmount: min,
+                          durationDays: duration || 30,
+                          imageUrl: imageUrl || "https://images.unsplash.com/photo-1611974717535-7cf2bd635c0a?q=80&w=400&auto=format&fit=crop",
+                          active: true,
+                          createdAt: new Date().toISOString()
+                        });
+                        alert("Investment Plan Deployed!");
+                     }}
+                     className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
+                   >
+                     Launch Investment Plan
+                   </button>
+                </div>
+              </div>
+
+              {/* Active Plans List */}
+              <div className="space-y-3">
+                 <p className="text-[10px] font-black uppercase text-neutral-400 tracking-widest pl-1">Marketplace Models</p>
+                 <div className="grid gap-3">
+                    {investmentPlans.map(p => (
+                       <div key={p.id} className="bg-white border border-neutral-100 p-4 rounded-3xl flex items-center justify-between shadow-sm group">
+                          <div className="flex items-center gap-4">
+                             <div className="w-14 h-14 bg-neutral-50 rounded-2xl overflow-hidden border border-neutral-100">
+                                <img src={p.imageUrl} className="w-full h-full object-cover" alt="Plan" />
+                             </div>
+                             <div>
+                                <p className="text-sm font-black uppercase italic text-neutral-900 tracking-tighter">{p.title}</p>
+                                <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">
+                                   {p.rewardRate}% {p.rewardType} • Min: RS {p.minAmount}
+                                </p>
+                             </div>
+                          </div>
+                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <button 
+                               onClick={async () => {
+                                  if (confirm("Deactivate this plan?")) {
+                                     await updateDoc(doc(db, "investment_plans", p.id), { active: false });
+                                  }
+                               }}
+                               className="p-2 text-red-400 hover:text-red-600 hover:bg-neutral-50 rounded-xl"
+                             >
+                                <Trash2 size={16} />
+                             </button>
+                          </div>
+                       </div>
+                    ))}
+                    {investmentPlans.length === 0 && (
+                       <div className="py-10 text-center bg-neutral-50 rounded-3xl border border-dashed border-neutral-200">
+                          <TrendingUp className="mx-auto text-neutral-200 mb-2" size={32} />
+                          <p className="text-neutral-400 font-black uppercase text-[8px]">No investment plans active</p>
+                       </div>
+                    )}
+                 </div>
+              </div>
+
+              {/* User Investments Audit */}
+              <div className="space-y-3">
+                 <div className="flex items-center justify-between px-1">
+                    <p className="text-[10px] font-black uppercase text-neutral-400 tracking-widest">Active Stakes Audit</p>
+                    <span className="text-[8px] font-black text-blue-500 uppercase">{userInvestments.length} Active Positions</span>
+                 </div>
+                 <div className="space-y-2">
+                    {userInvestments.map(inv => (
+                       <div key={inv.id} className="bg-white border border-neutral-100 p-4 rounded-2xl flex items-center justify-between shadow-sm">
+                          <div>
+                             <p className="text-[10px] font-black text-neutral-900 uppercase">User: {inv.userId.substring(0, 8)}...</p>
+                             <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest">Stake: RS {inv.amount} • Earned: RS {inv.totalEarned || 0}</p>
+                          </div>
+                          <div className="text-right">
+                             <p className="text-[9px] font-black text-blue-600 uppercase">Next: {new Date(inv.nextPayoutDate).toLocaleDateString()}</p>
+                             <p className={`text-[7px] font-black uppercase ${inv.status === 'active' ? 'text-green-500' : 'text-neutral-300'}`}>{inv.status}</p>
+                          </div>
+                       </div>
+                    ))}
+                 </div>
+              </div>
+            </motion.div>
+          )}
+
           {activeTab === 'dashboard' && (
             <motion.div key="dash" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
               <div className="grid grid-cols-2 gap-3">
@@ -644,27 +810,45 @@ export default function AdminView() {
                     </p>
                   ) : (
                     promos.map(p => (
-                      <div key={p.code} className="bg-white border border-neutral-100 p-4 rounded-2xl flex items-center justify-between shadow-sm">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-neutral-50 rounded-xl flex items-center justify-center font-mono font-black text-xs text-orange-500">{p.code[0]}</div>
+                      <div key={p.code} className="bg-white border border-neutral-100 p-4 rounded-3xl flex items-center justify-between shadow-sm group">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-mono font-black text-lg shadow-inner ${p.type === 'balance' ? 'bg-orange-500/10 text-orange-500' : 'bg-blue-500/10 text-blue-500'}`}>
+                             {p.code[0]}
+                          </div>
                           <div>
-                            <p className="text-xs font-black uppercase italic text-neutral-900">{p.code}</p>
-                            <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-tighter">
-                              {p.type === 'balance' ? `Reward: RS ${p.value}` : p.type} • Used: {p.usedBy?.length || 0}
+                            <div className="flex items-center gap-2">
+                               <p className="text-sm font-black uppercase italic text-neutral-900 tracking-tighter">{p.code}</p>
+                               {p.active ? (
+                                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                               ) : (
+                                 <span className="w-1.5 h-1.5 bg-neutral-300 rounded-full" />
+                               )}
+                            </div>
+                            <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest mt-0.5">
+                              {p.type === 'balance' ? `Reward: RS ${p.value}` : '24H Boost'} • {p.usedBy?.length || 0} Claims
                             </p>
                           </div>
                         </div>
-                        <button 
-                          onClick={async () => {
-                            if (confirm("Delete this promo?")) {
-                              // We'll set active false or delete
-                              await updateDoc(doc(db, "promo_codes", p.code), { active: false });
-                            }
-                          }}
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                           <button 
+                             onClick={() => {
+                               navigator.clipboard.writeText(p.code);
+                             }}
+                             className="p-2 hover:bg-neutral-100 rounded-xl text-neutral-400 hover:text-orange-500 transition-all border border-transparent hover:border-neutral-200"
+                           >
+                             <Copy size={16} />
+                           </button>
+                           <button 
+                             onClick={async () => {
+                               if (confirm("Deactivate this promo?")) {
+                                 await updateDoc(doc(db, "promo_codes", p.code), { active: false });
+                               }
+                             }}
+                             className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
+                           >
+                             <Trash2 size={16} />
+                           </button>
+                        </div>
                       </div>
                     ))
                   )}
