@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { LogOut, Plus, Minus, Play, Sparkles, Trophy, Zap, History, MousePointer2, RefreshCw } from 'lucide-react';
+import { LogOut, Plus, Minus, Play, Sparkles, Trophy, Zap, History, MousePointer2, RefreshCw, ArrowLeft, Ticket } from 'lucide-react';
 import { playSound, stopSound } from '../lib/sounds';
 import confetti from 'canvas-confetti';
 
@@ -45,42 +45,73 @@ export const GoldScratch: React.FC<GoldScratchProps> = ({
     canvas.width = rect.width;
     canvas.height = rect.height;
 
-    // Premium Gold Metallic Texture
+    // Premium Pink-Purple Gradient from image
     const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    gradient.addColorStop(0, '#D4AF37'); // Metallic Gold
-    gradient.addColorStop(0.2, '#F9E27E'); // Light highlight
-    gradient.addColorStop(0.5, '#B8860B'); // Darker gold
-    gradient.addColorStop(0.8, '#FFD700'); // Pure Gold
-    gradient.addColorStop(1, '#8B4513'); // Deep shadows
+    gradient.addColorStop(0, '#FF4B91'); 
+    gradient.addColorStop(1, '#7848FF'); 
     
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Decorative sparkles / noise
-    for (let i = 0; i < 200; i++) {
-        ctx.beginPath();
-        ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 1.5, 0, Math.PI * 2);
-        ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)';
-        ctx.fill();
+    // Add faint decorative patterns (fireworks/stars from image)
+    ctx.globalAlpha = 0.2;
+    for (let j = 0; j < 6; j++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        drawStar(ctx, x, y, 5, 5, 12);
     }
+    ctx.globalAlpha = 1.0;
 
-    // Border
-    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-    ctx.lineWidth = 10;
-    ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+    // Draw central Trophy design from image (This is the "Logo" on the scratch surface)
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    
+    // Middle Circle with glow
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 20;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 70, 0, Math.PI * 2);
+    ctx.fillStyle = '#6328BB';
+    ctx.fill();
+    ctx.shadowBlur = 0;
 
-    // Label
-    ctx.shadowColor = 'rgba(0,0,0,0.3)';
-    ctx.shadowBlur = 4;
-    ctx.fillStyle = '#451a03';
-    ctx.font = '900 24px Inter';
+    // Trophy Icon - since we are in canvas, we can't easily use Lucide, so we draw a simple trophy or just text
+    ctx.fillStyle = '#FFD700'; // Gold
+    ctx.font = '70px Inter';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('SCRATCH TO REVEAL', canvas.width / 2, canvas.height / 2);
-    
+    ctx.fillText('🏆', centerX, centerY);
+
+    // Text Label (Move to bottom)
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
     ctx.font = 'bold 12px Inter';
-    ctx.fillText('WIN UP TO ' + (bet * multiplier) + ' RS', canvas.width / 2, (canvas.height / 2) + 30);
+    ctx.fillText('SCRATCH TO REVEAL', centerX, canvas.height - 40);
   }, [bet, multiplier]);
+
+  const drawStar = (ctx: CanvasRenderingContext2D, cx: number, cy: number, spikes: number, outerRadius: number, innerRadius: number) => {
+    let rot = Math.PI / 2 * 3;
+    let x = cx;
+    let y = cy;
+    let step = Math.PI / spikes;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - outerRadius);
+    for (let i = 0; i < spikes; i++) {
+        x = cx + Math.cos(rot) * outerRadius;
+        y = cy + Math.sin(rot) * outerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+
+        x = cx + Math.cos(rot) * innerRadius;
+        y = cy + Math.sin(rot) * innerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+    }
+    ctx.lineTo(cx, cy - outerRadius);
+    ctx.closePath();
+    ctx.strokeStyle = 'white';
+    ctx.stroke();
+  };
 
   useEffect(() => {
     if (isPlaying && !revealed) {
@@ -201,38 +232,45 @@ export const GoldScratch: React.FC<GoldScratchProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#050B14] text-white font-sans overflow-hidden">
+    <div className="flex flex-col h-full bg-[#0B0D18] text-white font-sans overflow-hidden">
       {/* Background Decorative */}
-      <div className="absolute inset-0 pointer-events-none opacity-20">
-        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-amber-500 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500 blur-[120px] rounded-full" />
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+         <div className="absolute top-[20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 blur-[100px] rounded-full" />
+         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-white/5 blur-[80px] rounded-full" />
       </div>
 
-      <header className="flex items-center justify-between px-3 h-14 bg-[#0a121e] border-b border-[#1a2b45] relative z-20 shrink-0">
-        <div className="flex items-center gap-2">
-          <Sparkles className="text-amber-400" size={20} />
-          <span className="text-amber-400 font-black italic tracking-tighter text-lg uppercase whitespace-nowrap">Gold Scratch</span>
-        </div>
-        
-        <div className="flex items-center gap-2 bg-black/60 rounded-full px-3 py-1.5 border border-[#1a2b45] shadow-lg">
-          <div className="w-3.5 h-3.5 rounded-full bg-[#FBCB35] flex items-center justify-center shadow-[0_0_10px_rgba(251,203,53,0.3)]">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#14171A]" />
-          </div>
-          <span className="text-[#32D74B] font-black text-xs leading-none">RS {balance.toFixed(0)}</span>
-        </div>
-
+      <header className="flex items-center justify-between px-4 h-16 bg-transparent relative z-20 shrink-0">
         <button 
           onClick={onExit}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 text-red-500 rounded-lg border border-red-500/20 active:scale-95 transition-all hover:bg-red-500/20 shadow-lg"
+          className="p-2 hover:bg-white/5 rounded-full transition-colors"
         >
-          <LogOut size={14} />
-          <span className="text-[10px] font-black uppercase tracking-widest">Quit</span>
+          <ArrowLeft size={24} />
         </button>
+        <span className="text-white font-bold text-base tracking-tight">Scratch Card</span>
+        <div className="w-10" />
       </header>
 
-      <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10 min-h-0">
+      {/* Scratch Card Left Info Bar - from image */}
+      <div className="px-5 mt-2 relative z-20">
+        <div className="bg-[#1C1F3D] border border-white/5 rounded-xl p-3 flex items-center justify-between shadow-lg">
+           <div className="flex items-center gap-3">
+              <div className="w-10 h-8 bg-black/40 rounded-lg flex items-center justify-center border border-white/5 italic">
+                 <Ticket className="text-orange-500" size={18} fill="currentColor" />
+              </div>
+              <div className="flex flex-col">
+                 <span className="text-[10px] font-bold text-white leading-tight">Scratch Card left</span>
+                 <span className="text-[9px] text-white/40 leading-tight">Scratch and get your rewards instantly, receive in bal</span>
+              </div>
+           </div>
+           <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center font-bold text-sm">
+              10
+           </div>
+        </div>
+      </div>
+
+      <div className="flex-1 flex flex-col items-center justify-start pt-8 p-6 relative z-10 min-h-0">
         {/* Main Stage */}
-        <div className="w-full max-w-lg aspect-[5/4] bg-[#0a121e] border-4 border-[#1a2b45] rounded-[2.5rem] p-6 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center">
+        <div className="w-full max-w-sm aspect-square bg-[#0a121e] border-2 border-white/5 rounded-[1rem] p-0 shadow-2xl relative overflow-hidden">
           {/* Card Decorations */}
           <div className="absolute top-4 left-6 flex flex-col gap-0.5 opacity-20">
              <span className="text-[8px] font-black uppercase font-mono tracking-widest text-amber-500">PlayHub Secure Ticket</span>
@@ -276,7 +314,7 @@ export const GoldScratch: React.FC<GoldScratchProps> = ({
                 className="w-full h-full relative group"
               >
                 {/* Underneath Content (Prize) */}
-                <div className="absolute inset-0 bg-[#070d18] rounded-3xl overflow-hidden border border-[#23354d] flex flex-col items-center justify-center">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#0a121e] to-[#050B14] rounded-2xl overflow-hidden border border-white/5 flex flex-col items-center justify-center">
                     <AnimatePresence mode="wait">
                       {isWinner ? (
                         <motion.div 
@@ -286,14 +324,15 @@ export const GoldScratch: React.FC<GoldScratchProps> = ({
                           className="flex flex-col items-center gap-4"
                         >
                            <motion.div
-                             animate={{ rotate: [0, 10, -10, 10, 0], scale: [1, 1.1, 1] }}
+                             animate={{ rotate: [0, 10, -10, 10, 0], scale: [1, 1.2, 1] }}
                              transition={{ duration: 0.5, repeat: revealed ? Infinity : 0 }}
+                             className="w-24 h-24 bg-orange-500/10 rounded-full flex items-center justify-center border border-orange-500/20"
                            >
-                            <Trophy size={80} className="text-amber-400 drop-shadow-[0_0_20px_rgba(251,191,36,0.5)]" />
+                            <Trophy size={48} className="text-orange-500 drop-shadow-[0_0_20px_rgba(249,115,22,0.4)]" />
                            </motion.div>
                            <div className="text-center">
-                             <div className="text-amber-400 font-black text-4xl italic tracking-tighter">RS {bet * multiplier}</div>
-                             <div className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-500/60">Grand Prize</div>
+                             <div className="text-white font-black text-4xl italic tracking-tighter">RS {bet * multiplier}</div>
+                             <div className="text-[10px] font-black uppercase tracking-[0.4em] text-orange-500 mt-1">WINNER</div>
                            </div>
                         </motion.div>
                       ) : (
@@ -301,10 +340,12 @@ export const GoldScratch: React.FC<GoldScratchProps> = ({
                           key="loss"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          className="flex flex-col items-center gap-2 opacity-20"
+                          className="flex flex-col items-center gap-3 opacity-30"
                         >
-                           <Zap size={64} className="text-white" />
-                           <div className="font-black text-xl italic uppercase tracking-widest">Try Again</div>
+                           <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center">
+                              <Zap size={40} className="text-white" />
+                           </div>
+                           <div className="font-black text-sm italic uppercase tracking-widest">Better Luck Next Time</div>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -321,7 +362,7 @@ export const GoldScratch: React.FC<GoldScratchProps> = ({
                     onTouchStart={startScratching}
                     onTouchMove={scratch}
                     onTouchEnd={stopScratching}
-                    className="absolute inset-0 z-10 cursor-crosshair rounded-3xl touch-none shadow-2xl"
+                    className="absolute inset-0 z-10 cursor-crosshair rounded-2xl touch-none"
                   />
                 )}
 
@@ -374,28 +415,22 @@ export const GoldScratch: React.FC<GoldScratchProps> = ({
           )}
         </AnimatePresence>
 
-        {/* History / Multiplier Info */}
-        <div className="absolute bottom-8 left-8 right-8 flex justify-between items-end">
-           <div className="space-y-2">
-              <span className="text-[10px] font-black uppercase text-white/20 tracking-widest">Wager List</span>
-              <div className="flex gap-2">
-                {history.map((h, i) => (
-                  <div key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] border ${h.type === 'win' ? 'bg-amber-500/10 border-amber-500 text-amber-400' : 'bg-red-500/10 border-red-500/20 text-red-500'}`}>
-                    {h.type === 'win' ? 'W' : 'L'}
-                  </div>
-                ))}
-              </div>
+        {/* History / Multiplier Info - Minimalized */}
+        <div className="mt-auto pb-6 w-full flex justify-between items-center px-4">
+           <div className="bg-white/5 rounded-xl px-4 py-2 border border-white/5">
+              <span className="text-[8px] font-black uppercase text-white/20 tracking-widest block mb-1">Current Balance</span>
+              <span className="text-sm font-bold text-green-400 leading-none">RS {balance.toFixed(0)}</span>
            </div>
            
            <div className="text-right">
-              <div className="text-amber-400 font-black text-2xl italic tracking-tighter">{multiplier}x</div>
-              <div className="text-[10px] font-black uppercase text-white/20 tracking-widest">Payout Rate</div>
+              <div className="text-orange-500 font-black text-xl italic tracking-tighter">{multiplier}x</div>
+              <div className="text-[8px] font-black uppercase text-white/20 tracking-widest">Payout</div>
            </div>
         </div>
       </div>
 
       {/* Footer Controls */}
-      <footer className="p-4 bg-[#0a121e] border-t border-[#1a2b45] relative z-30 shrink-0">
+      <footer className="p-4 bg-black/40 backdrop-blur-md relative z-30 shrink-0">
         <div className="max-w-xl mx-auto flex items-center gap-4">
            {/* Amount Control */}
            <div className="flex-1 bg-black/40 rounded-2xl border border-[#1a2b45] flex items-center justify-between p-2 shadow-inner">
