@@ -20,7 +20,8 @@ import {
   Share2,
   Bell,
   Search,
-  LayoutDashboard
+  LayoutDashboard,
+  MessageCircle
 } from "lucide-react";
 
 // Components
@@ -264,6 +265,23 @@ export default function App() {
           </AnimatePresence>
 
           {user && <Navigation />}
+
+          {/* Floating WhatsApp Button */}
+          {systemConfig?.whatsappUrl && (
+            <motion.a
+              href={systemConfig.whatsappUrl}
+              target="_blank"
+              rel="noreferrer"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="fixed bottom-24 right-4 z-[60] bg-[#25D366] text-white p-3.5 rounded-full shadow-2xl hover:shadow-[#25D366]/40 transition-all border-2 border-white/20"
+            >
+              <MessageCircle size={24} fill="currentColor" className="text-white" />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-bounce" />
+            </motion.a>
+          )}
         </div>
       </div>
     </BrowserRouter>

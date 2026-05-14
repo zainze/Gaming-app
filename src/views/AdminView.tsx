@@ -1104,6 +1104,21 @@ export default function AdminView() {
                     </div>
                   </div>
 
+                  {/* Support Channel Configuration */}
+                  <div className="bg-neutral-50 rounded-2xl border border-neutral-100 p-4 space-y-2">
+                    <p className="text-[10px] font-black uppercase text-neutral-400">Support / WhatsApp Channel URL</p>
+                    <div className="flex gap-2">
+                      <input 
+                         type="text" 
+                         placeholder="https://wa.me/..." 
+                         value={(globalConfig as any).whatsappUrl || ''}
+                         onChange={(e) => updateConfig('whatsappUrl', e.target.value)}
+                         className="flex-1 bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-green-500"
+                      />
+                    </div>
+                    <p className="text-[8px] font-bold text-neutral-300 uppercase italic">* User clicks floating message icon to open this link</p>
+                  </div>
+
                   <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
                     <div>
                       <p className="text-[10px] font-black uppercase text-neutral-400">Minimum Wager</p>
