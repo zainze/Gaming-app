@@ -3,24 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "./lib/firebase";
-import { doc, getDoc, setDoc, getDocFromServer, onSnapshot, writeBatch, updateDoc, increment, deleteField, addDoc, collection } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, writeBatch, updateDoc, increment, deleteField, addDoc, collection, getDocFromServer } from "firebase/firestore";
 import { handleFirestoreError, OperationType } from "./lib/firebase";
 import { motion, AnimatePresence } from "motion/react";
 import { 
-  Home, 
   Gamepad2, 
-  Wallet, 
-  User as UserIcon, 
-  Settings, 
-  Gift, 
-  Share2,
-  Bell,
   Search,
-  LayoutDashboard,
   MessageCircle
 } from "lucide-react";
 
@@ -52,7 +44,6 @@ export default function App() {
 
       const creditReward = async () => {
         try {
-          // Verify session still exists and is active before crediting
           const userRef = doc(db, "users", user.uid);
           const freshSnap = await getDoc(userRef);
           if (freshSnap.exists() && freshSnap.data()?.arcadeSession?.status === 'active') {
@@ -71,8 +62,6 @@ export default function App() {
                 accountName: profile.displayName || profile.email,
                 createdAt: new Date().toISOString()
              });
-
-             console.log(`Arcade Reward Credited: RS ${session.reward} for ${session.title}`);
           }
         } catch (err) {
           console.error("Failed to credit background arcade reward:", err);
@@ -89,12 +78,10 @@ export default function App() {
   }, [profile?.arcadeSession, user]);
 
   useEffect(() => {
-    // Connection test (silent)
     const testConnection = async () => {
       try {
         await getDocFromServer(doc(db, 'system', 'connection_test'));
       } catch (error) {
-        // Log quietly once
         console.debug("Firebase connection check:", error);
       }
     };
@@ -105,7 +92,6 @@ export default function App() {
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       
-      // Cleanup previous profile listener if user changes
       if (unsubscribeProfile) {
         unsubscribeProfile();
         unsubscribeProfile = null;
@@ -119,14 +105,10 @@ export default function App() {
             setProfile(docSnap.data());
             setLoading(false);
           } else {
-            // Profile creation logic
             (async () => {
               try {
                 const adminCheckRef = doc(db, "system", "admin_check");
-                const adminCheck = await getDoc(adminCheckRef).catch(err => {
-                  handleFirestoreError(err, OperationType.GET, "system/admin_check");
-                  throw err;
-                });
+                const adminCheck = await getDoc(adminCheckRef);
                 
                 const batch = writeBatch(db);
                 let role = "user";
@@ -142,10 +124,7 @@ export default function App() {
                   role = "admin";
                 }
 
-                const configSnap = await getDoc(doc(db, "system", "config")).catch(err => {
-                  handleFirestoreError(err, OperationType.GET, "system/config");
-                  throw err;
-                });
+                const configSnap = await getDoc(doc(db, "system", "config"));
                 const joiningBonus = configSnap.exists() ? (Number(configSnap.data().joiningBonus) || 0) : 100;
 
                 const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -169,15 +148,11 @@ export default function App() {
                   uid: firebaseUser.uid
                 });
 
-                await batch.commit().catch(err => {
-                  handleFirestoreError(err, OperationType.WRITE, "profile_init_batch");
-                  throw err;
-                });
+                await batch.commit();
               } catch (err) {
                 console.error("Profile creation error:", err);
               }
             })();
-            // snapshot will trigger again after setDoc
           }
         }, (err) => {
           handleFirestoreError(err, OperationType.GET, `users/${firebaseUser.uid}`);
@@ -195,13 +170,11 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // Config Listener
     const unsubConfig = onSnapshot(doc(db, "system", "config"), (snap) => {
       if (snap.exists()) {
         setSystemConfig(snap.data());
       }
     });
-
     return () => unsubConfig();
   }, []);
 
@@ -209,7 +182,7 @@ export default function App() {
     if (!loading) {
       const timer = setTimeout(() => {
         setSplashVisible(false);
-      }, 2500); // Minimum splash time
+      }, 2500); 
       return () => clearTimeout(timer);
     }
   }, [loading]);
@@ -220,81 +193,83 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-[#0b0e11] text-white font-sans selection:bg-orange-500/30">
-        <div className="pb-24 max-w-lg mx-auto bg-[#1b2a5c] border-x border-white/5 min-h-screen relative shadow-2xl overflow-x-hidden">
-          {/* Top Bar - Only show if not in a game/auth or if specifically needed */}
-          <header className="sticky top-0 z-50 bg-[#14254f]/90 backdrop-blur-2xl border-b border-white/5 p-4 flex items-center justify-between shadow-lg">
-            <div className="flex items-center gap-2">
-              {systemConfig?.appLogo ? (
-                <img 
-                  src={systemConfig.appLogo} 
-                  alt="Logo" 
-                  className="h-8 w-auto object-contain"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <>
-                  <div className="bg-gradient-to-br from-orange-400 to-orange-600 p-1.5 rounded-lg shadow-inner">
-                     <Gamepad2 className="text-white drop-shadow-md" size={18} />
-                  </div>
-                  <h1 className="text-xl font-black tracking-tighter italic text-white leading-none">Dream<span className="text-orange-500 italic">Win</span></h1>
-                </>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {profile?.balance !== undefined ? (
-                <div className="bg-[#0b0e11]/60 px-3 py-1.5 rounded-2xl border border-white/10 flex items-center gap-2 shadow-inner">
-                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
-                  <span className="text-[10px] font-black italic tracking-tight">PKR {profile.balance.toLocaleString()}</span>
-                </div>
-              ) : (
-                <Search size={18} className="text-neutral-400 hover:text-orange-500 transition-colors cursor-pointer" />
-              )}
-            </div>
-          </header>
-
-          <AnimatePresence mode="wait">
-            <Routes>
-              <Route path="/" element={user ? <HomeView profile={profile} /> : <Navigate to="/auth" />} />
-              <Route path="/games" element={user ? (
-                <ViewConnector view="games" profile={profile} />
-              ) : <Navigate to="/auth" />} />
-              <Route path="/wallet" element={user ? <WalletView profile={profile} /> : <Navigate to="/auth" />} />
-              <Route path="/profile" element={user ? <ProfileView profile={profile} /> : <Navigate to="/auth" />} />
-              <Route path="/admin" element={(user && (profile?.role === 'admin' || profile?.email === 'zainzeb333@gmail.com')) ? <AdminView /> : <Navigate to="/" />} />
-              <Route path="/auth" element={!user ? <AuthView /> : <Navigate to="/" />} />
-            </Routes>
-          </AnimatePresence>
-
-          {user && <Navigation />}
-
-          {/* Floating WhatsApp Button */}
-          {systemConfig?.whatsappUrl && (
-            <motion.a
-              href={systemConfig.whatsappUrl}
-              target="_blank"
-              rel="noreferrer"
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="fixed bottom-24 right-4 z-[60] bg-[#25D366] text-white p-3.5 rounded-full shadow-2xl hover:shadow-[#25D366]/40 transition-all border-2 border-white/20"
-            >
-              <MessageCircle size={24} fill="currentColor" className="text-white" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-bounce" />
-            </motion.a>
-          )}
-        </div>
-      </div>
+       <AppContent 
+         user={user} 
+         profile={profile} 
+         systemConfig={systemConfig} 
+       />
     </BrowserRouter>
   );
 }
 
-function ViewConnector({ view, profile }: { view: string, profile: any }) {
-  const navigate = (path: string) => {
-    window.location.href = '/' + path;
+function AppContent({ user, profile, systemConfig }: any) {
+  const navigate = useNavigate();
+  const onNavigate = (path: string) => {
+    navigate('/' + path);
   };
 
-  if (view === 'games') return <GamesView profile={profile} onNavigate={navigate} />;
-  return null;
+  return (
+    <div className="min-h-screen bg-[#0b0e11] text-white font-sans selection:bg-orange-500/30">
+      <div className="pb-24 max-w-lg mx-auto bg-[#1b2a5c] border-x border-white/5 min-h-screen relative shadow-2xl overflow-x-hidden">
+        <header className="sticky top-0 z-50 bg-[#14254f]/90 backdrop-blur-xl border-b border-white/5 px-4 py-2.5 flex items-center justify-between shadow-lg">
+          <div className="flex items-center gap-2">
+            {systemConfig?.appLogo ? (
+              <img 
+                src={systemConfig.appLogo} 
+                alt="Logo" 
+                className="h-6 w-auto object-contain opacity-90"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <>
+                <div className="bg-orange-500 p-1 rounded-lg">
+                   <Gamepad2 className="text-white" size={14} />
+                </div>
+                <h1 className="text-lg font-black tracking-tighter italic text-white leading-none">Dream<span className="text-orange-500">Win</span></h1>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {profile?.balance !== undefined ? (
+              <div className="bg-black/40 px-2.5 py-1 rounded-lg border border-white/5 flex items-center gap-2 shadow-inner">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-[9px] font-black italic tracking-tighter text-white/90">PKR {profile.balance.toLocaleString()}</span>
+              </div>
+            ) : (
+              <Search size={16} className="text-white/20 hover:text-white transition-colors cursor-pointer" />
+            )}
+          </div>
+        </header>
+
+        <AnimatePresence mode="wait">
+          <Routes>
+            <Route path="/" element={user ? <HomeView profile={profile} onNavigate={onNavigate} /> : <Navigate to="/auth" />} />
+            <Route path="/games" element={user ? <GamesView profile={profile} onNavigate={onNavigate} /> : <Navigate to="/auth" />} />
+            <Route path="/wallet" element={user ? <WalletView profile={profile} /> : <Navigate to="/auth" />} />
+            <Route path="/profile" element={user ? <ProfileView profile={profile} /> : <Navigate to="/auth" />} />
+            <Route path="/admin" element={(user && (profile?.role === 'admin' || profile?.email === 'zainzeb333@gmail.com')) ? <AdminView /> : <Navigate to="/" />} />
+            <Route path="/auth" element={!user ? <AuthView /> : <Navigate to="/" />} />
+          </Routes>
+        </AnimatePresence>
+
+        {user && <Navigation />}
+
+        {systemConfig?.whatsappUrl && (
+          <motion.a
+            href={systemConfig.whatsappUrl}
+            target="_blank"
+            rel="noreferrer"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="fixed bottom-24 right-4 z-[60] bg-[#25D366] text-white p-3.5 rounded-full shadow-2xl hover:shadow-[#25D366]/40 transition-all border-2 border-white/20"
+          >
+            <MessageCircle size={24} fill="currentColor" className="text-white" />
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-bounce" />
+          </motion.a>
+        )}
+      </div>
+    </div>
+  );
 }

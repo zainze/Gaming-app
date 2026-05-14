@@ -5,10 +5,10 @@ import firebaseConfig from "../../firebase-applet-config.json";
 
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore with long-polling to handle sandboxed environment connectivity issues
+// Initialize Firestore with long-polling and no streams to handle sandboxed environment connectivity issues
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
-}, firebaseConfig.firestoreDatabaseId);
+}, (firebaseConfig as any).firestoreDatabaseId);
 
 export const auth = getAuth(app);
 

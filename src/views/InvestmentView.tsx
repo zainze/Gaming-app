@@ -225,6 +225,9 @@ export default function InvestmentView({ profile, onBack }: { profile: any, onBa
                                <p className="text-xl font-black italic tracking-tighter text-white">
                                   {inv.rewardType === 'daily' ? `${hoursLeft}H Remaining` : `${daysLeft}D Remaining`}
                                </p>
+                               <p className="text-[8px] font-black uppercase text-white/20">
+                                  Next: {new Date(inv.nextPayoutDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                               </p>
                             </div>
                             <div className="text-right space-y-1">
                                {new Date() >= new Date(inv.nextPayoutDate) ? (

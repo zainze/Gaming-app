@@ -28,6 +28,8 @@ import { useState, useEffect } from "react";
 import { doc, updateDoc, increment, addDoc, collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
 import InvestmentView from "./InvestmentView";
+import ReferralView from "./ReferralView";
+import NewPlayerView from "./NewPlayerView";
 
 // Game Components
 import CoinFlip from "../components/CoinFlip";
@@ -50,6 +52,8 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
   const [gamesList, setGamesList] = useState<any[]>([]);
   const [activeCategory, setActiveCategory] = useState("All");
   const [showVIP, setShowVIP] = useState(false);
+  const [showReferral, setShowReferral] = useState(false);
+  const [showNewPlayers, setShowNewPlayers] = useState(false);
   const [latestPlayers, setLatestPlayers] = useState<any[]>([]);
 
   useEffect(() => {
@@ -124,8 +128,8 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
   ];
 
   const quickLinks = [
-    { name: "Invitation", icon: UserPlus, color: "from-green-400 to-green-600", action: () => onNavigate('profile') },
-    { name: "Newplayer", icon: Gift, color: "from-blue-400 to-blue-600", action: () => setActiveCategory('All') },
+    { name: "Invitation", icon: UserPlus, color: "from-green-400 to-green-600", action: () => setShowReferral(true) },
+    { name: "Newplayer", icon: Gift, color: "from-blue-400 to-blue-600", action: () => setShowNewPlayers(true) },
     { name: "Deposit", icon: Coins, color: "from-yellow-400 to-yellow-600", action: () => onNavigate('wallet') },
     { name: "Spins", icon: Radio, color: "from-orange-400 to-orange-600", action: () => setActiveGame('spin') },
     { name: "VIP", icon: Gem, color: "from-purple-400 to-purple-600", action: () => setShowVIP(true) },
@@ -331,6 +335,14 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
            <InvestmentView profile={profile} onBack={() => setShowVIP(false)} />
         )}
 
+        {showReferral && (
+           <ReferralView profile={profile} onBack={() => setShowReferral(false)} />
+        )}
+
+        {showNewPlayers && (
+           <NewPlayerView onBack={() => setShowNewPlayers(false)} />
+        )}
+
         {activeGame === 'slipper' && (
           <motion.div key="slipper" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="fixed inset-0 z-[100] bg-[#050B14] p-4 flex flex-col">
             <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-neutral-400 font-bold uppercase text-xs mb-4 hover:text-white transition-colors group">
@@ -410,36 +422,41 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
 
         {!activeGame && (
           <motion.div key="lobby" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col pb-24 h-full">
-            {/* Quick Links Row */}
-            <div className="grid grid-cols-5 gap-2 px-4 py-6 bg-[#1a2c5a]">
-               {quickLinks.map((link) => (
-                 <button 
-                  key={link.name} 
-                  onClick={link.action}
-                  className="flex flex-col items-center gap-2 active:scale-90 transition-transform"
-                 >
-                    <div className={`w-14 h-14 rounded-full bg-gradient-to-tr ${link.color} flex items-center justify-center border-4 border-[#14254f] shadow-lg`}>
-                       <link.icon className="text-white" size={24} />
-                    </div>
-                    <span className="text-[9px] font-bold text-white/80 uppercase tracking-tighter text-center">{link.name}</span>
-                 </button>
-               ))}
+            {/* Premium Quick Links Row */}
+            <div className="px-6 py-6 bg-[#1a2c5a] border-b border-white/5">
+               <div className="grid grid-cols-5 gap-4">
+                  {quickLinks.map((link) => (
+                    <button 
+                     key={link.name} 
+                     onClick={link.action}
+                     className="flex flex-col items-center gap-1.5 group active:scale-90 transition-all"
+                    >
+                       <div className={`w-11 h-11 rounded-xl bg-gradient-to-tr ${link.color} flex items-center justify-center border border-white/10 shadow-xl relative overflow-hidden group-hover:rotate-3 transition-transform transition-all`}>
+                          <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <link.icon className="text-white drop-shadow-md" size={18} />
+                       </div>
+                       <span className="text-[7px] font-black text-white/40 uppercase tracking-widest text-center">{link.name}</span>
+                    </button>
+                  ))}
+               </div>
             </div>
 
             {/* New Player Ticker Display */}
-            <div className="px-4 py-2 bg-black/20 flex items-center gap-4 overflow-hidden border-y border-white/5">
-                <div className="flex items-center gap-1 shrink-0">
-                  <Sparkles size={12} className="text-yellow-400" />
-                  <span className="text-[9px] font-black uppercase text-white/40">New:</span>
+            <div className="px-6 py-2 bg-black/40 flex items-center gap-3 overflow-hidden border-b border-white/5 backdrop-blur-md">
+                <div className="flex items-center gap-1.5 shrink-0 border-r border-white/10 pr-3">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                  <span className="text-[8px] font-black uppercase text-white/40 font-mono tracking-widest">LIVE</span>
                 </div>
                 <div className="flex-1 overflow-hidden">
-                   <div className="flex gap-6 animate-marquee">
+                   <div className="flex gap-10 animate-marquee">
                       {latestPlayers.map((u, i) => (
                         <div key={i} className="flex items-center gap-2 shrink-0">
-                           <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center overflow-hidden">
+                           <div className="w-4 h-4 rounded-md bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
                               {u.photoURL ? <img src={u.photoURL} className="w-full h-full object-cover" /> : <User size={8} />}
                            </div>
-                           <span className="text-[10px] font-bold text-blue-200">{u.displayName?.split(' ')[0] || 'Player'} Joined!</span>
+                           <span className="text-[8px] font-black text-blue-200/50 uppercase tracking-[0.15em] font-mono">
+                             {u.displayName?.split(' ')[0] || 'GUEST'}_NODE JOINED
+                           </span>
                         </div>
                       ))}
                    </div>
@@ -463,37 +480,36 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
             </div>
 
             {/* Category Tab Row */}
-            <div className="mt-8 px-4 flex gap-6 overflow-x-auto scrollbar-hide border-b border-white/5 pb-2">
+            <div className="mt-6 px-6 flex gap-8 overflow-x-auto scrollbar-hide border-b border-white/5 pb-1">
               {categories.map((cat) => (
                 <button 
                   key={cat.name} 
                   onClick={() => setActiveCategory(cat.name)} 
-                  className={`flex flex-col items-center gap-2 min-w-[60px] pb-2 relative transition-all ${
-                    activeCategory === cat.name ? 'scale-110 opacity-100' : 'opacity-40 hover:opacity-100'
+                  className={`flex flex-col items-center gap-1.5 min-w-[50px] pb-3 relative transition-all ${
+                    activeCategory === cat.name ? 'opacity-100' : 'opacity-30 hover:opacity-100'
                   }`}
                 >
-                  <cat.icon size={24} className={activeCategory === cat.name ? 'text-orange-500' : 'text-white'} />
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${activeCategory === cat.name ? 'text-orange-500' : 'text-white'}`}>
+                  <cat.icon size={18} className={activeCategory === cat.name ? 'text-orange-500' : 'text-white'} />
+                  <span className={`text-[9px] font-black uppercase tracking-widest ${activeCategory === cat.name ? 'text-orange-500' : 'text-white'}`}>
                     {cat.name}
                   </span>
                   {activeCategory === cat.name && (
-                    <motion.div layoutId="activeCat" className="absolute -bottom-[2px] left-0 right-0 h-0.5 bg-orange-500" />
+                    <motion.div layoutId="activeCat" className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500 rounded-full" />
                   )}
                 </button>
               ))}
             </div>
 
             {/* Section Header */}
-            <div className="px-4 mt-8 mb-4 flex items-center justify-between">
+            <div className="px-6 mt-6 mb-3 flex items-center justify-between">
                <div className="flex items-center gap-2">
-                  {activeCategory === "Hot" ? <Flame className="text-orange-500" size={20} fill="currentColor" /> : <LayoutGrid className="text-blue-400" size={20} />}
-                  <h2 className="text-xl font-black italic uppercase tracking-tighter">{activeCategory}</h2>
+                  <h2 className="text-lg font-black italic uppercase tracking-tighter text-white/90">{activeCategory} Selection</h2>
                </div>
-               <button onClick={() => setActiveCategory("All")} className="text-xs font-bold text-neutral-400 uppercase tracking-widest hover:text-white transition-colors">All &gt;</button>
+               <button onClick={() => setActiveCategory("All")} className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] border border-white/5 px-3 py-1 rounded-full hover:bg-white/5 transition-all">All Nodes</button>
             </div>
 
             {/* Enhanced Game Grid */}
-            <div className="grid grid-cols-2 gap-3 px-4 pb-24">
+            <div className="grid grid-cols-2 gap-3 px-6 pb-24">
               {filteredGames.map((game, idx) => {
                 const config = gamesConfig[game.id] || {};
                 const displayImage = config.image || game.image;
@@ -502,93 +518,72 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
                 return (
                   <motion.div 
                     key={game.id} 
-                    initial={{ opacity: 0, y: 30 }} 
+                    initial={{ opacity: 0, y: 20 }} 
                     animate={{ opacity: 1, y: 0 }} 
-                    transition={{ delay: idx * 0.05 }} 
+                    transition={{ delay: idx * 0.03 }} 
                     onClick={() => game.url ? handleLaunchWebGame(game) : setActiveGame(game.id)} 
                     className={`relative group cursor-pointer ${isArcade ? 'col-span-2' : ''}`}
                   >
-                    <div className={`${isArcade ? 'aspect-[24/9]' : 'aspect-[3/4]'} rounded-2xl overflow-hidden border border-white/10 bg-[#14254f] shadow-xl relative`}>
+                    <div className={`${isArcade ? 'aspect-[21/9]' : 'aspect-[3/4.2]'} rounded-[1.5rem] overflow-hidden border border-white/5 bg-[#14254f] shadow-2xl relative transition-transform duration-500 group-hover:scale-[1.02]`}>
                       <img 
                         src={displayImage} 
                         alt={game.title} 
-                        className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700" 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700" 
                         referrerPolicy="no-referrer" 
                       />
-                      <div className={`absolute inset-0 bg-gradient-to-t ${isArcade ? 'from-black/80 via-transparent' : 'from-black via-transparent'} to-transparent opacity-60`} />
+                      <div className={`absolute inset-0 bg-gradient-to-t ${isArcade ? 'from-black/90 via-black/20' : 'from-black/90 via-transparent'} to-transparent`} />
                       
                       {/* Badges from Screenshot */}
-                      <div className="absolute top-2 left-2 flex flex-col gap-1">
-                        <div className="bg-orange-500 flex items-center justify-center p-1 rounded-sm shadow-md">
-                           <ThumbsUp size={10} className="text-white" fill="currentColor" />
+                      <div className="absolute top-3 left-3 flex flex-col gap-1">
+                        <div className="bg-orange-500 text-white w-6 h-6 flex items-center justify-center rounded-lg shadow-xl translate-y-2 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
+                           <Play size={12} fill="currentColor" />
                         </div>
                       </div>
-                      <div className="absolute top-2 right-2 flex flex-col gap-1">
-                        <div className="bg-black/40 backdrop-blur-md flex items-center justify-center p-1 rounded-full border border-white/20">
-                           <Star size={10} className="text-yellow-500" fill="currentColor" />
-                        </div>
-                      </div>
- 
+
                       {/* Game Info Overlay */}
                       {isArcade ? (
                         <>
-                          {/* Minimal Top Header - Title */}
-                          <div className="absolute top-2 left-2 flex items-center gap-2">
-                             <div className="bg-black/40 backdrop-blur-sm px-2 py-0.5 rounded border border-white/5">
-                               <p className="text-[9px] font-black uppercase tracking-tight text-white">{game.title}</p>
-                             </div>
-                             {profile?.arcadeSession?.status === 'active' && profile?.arcadeSession?.gameId === game.id && (
-                               <div className="bg-orange-500 px-2 py-0.5 rounded text-[8px] font-black animate-pulse uppercase">Active</div>
-                             )}
-                          </div>
-
-                          {/* Minimal Bottom Bar - Stats */}
-                          <div className="absolute bottom-2 right-2">
-                             {profile?.arcadeSession?.status === 'active' && profile?.arcadeSession?.gameId === game.id ? (
+                          <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between">
+                            <div className="space-y-1">
+                               <p className="text-xs font-black italic uppercase text-white tracking-tight">{game.title}</p>
+                               <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1 opacity-60">
+                                    <Coins size={10} className="text-yellow-400" />
+                                    <span className="text-[10px] font-black text-white">{game.cost || 0}</span>
+                                  </div>
+                                  <div className="w-1 h-1 bg-white/20 rounded-full" />
+                                  <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Arcade</span>
+                               </div>
+                            </div>
+                            
+                            {profile?.arcadeSession?.status === 'active' && profile?.arcadeSession?.gameId === game.id ? (
                                <button 
                                  onClick={(e) => {
                                    e.stopPropagation();
                                    handleClaimArcadeReward();
                                  }}
-                                 className="bg-green-500 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase shadow-lg shadow-green-500/20 active:scale-95 transition-all"
+                                 className="bg-green-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase shadow-2xl animate-pulse"
                                >
-                                 Claim RS {game.reward}
+                                 Claim {game.reward}
                                </button>
-                             ) : (
-                               <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm px-2 py-1 rounded-lg border border-white/5">
-                                  <div className="flex items-center gap-1">
-                                    <Coins size={7} className="text-yellow-400" />
-                                    <span className="text-[7px] font-black text-yellow-400 uppercase">{game.cost || 0}</span>
-                                  </div>
-                                  <div className="w-px h-2 bg-white/10" />
-                                  <div className="flex items-center gap-1">
-                                    <Radio size={7} className="text-orange-500" />
-                                    <span className="text-[7px] font-black text-orange-500 uppercase">{game.time}s</span>
-                                  </div>
-                                  <div className="w-px h-2 bg-white/10" />
-                                  <div className="flex items-center gap-1">
-                                    <Trophy size={7} className="text-green-400" />
-                                    <span className="text-[7px] font-black text-green-400 uppercase">RS {game.reward}</span>
-                                  </div>
+                            ) : (
+                               <div className="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
+                                  <span className="text-[10px] font-black text-white/60">Play & Earn</span>
                                </div>
-                             )}
+                            )}
                           </div>
                         </>
                       ) : (
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-md p-2 text-center border-t border-white/5">
-                           <div className="flex flex-col items-center space-y-1">
-                              <p className="text-[10px] font-black uppercase tracking-tight truncate leading-none text-white">{game.title}</p>
-                              <p className="text-[8px] font-bold text-orange-400 uppercase tracking-widest leading-none">{game.category}</p>
+                        <div className="absolute bottom-0 left-0 right-0 p-4 pt-8 bg-gradient-to-t from-black to-transparent">
+                           <div className="space-y-1">
+                              <p className="text-xs font-black italic uppercase text-white tracking-tight leading-none truncate">{game.title}</p>
+                              <div className="flex items-center justify-between">
+                                 <span className="text-[9px] font-black text-orange-500 uppercase tracking-widest">{game.category}</span>
+                                 <span className="text-[8px] font-black text-white/30 uppercase font-mono">ID_{game.id.substr(0,4)}</span>
+                              </div>
                            </div>
                         </div>
                       )}
-
-                      {/* Hover Overlay */}
-                      <div className="absolute inset-x-2 top-1/2 -translate-y-1/2 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                         <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-2xl scale-75 group-hover:scale-100 transition-transform duration-500">
-                           <Play size={20} className="fill-black text-black ml-1" />
-                         </div>
-                      </div>
                     </div>
                   </motion.div>
                 );

@@ -1,11 +1,11 @@
 import { motion } from "motion/react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Gamepad2, Wallet, User as UserIcon } from "lucide-react";
+import { Sparkles, Gamepad2, Wallet, User as UserIcon } from "lucide-react";
 import { cn } from "../lib/utils";
 
 const navItems = [
-  { path: "/games", icon: Gamepad2, label: "Home" },
-  { path: "/", icon: Home, label: "Discover" },
+  { path: "/games", icon: Gamepad2, label: "Games" },
+  { path: "/", icon: Sparkles, label: "Discover" },
   { path: "/wallet", icon: Wallet, label: "Wallet" },
   { path: "/profile", icon: UserIcon, label: "Profile" },
 ];
