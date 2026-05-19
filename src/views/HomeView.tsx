@@ -328,8 +328,9 @@ export default function HomeView({ profile, onNavigate }: { profile: any, onNavi
           <div className="grid grid-cols-1 gap-4">
             {[
               { id: 'aviator', name: 'Aviator', img: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778147101/aviator_banner_z0j7v8.png", category: "Active" },
+              { id: 'fruit_ninja', name: 'Fruit Ninja', img: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?q=80&w=400&auto=format&fit=crop", category: "New" },
+              { id: 'teen_patti', name: 'Teen Patti', img: "https://images.unsplash.com/photo-1541275322896-180a3a780b62?q=80&w=400&auto=format&fit=crop", category: "Hot" },
               { id: 'mines', name: 'Mines Finder', img: "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=400&auto=format&fit=crop", category: "Popular" },
-              { id: 'coin', name: 'Coin Flip', img: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778146981/game-coin-a-good-investment_lqjtaj.webp", category: "Hot" },
             ].map((game) => {
               const config = gamesConfig[game.id] || {};
               const displayImage = config.image || game.img;

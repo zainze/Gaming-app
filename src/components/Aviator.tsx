@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Info, Plus, Minus, LogOut } from 'lucide-react';
+import { Info, Plus, Minus, LogOut, Plane } from 'lucide-react';
 import { playSound, stopSound } from '../lib/sounds';
 
 interface AviatorProps {
@@ -8,6 +8,8 @@ interface AviatorProps {
   onWin: (amount: number) => void;
   onBet: (amount: number) => void;
   onExit: () => void;
+  winRate?: number;
+  multiplier?: number;
 }
 
 interface UserBet {
@@ -21,14 +23,14 @@ interface UserBet {
 
 const JET_ICON_URL = "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1777971975/air-force_do6cuq.png";
 
-export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet, onExit }) => {
+export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet, onExit, winRate = 50 }) => {
   const [gameState, setGameState] = useState<'idle' | 'waiting' | 'running' | 'crashed'>('idle');
   const [multiplier, setMultiplier] = useState(1.0);
   const [history, setHistory] = useState<number[]>([4.02, 1.00, 1.14, 1.20, 6.72, 1.89, 1.04, 1.00]);
   const [crashPoint, setCrashPoint] = useState(0);
   
-  const [bet, setBet] = useState({ amount: 1.00, active: false, activeInRound: false, hasFinished: false });
-  const [bet2, setBet2] = useState({ amount: 1.00, active: false, activeInRound: false, hasFinished: false });
+  const [bet, setBet] = useState({ amount: 10.00, active: false, activeInRound: false, hasFinished: false });
+  const [bet2, setBet2] = useState({ amount: 10.00, active: false, activeInRound: false, hasFinished: false });
   const [activeTab, setActiveTab] = useState<'all' | 'my' | 'top'>('all');
   const [localBets, setLocalBets] = useState<UserBet[]>([]);
 
@@ -37,8 +39,16 @@ export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet, onExit 
 
   const generateCrashPoint = () => {
     const r = Math.random();
-    if (r < 0.03) return 1.0;
-    return Math.max(1.0, 0.98 / (1.0 - Math.random()));
+    // Use winRate from admin to adjust house edge
+    const houseEdge = (100 - winRate) / 100;
+    
+    // Base 3% instant crash + admin adjustment
+    if (r < (0.03 + houseEdge * 0.1)) return 1.0;
+    
+    // Fair crash formula: 0.99 / (1 - r) or similar
+    // We adjust the numerator to add house edge
+    const point = Math.max(1.0, (0.97 - houseEdge * 0.05) / (1.0 - Math.random()));
+    return Number(point.toFixed(2));
   };
 
   const startRound = useCallback(() => {
@@ -182,51 +192,66 @@ export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet, onExit 
   }, [graphProgress]);
 
   return (
-    <div className="flex flex-col h-full bg-[#101112] text-[#9EA0A3] font-sans">
-      <header className="flex items-center justify-between px-3 h-14 bg-[#1B1C1D] border-b border-[#2C2D2E] flex-shrink-0 relative z-50">
-        <div className="flex items-center gap-2">
-          <span className="text-[#D92121] font-black italic tracking-tighter text-lg uppercase whitespace-nowrap">Aviator Pro</span>
-          <div className="w-5 h-5 rounded-full border border-[#494B4D] flex items-center justify-center text-[#9EA0A3] cursor-pointer hover:bg-white/5 transition-colors hidden sm:flex">
-            <span className="text-[10px] font-bold">i</span>
+    <div className="flex flex-col h-full bg-[#0d0e10] text-[#9EA0A3] font-sans relative overflow-hidden">
+      {/* Professional Background Accents */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_40%,_rgba(217,33,33,0.08),_transparent_70%)]" />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '100px 100px' }} />
+      </div>
+
+      <header className="flex items-center justify-between px-4 h-16 bg-[#16171a]/95 border-b border-white/5 backdrop-blur-md flex-shrink-0 relative z-50 shadow-2xl">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#D92121]/10 flex items-center justify-center border border-[#D92121]/20">
+            <Plane size={22} className="text-[#D92121] -rotate-45" />
+          </div>
+          <div className="flex flex-col leading-none">
+            <span className="text-white font-black italic tracking-tighter text-xl uppercase">Aviator Elite</span>
+            <span className="text-[8px] font-black uppercase tracking-[0.4em] text-[#D92121]/60">Precision Flight</span>
           </div>
         </div>
         
-        <div className="flex items-center gap-2 bg-black/60 rounded-full px-3 py-1.5 border border-[#2C2D2E] shadow-inner">
-          <div className="w-3.5 h-3.5 rounded-full bg-[#FBCB35] flex items-center justify-center">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#141516]" />
+        <div className="flex items-center gap-2 bg-black/40 rounded-2xl px-4 py-2 border border-white/5 shadow-inner">
+          <div className="w-4 h-4 rounded-full bg-[#fdd835]/20 flex items-center justify-center">
+            <div className="w-2 h-2 rounded-full bg-[#fdd835] shadow-[0_0_10px_#fdd835]" />
           </div>
-          <span className="text-[#32D74B] font-black text-xs leading-none">RS {balance.toFixed(0)}</span>
+          <span className="text-[#32D74B] font-black text-sm tracking-tight leading-none">RS {balance.toFixed(0)}</span>
         </div>
 
         <button 
           onClick={onExit}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#D92121]/10 text-[#D92121] rounded-lg border border-[#D92121]/20 active:scale-95 transition-all hover:bg-[#D92121]/20 shadow-lg"
+          className="p-2.5 bg-white/5 text-white/50 rounded-xl border border-white/5 hover:bg-white/10 hover:text-white transition-all shadow-lg active:scale-90"
         >
-          <LogOut size={14} />
-          <span className="text-[10px] font-black uppercase">Quit</span>
+          <LogOut size={20} />
         </button>
       </header>
 
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        {/* 1. History Bar (Fixed) */}
-        <div className="flex items-center justify-between px-4 py-1.5 bg-[#141516] border-b border-[#2C2D2E] h-10 flex-shrink-0">
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-1">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative z-10">
+        {/* 1. History Bar */}
+        <div className="flex items-center justify-between px-4 py-2 bg-black/40 border-b border-white/5 h-12 flex-shrink-0 backdrop-blur-sm">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-1">
             {history.map((val, idx) => (
-              <span key={idx} className={`px-3 py-0.5 rounded-full text-[9px] font-black border transition-all ${val < 2 ? 'text-[#3498db] bg-[#1a2b3c] border-[#3498db]/30' : val < 10 ? 'text-[#9b59b6] bg-[#2a1b3c] border-[#9b59b6]/30' : 'text-[#f1c40f] bg-[#3c361b] border-[#f1c40f]/30'}`}>
+              <motion.span 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                key={idx} 
+                className={`px-4 py-1 rounded-full text-[10px] font-black border transition-all shadow-lg ${val < 2 ? 'text-[#3498db] bg-[#3498db]/10 border-[#3498db]/20' : val < 10 ? 'text-[#9b59b6] bg-[#9b59b6]/10 border-[#9b59b6]/20' : 'text-[#f1c40f] bg-[#f1c40f]/10 border-[#f1c40f]/20'}`}
+              >
                 {val.toFixed(2)}x
-              </span>
+              </motion.span>
             ))}
-          </div>
-          <div className="flex items-center justify-center w-6 h-6 rounded-md bg-[#2C2D2E]/50 cursor-pointer">
-            <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[5px] border-t-[#6B6D6F]" />
           </div>
         </div>
 
         {/* 2. Scrollable Game Content */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col bg-[#101112]">
+        <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col bg-transparent">
           {/* Flight Area */}
-          <section className="relative w-full aspect-[16/10] bg-black border-b border-[#141516] overflow-hidden flex-shrink-0">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,_rgba(217,33,33,0.15),_transparent_70%)]" />
+          <section className="relative w-full aspect-[16/9] bg-[#090a0c] border-b border-white/5 overflow-hidden flex-shrink-0 shadow-inner">
+            {/* Radar Background */}
+            <div className="absolute inset-0 opacity-20 pointer-events-none">
+                {[...Array(5)].map((_, i) => (
+                    <div key={i} className="absolute top-1/2 left-0 w-[200%] h-px bg-white/10" style={{ transform: `rotate(${i * 36}deg) translateX(-50%)` }} />
+                ))}
+            </div>
             
             <svg viewBox="0 0 1000 600" className="absolute inset-0 w-full h-full" preserveAspectRatio="xMidYMid slice">
               <defs>

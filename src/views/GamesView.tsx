@@ -39,10 +39,24 @@ import { LuckyChests } from "../components/LuckyChests";
 import { DiceRoll } from "../components/DiceRoll";
 import ThreeCardSlipper from "../components/ThreeCardSlipper";
 import { Aviator } from "../components/Aviator";
+import { RocketCrash } from "../components/RocketCrash";
+import { MoonCrash } from "../components/MoonCrash";
+import { FruitSlots } from "../components/FruitSlots";
+import { TreasureHunt } from "../components/TreasureHunt";
+import { WheelOfFortune } from "../components/WheelOfFortune";
+import { ColorMatch } from "../components/ColorMatch";
+import { FruitNinja } from "../components/FruitNinja";
+import { TeenPatti } from "../components/TeenPatti";
 import { BannerSlider } from "../components/BannerSlider";
 import { PlinkoPro } from "../components/PlinkoPro";
 import { MinesFinder } from "../components/MinesFinder";
 import { GoldScratch } from "../components/GoldScratch";
+import { DojoCards } from "../components/DojoCards";
+import { SpaceDice } from "../components/SpaceDice";
+import { DragonTiger } from "../components/DragonTiger";
+import { GoalKick } from "../components/GoalKick";
+import { CyberFlip } from "../components/CyberFlip";
+import { SushiStrike } from "../components/SushiStrike";
 
 export default function GamesView({ profile, onNavigate }: { profile: any, onNavigate: (view: string) => void }) {
   const [activeGame, setActiveGame] = useState<string | null>(null);
@@ -144,8 +158,22 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
     dice: { title: "Dice Pro", category: "Blockchain", image: "https://cdn-icons-png.flaticon.com/512/3533/3533966.png" },
     scratch: { title: "Gold Scratch", category: "Slot", image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop" },
     aviator: { title: "Aviator", category: "Hot", image: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778147101/aviator_banner_z0j7v8.png" },
+    rocket_crash: { title: "Rocket Crash", category: "Hot", image: "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?q=80&w=400&auto=format&fit=crop" },
+    moon_crash: { title: "Moon Crash", category: "Hot", image: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=400&auto=format&fit=crop" },
+    fruit_slots: { title: "Fruit Slots", category: "Classic", image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
+    treasure_hunt: { title: "Treasure Hunt", category: "Classic", image: "https://images.unsplash.com/photo-1563212417-640306232938?q=80&w=400&auto=format&fit=crop" },
+    wheel_fortune: { title: "Wheel Fortune", category: "Hot", image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
+    color_match: { title: "Color Match", category: "Hot", image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=400&auto=format&fit=crop" },
+    fruit_ninja: { title: "Fruit Ninja", category: "Hot", image: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?q=80&w=400&auto=format&fit=crop" },
+    teen_patti: { title: "Teen Patti", category: "Hot", image: "https://images.unsplash.com/photo-1541275322896-180a3a780b62?q=80&w=400&auto=format&fit=crop" },
     plinko: { title: "Plinko Pro", category: "Slot", image: "https://images.unsplash.com/photo-1553481187-be93c21490a9?q=80&w=400&auto=format&fit=crop" },
     mines: { title: "Mines Finder", category: "Hot", image: "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=400&auto=format&fit=crop" },
+    dojo_cards: { title: "Dojo Hi-Lo", category: "Cards", image: "https://images.unsplash.com/photo-1552084117-56a987666449?q=80&w=400&auto=format&fit=crop" },
+    space_dice: { title: "Space Dice", category: "Blockchain", image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=400&auto=format&fit=crop" },
+    dragon_tiger: { title: "Dragon Tiger", category: "Cards", image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
+    goal_kick: { title: "Penalty Royale", category: "Skill", image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
+    cyber_flip: { title: "Cyber Flip", category: "Blockchain", image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop" },
+    sushi_strike: { title: "Sushi Strike", category: "Classic", image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
     web_cyber: { title: "Cyber City", category: "Arcade", url: "https://www.crazygames.com/embed/block-rush", image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=400&auto=format&fit=crop", time: 60, reward: 25 },
     web_drift: { title: "Drift King", category: "Arcade", url: "https://www.crazygames.com/embed/cyber-surfer", image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop", time: 45, reward: 20 },
   };
@@ -161,7 +189,7 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
   const filteredGames = displayedGames.filter(g => 
     activeCategory === "All" || 
     g.category === activeCategory || 
-    (activeCategory === "Hot" && (g.id === "aviator" || g.id === "mines" || g.id === "swipe" || g.id === "slipper"))
+    (activeCategory === "Hot" && (g.id === "aviator" || g.id === "mines" || g.id === "swipe" || g.id === "slipper" || g.id === "rocket_crash" || g.id === "moon_crash" || g.id === "fruit_slots" || g.id === "treasure_hunt" || g.id === "wheel_fortune" || g.id === "color_match" || g.id === "fruit_ninja" || g.id === "teen_patti" || g.id === "dojo_cards" || g.id === "space_dice" || g.id === "dragon_tiger" || g.id === "goal_kick" || g.id === "cyber_flip" || g.id === "sushi_strike"))
   );
 
   const handleWin = async (amount: number) => {
@@ -404,7 +432,102 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
 
         {activeGame === 'aviator' && (
           <motion.div key="aviator" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#101112]">
-            <Aviator onWin={handleWin} onBet={handleBet} balance={profile?.balance || 0} onExit={() => setActiveGame(null)} />
+            <Aviator onWin={handleWin} onBet={handleBet} balance={profile?.balance || 0} onExit={() => setActiveGame(null)} winRate={gamesConfig['aviator']?.winRate || 50} />
+          </motion.div>
+        )}
+
+        {activeGame === 'rocket_crash' && (
+          <motion.div key="rocket_crash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#0a0b0d]">
+            <RocketCrash onWin={handleWin} onBet={handleBet} balance={profile?.balance || 0} onExit={() => setActiveGame(null)} winRate={gamesConfig['rocket_crash']?.winRate || 50} />
+          </motion.div>
+        )}
+
+        {activeGame === 'moon_crash' && (
+          <motion.div key="moon_crash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#050608]">
+            <MoonCrash onWin={handleWin} onBet={handleBet} balance={profile?.balance || 0} onExit={() => setActiveGame(null)} winRate={gamesConfig['moon_crash']?.winRate || 50} />
+          </motion.div>
+        )}
+
+        {activeGame === 'fruit_slots' && (
+          <motion.div key="fruit_slots" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#0B0D18]">
+            <FruitSlots 
+              onWin={handleWin} 
+              onBet={handleBet} 
+              balance={profile?.balance || 0} 
+              onExit={() => setActiveGame(null)} 
+              winRate={gamesConfig['fruit_slots']?.winRate || 40}
+              minBet={gamesConfig['fruit_slots']?.minBet || 10}
+              multiplier={gamesConfig['fruit_slots']?.multiplier || 5}
+            />
+          </motion.div>
+        )}
+
+        {activeGame === 'treasure_hunt' && (
+          <motion.div key="treasure_hunt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#050608]">
+            <TreasureHunt 
+              onWin={handleWin} 
+              onBet={handleBet} 
+              balance={profile?.balance || 0} 
+              onExit={() => setActiveGame(null)} 
+              winRate={gamesConfig['treasure_hunt']?.winRate || 35}
+              minBet={gamesConfig['treasure_hunt']?.minBet || 10}
+              multiplier={gamesConfig['treasure_hunt']?.multiplier || 3}
+            />
+          </motion.div>
+        )}
+
+        {activeGame === 'wheel_fortune' && (
+          <motion.div key="wheel_fortune" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#050B14]">
+            <WheelOfFortune 
+              onWin={handleWin} 
+              onBet={handleBet} 
+              balance={profile?.balance || 0} 
+              onExit={() => setActiveGame(null)} 
+              winRate={gamesConfig['wheel_fortune']?.winRate || 45}
+              minBet={gamesConfig['wheel_fortune']?.minBet || 10}
+            />
+          </motion.div>
+        )}
+
+        {activeGame === 'color_match' && (
+          <motion.div key="color_match" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#050608]">
+            <ColorMatch 
+              onWin={handleWin} 
+              onBet={handleBet} 
+              balance={profile?.balance || 0} 
+              onExit={() => setActiveGame(null)} 
+              winRate={gamesConfig['color_match']?.winRate || 33}
+              minBet={gamesConfig['color_match']?.minBet || 10}
+              multiplier={gamesConfig['color_match']?.multiplier || 2.5}
+            />
+          </motion.div>
+        )}
+
+        {activeGame === 'fruit_ninja' && (
+          <motion.div key="fruit_ninja" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#0a0a0a]">
+            <FruitNinja 
+              onWin={handleWin} 
+              onBet={handleBet} 
+              balance={profile?.balance || 0} 
+              onExit={() => setActiveGame(null)} 
+              winRate={gamesConfig['fruit_ninja']?.winRate || 40}
+              minBet={gamesConfig['fruit_ninja']?.minBet || 10}
+              multiplier={gamesConfig['fruit_ninja']?.multiplier || 2}
+            />
+          </motion.div>
+        )}
+
+        {activeGame === 'teen_patti' && (
+          <motion.div key="teen_patti" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#072418]">
+            <TeenPatti 
+              onWin={handleWin} 
+              onBet={handleBet} 
+              balance={profile?.balance || 0} 
+              onExit={() => setActiveGame(null)} 
+              winRate={gamesConfig['teen_patti']?.winRate || 45}
+              minBet={gamesConfig['teen_patti']?.minBet || 10}
+              multiplier={gamesConfig['teen_patti']?.multiplier || 2}
+            />
           </motion.div>
         )}
 
@@ -417,6 +540,90 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
         {activeGame === 'mines' && (
           <motion.div key="mines" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#0B0E11]">
             <MinesFinder onWin={handleWin} onBet={handleBet} balance={profile?.balance || 0} onExit={() => setActiveGame(null)} minBet={gamesConfig['mines']?.minBet || minBet} winRate={gamesConfig['mines']?.winRate || 70} />
+          </motion.div>
+        )}
+
+        {activeGame === 'dojo_cards' && (
+          <motion.div key="dojo_cards" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#0a0f0d]">
+             <DojoCards 
+               onWin={handleWin} 
+               onBet={handleBet} 
+               balance={profile?.balance || 0} 
+               onExit={() => setActiveGame(null)} 
+               winRate={gamesConfig['dojo_cards']?.winRate || 48}
+               minBet={gamesConfig['dojo_cards']?.minBet || 10}
+               multiplier={gamesConfig['dojo_cards']?.multiplier || 2}
+             />
+          </motion.div>
+        )}
+
+        {activeGame === 'space_dice' && (
+          <motion.div key="space_dice" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#050914]">
+             <SpaceDice 
+               onWin={handleWin} 
+               onBet={handleBet} 
+               balance={profile?.balance || 0} 
+               onExit={() => setActiveGame(null)} 
+               winRate={gamesConfig['space_dice']?.winRate || 50}
+               minBet={gamesConfig['space_dice']?.minBet || 10}
+               multiplier={gamesConfig['space_dice']?.multiplier || 1.9}
+             />
+          </motion.div>
+        )}
+
+        {activeGame === 'dragon_tiger' && (
+          <motion.div key="dragon_tiger" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#1a0505]">
+             <DragonTiger 
+               onWin={handleWin} 
+               onBet={handleBet} 
+               balance={profile?.balance || 0} 
+               onExit={() => setActiveGame(null)} 
+               winRate={gamesConfig['dragon_tiger']?.winRate || 45}
+               minBet={gamesConfig['dragon_tiger']?.minBet || 10}
+               multiplier={gamesConfig['dragon_tiger']?.multiplier || 2}
+             />
+          </motion.div>
+        )}
+
+        {activeGame === 'goal_kick' && (
+          <motion.div key="goal_kick" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#072418]">
+             <GoalKick 
+               onWin={handleWin} 
+               onBet={handleBet} 
+               balance={profile?.balance || 0} 
+               onExit={() => setActiveGame(null)} 
+               winRate={gamesConfig['goal_kick']?.winRate || 45}
+               minBet={gamesConfig['goal_kick']?.minBet || 10}
+               multiplier={gamesConfig['goal_kick']?.multiplier || 1.9}
+             />
+          </motion.div>
+        )}
+
+        {activeGame === 'cyber_flip' && (
+          <motion.div key="cyber_flip" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#050505]">
+             <CyberFlip 
+               onWin={handleWin} 
+               onBet={handleBet} 
+               balance={profile?.balance || 0} 
+               onExit={() => setActiveGame(null)} 
+               winRate={gamesConfig['cyber_flip']?.winRate || 48}
+               minBet={gamesConfig['cyber_flip']?.minBet || 10}
+               multiplier={gamesConfig['cyber_flip']?.multiplier || 1.95}
+             />
+          </motion.div>
+        )}
+
+        {activeGame === 'sushi_strike' && (
+          <motion.div key="sushi_strike" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#120a0a]">
+             <SushiStrike 
+               onWin={handleWin} 
+               onBet={handleBet} 
+               balance={profile?.balance || 0} 
+               onExit={() => setActiveGame(null)} 
+               winRate={gamesConfig['sushi_strike']?.winRate || 33}
+               minBet={gamesConfig['sushi_strike']?.minBet || 10}
+               multiplier={gamesConfig['sushi_strike']?.multiplier || 2.8}
+             />
           </motion.div>
         )}
 
