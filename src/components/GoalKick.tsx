@@ -46,7 +46,7 @@ export const GoalKick: React.FC<PenaltyRoyaleProps> = ({
     setBallState('shot');
     setTimeout(() => {
         setKeeperPos(finalKeeperPos);
-        playSound('swipe');
+        playSound('click');
         
         setTimeout(() => {
             setStage('result');

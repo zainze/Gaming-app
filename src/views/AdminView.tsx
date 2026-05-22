@@ -333,11 +333,11 @@ export default function AdminView() {
                    <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5 col-span-2">
                         <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Plan Title</label>
-                        <input id="plan-title" type="text" placeholder="Quantum Growth Tier 1" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-bold text-xs" />
+                        <input id="plan-title" type="text" placeholder="Quantum Growth Tier 1" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-bold text-xs text-neutral-900" />
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Earning Type</label>
-                        <select id="plan-type" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs uppercase">
+                        <select id="plan-type" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs uppercase text-neutral-900">
                           <option value="daily">Daily Profit</option>
                           <option value="weekly">Weekly Profit</option>
                           <option value="monthly">Monthly Profit</option>
@@ -345,22 +345,22 @@ export default function AdminView() {
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Profit Rate (%)</label>
-                        <input id="plan-rate" type="number" placeholder="5" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs" />
+                        <input id="plan-rate" type="number" placeholder="5" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs text-neutral-900" />
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Min Investment (RS)</label>
-                        <input id="plan-min" type="number" placeholder="1000" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs" />
+                        <input id="plan-min" type="number" placeholder="1000" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs text-neutral-900" />
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Duration (Days)</label>
-                        <input id="plan-duration" type="number" placeholder="30" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs" />
+                        <input id="plan-duration" type="number" placeholder="30" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs text-neutral-900" />
                       </div>
                    </div>
                    
                    <div className="space-y-1.5">
                       <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Plan Image (Cloudinary)</label>
                       <div className="flex gap-2">
-                         <input id="plan-img-url" type="text" placeholder="https://..." className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 text-[10px] font-bold" />
+                         <input id="plan-img-url" type="text" placeholder="https://..." className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 text-[10px] font-bold text-neutral-900" />
                          <input type="file" id="plan-img-file" className="hidden" onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (file) {
@@ -763,16 +763,16 @@ export default function AdminView() {
                    <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Code String</label>
-                        <input id="new-promo-code" type="text" placeholder="LUCKY100" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-mono font-black text-xs uppercase" />
+                        <input id="new-promo-code" type="text" placeholder="LUCKY100" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-mono font-black text-xs uppercase text-neutral-900" />
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Reward Value</label>
-                        <input id="new-promo-value" type="number" placeholder="100" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs" />
+                        <input id="new-promo-value" type="number" placeholder="100" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs text-neutral-900" />
                       </div>
                    </div>
                    <div className="space-y-1.5">
                       <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Reward Type</label>
-                      <select id="new-promo-type" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs uppercase appearance-none">
+                      <select id="new-promo-type" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs uppercase appearance-none text-neutral-900">
                         <option value="balance">Net Cash (Balance)</option>
                         <option value="double_rewards">24H Double Rewards (2X)</option>
                       </select>
@@ -1035,7 +1035,7 @@ export default function AdminView() {
                           { id: 'space_dice', name: 'Space Dice', category: 'Blockchain', minBet: 10, winRate: 50, multiplier: 1.9, image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=400&auto=format&fit=crop" },
                           { id: 'dragon_tiger', name: 'Dragon Tiger', category: 'Cards', minBet: 10, winRate: 45, multiplier: 2, image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
                           { id: 'goal_kick', name: 'Penalty Royale', category: 'Skill', minBet: 10, winRate: 45, multiplier: 1.9, image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
-                          { id: 'cyber_flip', name: 'Cyber Flip', category: 'Classic', minBet: 10, winRate: 48, multiplier: 1.95, image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop" },
+                          { id: 'cyber_flip', name: 'Volt Surge', category: 'Classic', minBet: 10, winRate: 48, multiplier: 1.95, image: "https://images.unsplash.com/photo-1517055729445-fa7d27394b48?q=80&w=400&auto=format&fit=crop" },
                           { id: 'sushi_strike', name: 'Sushi Strike', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.8, image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" }
                         ];
                         for (const g of initialGames) {
@@ -1097,7 +1097,7 @@ export default function AdminView() {
                         { id: 'space_dice', name: 'Space Dice', category: 'Blockchain', minBet: 10, winRate: 50, multiplier: 1.9, image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=400&auto=format&fit=crop" },
                         { id: 'dragon_tiger', name: 'Dragon Tiger', category: 'Cards', minBet: 10, winRate: 45, multiplier: 2, image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
                         { id: 'goal_kick', name: 'Penalty Royale', category: 'Skill', minBet: 10, winRate: 45, multiplier: 1.9, image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
-                        { id: 'cyber_flip', name: 'Cyber Flip', category: 'Classic', minBet: 10, winRate: 48, multiplier: 1.95, image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop" },
+                        { id: 'cyber_flip', name: 'Volt Surge', category: 'Classic', minBet: 10, winRate: 48, multiplier: 1.95, image: "https://images.unsplash.com/photo-1517055729445-fa7d27394b48?q=80&w=400&auto=format&fit=crop" },
                         { id: 'sushi_strike', name: 'Sushi Strike', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.8, image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" }
                       ];
                       for (const g of initialGames) {
@@ -1316,19 +1316,49 @@ export default function AdminView() {
                     </div>
                   </div>
 
-                  {/* Support Channel Configuration */}
-                  <div className="bg-neutral-50 rounded-2xl border border-neutral-100 p-4 space-y-2">
-                    <p className="text-[10px] font-black uppercase text-neutral-400">Support / WhatsApp Channel URL</p>
-                    <div className="flex gap-2">
-                      <input 
-                         type="text" 
-                         placeholder="https://wa.me/..." 
-                         value={(globalConfig as any).whatsappUrl || ''}
-                         onChange={(e) => updateConfig('whatsappUrl', e.target.value)}
-                         className="flex-1 bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-green-500"
-                      />
+                  {/* Core Application Configuration & Support */}
+                  <div className="space-y-4">
+                    <div className="bg-neutral-50 rounded-2xl border border-neutral-100 p-4 space-y-2">
+                      <p className="text-[10px] font-black uppercase text-neutral-400">Application Name / Brand</p>
+                      <div className="flex gap-2">
+                        <input 
+   type="text" 
+   placeholder="e.g. DreamWin" 
+   value={(globalConfig as any).appName || ''}
+   onChange={(e) => updateConfig('appName', e.target.value)}
+   className="flex-1 bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-blue-500 text-black"
+/>
+                      </div>
+                      <p className="text-[8px] font-bold text-neutral-300 uppercase italic">* This name appears on Splash Screen and Header</p>
                     </div>
-                    <p className="text-[8px] font-bold text-neutral-300 uppercase italic">* User clicks floating message icon to open this link</p>
+
+                    <div className="bg-neutral-50 rounded-2xl border border-neutral-100 p-4 space-y-3">
+                      <p className="text-[10px] font-black uppercase text-neutral-400">Support / WhatsApp Channel URL</p>
+                      <div className="flex gap-2">
+                        <input 
+   type="text" 
+   placeholder="https://wa.me/..." 
+   value={(globalConfig as any).whatsappUrl || ''}
+   onChange={(e) => updateConfig('whatsappUrl', e.target.value)}
+   className="flex-1 bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-green-500 text-black"
+/>
+                      </div>
+                      <p className="text-[8px] font-bold text-neutral-300 uppercase italic">* User clicks floating message icon to open this link</p>
+                    </div>
+
+                    <div className="bg-neutral-50 rounded-2xl border border-neutral-100 p-4 space-y-3">
+                      <p className="text-[10px] font-black uppercase text-neutral-400">Download Application Link (APK / Mobile App)</p>
+                      <div className="flex gap-2">
+                        <input 
+                           type="text" 
+                           placeholder="https://example.com/app.apk" 
+                           value={(globalConfig as any).appDownloadUrl || ''}
+                           onChange={(e) => updateConfig('appDownloadUrl', e.target.value)}
+                           className="flex-1 bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-orange-500 text-black"
+                        />
+                      </div>
+                      <p className="text-[8px] font-bold text-neutral-300 uppercase italic">* Housed at home header/screen to facilitate quick offline installations</p>
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
@@ -1434,14 +1464,14 @@ export default function AdminView() {
                          placeholder="EP Number" 
                          value={(globalConfig as any).easypaisaNumber || ''}
                          onChange={(e) => updateConfig('easypaisaNumber', e.target.value)}
-                         className="bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2 text-xs font-black outline-none focus:border-orange-500" 
+                         className="bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2 text-xs font-black outline-none focus:border-orange-500 text-neutral-900" 
                        />
                        <input 
                          type="text" 
                          placeholder="EP Title" 
                          value={(globalConfig as any).easypaisaName || ''}
                          onChange={(e) => updateConfig('easypaisaName', e.target.value)}
-                         className="bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2 text-xs font-black outline-none focus:border-orange-500" 
+                         className="bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2 text-xs font-black outline-none focus:border-orange-500 text-neutral-900" 
                        />
                     </div>
                   </div>
@@ -1470,14 +1500,14 @@ export default function AdminView() {
                          placeholder="JC Number" 
                          value={(globalConfig as any).jazzcashNumber || ''}
                          onChange={(e) => updateConfig('jazzcashNumber', e.target.value)}
-                         className="bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2 text-xs font-black outline-none focus:border-orange-500" 
+                         className="bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2 text-xs font-black outline-none focus:border-orange-500 text-neutral-900" 
                        />
                        <input 
                          type="text" 
                          placeholder="JC Title" 
                          value={(globalConfig as any).jazzcashName || ''}
                          onChange={(e) => updateConfig('jazzcashName', e.target.value)}
-                         className="bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2 text-xs font-black outline-none focus:border-orange-500" 
+                         className="bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2 text-xs font-black outline-none focus:border-orange-500 text-neutral-900" 
                        />
                     </div>
                   </div>
@@ -1498,14 +1528,14 @@ export default function AdminView() {
                          placeholder="Account/IBAN" 
                          value={(globalConfig as any).bankNumber || ''}
                          onChange={(e) => updateConfig('bankNumber', e.target.value)}
-                         className="bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2 text-xs font-black outline-none focus:border-orange-500" 
+                         className="bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2 text-xs font-black outline-none focus:border-orange-500 text-neutral-900" 
                        />
                        <input 
                          type="text" 
                          placeholder="Bank Title" 
                          value={(globalConfig as any).bankName || ''}
                          onChange={(e) => updateConfig('bankName', e.target.value)}
-                         className="bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2 text-xs font-black outline-none focus:border-orange-500" 
+                         className="bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2 text-xs font-black outline-none focus:border-orange-500 text-neutral-900" 
                        />
                     </div>
                   </div>
@@ -1535,7 +1565,7 @@ export default function AdminView() {
                                value={(globalConfig as any)[`moreGame${num}Title`] || ''}
                                onChange={(e) => updateConfig(`moreGame${num}Title`, e.target.value)}
                                placeholder={`e.g. Game Name ${num}`}
-                               className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-orange-500"
+                               className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-orange-500 text-neutral-900"
                              />
                           </div>
                           <div className="space-y-1">
@@ -1545,7 +1575,7 @@ export default function AdminView() {
                                value={(globalConfig as any)[`moreGame${num}Url`] || ''}
                                onChange={(e) => updateConfig(`moreGame${num}Url`, e.target.value)}
                                placeholder="https://game-url.com"
-                               className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-orange-500"
+                               className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-orange-500 text-neutral-900"
                              />
                           </div>
                           <div className="grid grid-cols-3 gap-3">
@@ -1555,7 +1585,7 @@ export default function AdminView() {
                                   type="number" 
                                   value={(globalConfig as any)[`moreGame${num}Time`] || 60}
                                   onChange={(e) => updateConfig(`moreGame${num}Time`, parseInt(e.target.value))}
-                                  className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-orange-500"
+                                  className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs font-bold outline-none focus:border-orange-500 text-neutral-900"
                                 />
                              </div>
                              <div className="space-y-1">

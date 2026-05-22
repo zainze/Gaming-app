@@ -260,6 +260,49 @@ export default function HomeView({ profile, onNavigate }: { profile: any, onNavi
              </div>
         </header>
 
+        {systemConfig?.appDownloadUrl && (
+          <section className="px-6">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+              className="bg-gradient-to-r from-orange-500 via-orange-600 to-amber-600 rounded-[1.8rem] p-5 shadow-2xl relative overflow-hidden group border border-white/10"
+            >
+              {/* Background abstract decoration icon glowing */}
+              <div className="absolute top-0 right-0 -translate-y-4 translate-x-4 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-700" />
+              
+              <div className="flex items-center justify-between relative z-10">
+                <div className="space-y-1.5 flex-1 pr-4">
+                  <div className="inline-flex items-center gap-1.5 bg-black/20 px-2 py-0.5 rounded-full text-[8.5px] font-black tracking-widest uppercase text-white">
+                    <Sparkles size={8} className="text-orange-300 animate-pulse" /> Official Mobile App
+                  </div>
+                  <h3 className="text-lg font-black italic tracking-tight text-white uppercase leading-tight">
+                    Get {systemConfig?.appName || "DreamWin"} for Android
+                  </h3>
+                  <p className="text-[10px] text-white/80 font-semibold leading-relaxed">
+                    Download the verified mobile app (APK) directly and play with high-performance gaming.
+                  </p>
+                </div>
+                
+                <a 
+                  href={systemConfig.appDownloadUrl}
+                  download
+                  className="bg-white hover:bg-neutral-100 text-orange-600 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-black italic text-xs tracking-tight shadow-xl hover:shadow-orange-500/20 active:scale-95 transition-all flex-shrink-0"
+                >
+                  <motion.span
+                    animate={{ y: [0, -3, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                    className="text-base"
+                  >
+                    ⬇️
+                  </motion.span>
+                  DOWNLOAD APK
+                </a>
+              </div>
+            </motion.div>
+          </section>
+        )}
+
         <section className="px-6">
           <div className="grid grid-cols-5 gap-2">
              {quickLinks.map((link) => (

@@ -22,6 +22,7 @@ export default function CoinFlip({
   winRate = 50, 
   multiplier = 2 
 }: CoinFlipProps) {
+  const [selectedChoice, setSelectedChoice] = useState<'heads' | 'tails'>('heads');
   const [side, setSide] = useState<'heads' | 'tails' | null>(null);
   const [flipping, setFlipping] = useState(false);
   const [bet, setBet] = useState(minBet);
@@ -43,8 +44,8 @@ export default function CoinFlip({
     
     setTimeout(() => {
       stopSound('coin');
-      const willWin = Math.random() < (winRate / 100);
-      const finalSide = willWin ? 'heads' : 'tails';
+      const willWin = Math.random() * 100 < winRate;
+      const finalSide = willWin ? selectedChoice : (selectedChoice === 'heads' ? 'tails' : 'heads');
       setSide(finalSide);
       setFlipping(false);
       setShowResult(true);
@@ -101,7 +102,7 @@ export default function CoinFlip({
 
       {/* Main Game Stage */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
-        <div className="mb-12 h-24 flex flex-col items-center justify-center text-center">
+        <div className="mb-12 min-h-[140px] flex flex-col items-center justify-center text-center">
           <AnimatePresence mode="wait">
             {!flipping && side === null && (
               <motion.div
@@ -109,10 +110,36 @@ export default function CoinFlip({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="space-y-1"
+                className="space-y-4 flex flex-col items-center"
               >
-                <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white drop-shadow-lg">Heads or Tails?</h2>
-                <p className="text-[10px] font-black uppercase text-[#6B6D6F] tracking-[.3em]">Fortune favors the bold</p>
+                <div className="space-y-1">
+                  <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white drop-shadow-lg">Heads or Tails?</h2>
+                  <p className="text-[10px] font-black uppercase text-[#6B6D6F] tracking-[.3em]">Fortune favors the bold</p>
+                </div>
+                
+                {/* Select Option HEADS / TAILS */}
+                <div className="flex bg-black/40 rounded-2xl p-1 border border-[#1a2b45] w-64 shadow-inner">
+                  <button
+                    onClick={() => { setSelectedChoice('heads'); playSound('click'); }}
+                    className={`flex-1 py-2 px-4 rounded-xl font-black uppercase text-xs tracking-wider transition-all duration-300 ${
+                      selectedChoice === 'heads'
+                        ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/30 font-bold scale-[1.03]'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    Heads
+                  </button>
+                  <button
+                    onClick={() => { setSelectedChoice('tails'); playSound('click'); }}
+                    className={`flex-1 py-2 px-4 rounded-xl font-black uppercase text-xs tracking-wider transition-all duration-300 ${
+                      selectedChoice === 'tails'
+                        ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/30 font-bold scale-[1.03]'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    Tails
+                  </button>
+                </div>
               </motion.div>
             )}
             
@@ -122,7 +149,7 @@ export default function CoinFlip({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex flex-col items-center gap-2"
+                className="flex flex-col items-center gap-3"
               >
                 <div className="flex gap-2">
                   {[0, 1, 2].map(i => (
@@ -134,9 +161,14 @@ export default function CoinFlip({
                     />
                   ))}
                 </div>
-                <p className="text-[12px] font-black uppercase text-amber-500 tracking-[0.4em] animate-pulse">
-                  Flipping Coin...
-                </p>
+                <div className="space-y-1">
+                  <p className="text-[12px] font-black uppercase text-amber-500 tracking-[0.4em] animate-pulse">
+                    Flipping Coin...
+                  </p>
+                  <p className="text-[9px] font-bold text-neutral-500 uppercase tracking-widest">
+                    BET ON: {selectedChoice.toUpperCase()}
+                  </p>
+                </div>
               </motion.div>
             )}
 
@@ -148,10 +180,13 @@ export default function CoinFlip({
                 className="flex flex-col items-center"
               >
                 <div className={`text-5xl font-black italic tracking-tighter drop-shadow-[0_0_20px_rgba(0,0,0,0.5)] ${isWin ? 'text-[#32D74B]' : 'text-red-500'}`}>
-                  {isWin ? 'JACKPOT!' : 'TAILS: LOSS'}
+                  {isWin ? 'JACKPOT!' : `${side?.toUpperCase()}: LOSS`}
                 </div>
                 <div className="mt-2 text-xs font-black uppercase tracking-[0.2em] text-[#6B6D6F]">
-                  {isWin ? `YOU WON RS ${bet * multiplier}` : 'Better luck next time'}
+                  {isWin 
+                    ? `CONGRATS! GUESSED ${selectedChoice.toUpperCase()} & WON RS ${bet * multiplier}` 
+                    : `GUESSED ${selectedChoice.toUpperCase()} | LANDED ON ${side?.toUpperCase()}`
+                  }
                 </div>
               </motion.div>
             )}

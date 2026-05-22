@@ -199,29 +199,25 @@ export const Aviator: React.FC<AviatorProps> = ({ balance, onWin, onBet, onExit,
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '100px 100px' }} />
       </div>
 
-      <header className="flex items-center justify-between px-4 h-16 bg-[#16171a]/95 border-b border-white/5 backdrop-blur-md flex-shrink-0 relative z-50 shadow-2xl">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#D92121]/10 flex items-center justify-center border border-[#D92121]/20">
-            <Plane size={22} className="text-[#D92121] -rotate-45" />
-          </div>
-          <div className="flex flex-col leading-none">
-            <span className="text-white font-black italic tracking-tighter text-xl uppercase">Aviator Elite</span>
-            <span className="text-[8px] font-black uppercase tracking-[0.4em] text-[#D92121]/60">Precision Flight</span>
-          </div>
+      <header className="flex items-center justify-between px-3 h-14 bg-[#0a121e] border-b border-[#1a2b45] relative z-20 shrink-0">
+        <div className="flex items-center gap-2">
+          <Plane className="text-[#D92121] -rotate-45 animate-pulse" size={20} />
+          <span className="text-[#D92121] font-black italic tracking-tighter text-lg uppercase whitespace-nowrap">Aviator</span>
         </div>
         
-        <div className="flex items-center gap-2 bg-black/40 rounded-2xl px-4 py-2 border border-white/5 shadow-inner">
-          <div className="w-4 h-4 rounded-full bg-[#fdd835]/20 flex items-center justify-center">
-            <div className="w-2 h-2 rounded-full bg-[#fdd835] shadow-[0_0_10px_#fdd835]" />
+        <div className="flex items-center gap-2 bg-black/60 rounded-full px-3 py-1.5 border border-[#1a2b45] shadow-lg">
+          <div className="w-3.5 h-3.5 rounded-full bg-[#FBCB35] flex items-center justify-center shadow-[0_0_10px_rgba(251,203,53,0.3)]">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#14171A]" />
           </div>
-          <span className="text-[#32D74B] font-black text-sm tracking-tight leading-none">RS {balance.toFixed(0)}</span>
+          <span className="text-[#32D74B] font-black text-xs leading-none">RS {balance.toFixed(0)}</span>
         </div>
 
         <button 
           onClick={onExit}
-          className="p-2.5 bg-white/5 text-white/50 rounded-xl border border-white/5 hover:bg-white/10 hover:text-white transition-all shadow-lg active:scale-90"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 text-red-500 rounded-lg border border-red-500/20 active:scale-95 transition-all hover:bg-red-500/20 shadow-lg"
         >
-          <LogOut size={20} />
+          <LogOut size={14} />
+          <span className="text-[10px] font-black uppercase tracking-widest">Quit</span>
         </button>
       </header>
 

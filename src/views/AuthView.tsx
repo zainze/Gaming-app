@@ -41,17 +41,18 @@ export default function AuthView() {
           <motion.div 
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="w-20 h-20 bg-orange-500 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-xl shadow-orange-500/20 rotate-12 overflow-hidden"
+            className="w-20 h-20 bg-black rounded-[2rem] flex items-center justify-center mx-auto shadow-xl shadow-lime-500/10 rotate-12 overflow-hidden border border-[#65E902]/20"
           >
-            {logo ? (
-              <img src={logo} className="w-full h-full object-contain p-2 -rotate-12" alt="Logo" referrerPolicy="no-referrer" />
-            ) : (
-              <Gamepad2 size={40} className="text-white -rotate-12" />
-            )}
+            <img 
+              src={logo || "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1779478958/IMG-20260522-WA0007_ksqm2p.jpg"} 
+              className="w-full h-full object-cover -rotate-12" 
+              alt="Logo" 
+              referrerPolicy="no-referrer" 
+            />
           </motion.div>
           <div className="space-y-1">
-            <h1 className="text-5xl font-black tracking-tighter uppercase italic text-neutral-900">Dream<span className="text-orange-500">Win</span></h1>
-            <p className="text-neutral-400 text-sm font-bold uppercase tracking-[0.3em]">The Ultimate Game Hub</p>
+            <h1 className="text-5xl font-black tracking-tighter uppercase italic text-neutral-900">H<span className="text-[#65E902]">666</span></h1>
+            <p className="text-neutral-400 text-sm font-bold uppercase tracking-[0.3em]">H666.COM Flight Hub</p>
           </div>
         </div>
 

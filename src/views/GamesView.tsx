@@ -172,7 +172,7 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
     space_dice: { title: "Space Dice", category: "Blockchain", image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=400&auto=format&fit=crop" },
     dragon_tiger: { title: "Dragon Tiger", category: "Cards", image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
     goal_kick: { title: "Penalty Royale", category: "Skill", image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
-    cyber_flip: { title: "Cyber Flip", category: "Blockchain", image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop" },
+    cyber_flip: { title: "Volt Surge", category: "Classic", image: "https://images.unsplash.com/photo-1517055729445-fa7d27394b48?q=80&w=400&auto=format&fit=crop" },
     sushi_strike: { title: "Sushi Strike", category: "Classic", image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
     web_cyber: { title: "Cyber City", category: "Arcade", url: "https://www.crazygames.com/embed/block-rush", image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=400&auto=format&fit=crop", time: 60, reward: 25 },
     web_drift: { title: "Drift King", category: "Arcade", url: "https://www.crazygames.com/embed/cyber-surfer", image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop", time: 45, reward: 20 },
@@ -600,7 +600,7 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
         )}
 
         {activeGame === 'cyber_flip' && (
-          <motion.div key="cyber_flip" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#050505]">
+          <motion.div key="cyber_flip" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#05060a]">
              <CyberFlip 
                onWin={handleWin} 
                onBet={handleBet} 

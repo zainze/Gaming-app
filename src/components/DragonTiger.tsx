@@ -64,10 +64,10 @@ export const DragonTiger: React.FC<DragonTigerProps> = ({
 
     setTimeout(() => {
         setDragonCard(dVal);
-        playSound('card_flip');
+        playSound('click');
         setTimeout(() => {
             setTigerCard(tVal);
-            playSound('card_flip');
+            playSound('click');
             
             setTimeout(() => {
                 setStage('result');
