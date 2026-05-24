@@ -213,7 +213,7 @@ function AppContent({ user, profile, systemConfig }: any) {
   return (
     <div className="min-h-screen bg-[#0b0e11] text-white font-sans selection:bg-orange-500/30">
       <div className="pb-24 max-w-lg mx-auto bg-[#1b2a5c] border-x border-white/5 min-h-screen relative shadow-2xl overflow-x-hidden">
-        {location.pathname !== "/wallet" && (
+        {location.pathname === "/games" && (
           <header className="sticky top-0 z-50 bg-[#14254f]/90 backdrop-blur-xl border-b border-white/5 px-4 py-2.5 flex items-center justify-between shadow-lg">
             <div className="flex items-center gap-2">
               {systemConfig?.appLogo ? (
@@ -262,12 +262,12 @@ function AppContent({ user, profile, systemConfig }: any) {
 
         <AnimatePresence mode="wait">
           <Routes>
-            <Route path="/" element={user ? <HomeView profile={profile} onNavigate={onNavigate} /> : <Navigate to="/auth" />} />
+            <Route path="/" element={user ? <Navigate to="/games" replace /> : <Navigate to="/auth" />} />
             <Route path="/games" element={user ? <GamesView profile={profile} onNavigate={onNavigate} /> : <Navigate to="/auth" />} />
             <Route path="/wallet" element={user ? <WalletView profile={profile} /> : <Navigate to="/auth" />} />
             <Route path="/profile" element={user ? <ProfileView profile={profile} /> : <Navigate to="/auth" />} />
-            <Route path="/admin" element={(user && (profile?.role === 'admin' || profile?.email === 'zainzeb333@gmail.com')) ? <AdminView /> : <Navigate to="/" />} />
-            <Route path="/auth" element={!user ? <AuthView /> : <Navigate to="/" />} />
+            <Route path="/admin" element={(user && (profile?.role === 'admin' || profile?.email === 'zainzeb333@gmail.com')) ? <AdminView /> : <Navigate to="/games" />} />
+            <Route path="/auth" element={!user ? <AuthView /> : <Navigate to="/games" />} />
           </Routes>
         </AnimatePresence>
 

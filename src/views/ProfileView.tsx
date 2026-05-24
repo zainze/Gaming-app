@@ -1,10 +1,11 @@
-import { motion } from "motion/react";
-import { LogOut, Share2, Shield, Globe, Bell, ChevronRight, Copy, Check, ArrowLeft, Zap } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { LogOut, Share2, Shield, Globe, Bell, ChevronRight, Copy, Check, ArrowLeft, Zap, Gift, AlertCircle, CheckCircle2 } from "lucide-react";
 import { auth, db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { signOut } from "firebase/auth";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, where, onSnapshot, orderBy, updateDoc, doc, getDocs, limit, increment, addDoc, writeBatch, getDoc, setDoc } from "firebase/firestore";
+import { playSound } from "../lib/sounds";
 import PrivacyView from "./PrivacyView";
 
 type ActiveSection = 'main' | 'notifications' | 'privacy' | 'language' | 'favorites';
@@ -49,6 +50,7 @@ export default function ProfileView({ profile }: { profile: any }) {
   }, [profile]);
 
   const copyToClipboard = () => {
+    playSound("click");
     navigator.clipboard.writeText(`https://playhub.pro/i/${profile?.inviteCode}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -80,11 +82,11 @@ export default function ProfileView({ profile }: { profile: any }) {
     if (!referralCode.trim() || profile?.referredBy) return;
     setRefStatus('loading');
     const inputRaw = referralCode.trim();
-    // Extract code if it's a full URL or path (e.g., https://playhub.pro/i/CODE -> CODE)
     const inputCode = (inputRaw.includes('/') ? inputRaw.replace(/\/+$/, '').split('/').pop() : inputRaw)?.toUpperCase().trim() || "";
     
     if (!inputCode) {
       setRefStatus('error');
+      playSound("error" as any);
       return;
     }
 
@@ -101,7 +103,6 @@ export default function ProfileView({ profile }: { profile: any }) {
         const userSnap = await getDocs(userQ);
         if (!userSnap.empty) {
           referrerId = userSnap.docs[0].id;
-          // While we're here, let's fix the registry for future fast lookups
           setDoc(doc(db, "invite_codes", inputCode), { uid: referrerId });
         }
       }
@@ -109,18 +110,15 @@ export default function ProfileView({ profile }: { profile: any }) {
       if (referrerId) {
         if (referrerId === profile.uid) {
           setRefStatus('error');
+          playSound("error" as any);
           return;
         }
 
         const batch = writeBatch(db);
         
-        // Mark current user as referred
         batch.update(doc(db, "users", profile.uid), { referredBy: referrerId });
-
-        // Add reward to referrer balance
         batch.update(doc(db, "users", referrerId), { balance: increment(referralReward) });
 
-        // Create referral record
         const refId = `${profile.uid}_${referrerId}`;
         batch.set(doc(db, "referrals", refId), {
           referrerId: referrerId,
@@ -129,7 +127,6 @@ export default function ProfileView({ profile }: { profile: any }) {
           createdAt: new Date().toISOString()
         });
 
-        // Create transaction for referrer
         batch.set(doc(collection(db, "transactions")), {
           userId: referrerId,
           amount: referralReward,
@@ -138,7 +135,6 @@ export default function ProfileView({ profile }: { profile: any }) {
           createdAt: new Date().toISOString()
         });
 
-        // Notification
         batch.set(doc(collection(db, "notifications")), {
           userId: referrerId,
           title: "Referral Reward! 🎉",
@@ -153,297 +149,400 @@ export default function ProfileView({ profile }: { profile: any }) {
           throw err;
         });
         setRefStatus('success');
+        playSound("success" as any);
         return;
       }
 
-    // 2. Try Promo Code (promo_codes)
-    const promoDoc = await getDoc(doc(db, "promo_codes", inputCode)).catch(err => {
-      handleFirestoreError(err, OperationType.GET, `promo_codes/${inputCode}`);
-      throw err;
-    });
-    if (promoDoc.exists()) {
-      const promo = promoDoc.data();
-      if (!promo.active || (promo.usedBy && promo.usedBy.includes(profile.uid))) {
-        setRefStatus('error');
-        return;
-      }
-
-      const batch = writeBatch(db);
-      
-      // Reward Type Handling
-      if (promo.type === 'balance') {
-         batch.update(doc(db, "users", profile.uid), { balance: increment(promo.value) });
-         batch.set(doc(collection(db, "transactions")), {
-           userId: profile.uid,
-           amount: promo.value,
-           type: 'bonus',
-           status: 'completed',
-           createdAt: new Date().toISOString(),
-           promoCode: inputCode
-         });
-      } else if (promo.type === 'double_rewards') {
-         // Set double rewards for 24 hours
-         const expiry = new Date();
-         expiry.setHours(expiry.getHours() + 24);
-         batch.update(doc(db, "users", profile.uid), { 
-           doubleRewardsUntil: expiry.toISOString(),
-           rewardMultiplier: 2
-         });
-         batch.set(doc(collection(db, "transactions")), {
-           userId: profile.uid,
-           amount: 0,
-           type: 'bonus',
-           status: 'completed',
-           createdAt: new Date().toISOString(),
-           promoCode: inputCode,
-           note: "Double Rewards Activated (24h)"
-         });
-      }
-      
-      // Record Usage
-      batch.update(doc(db, "promo_codes", inputCode), {
-        usedBy: [...(promo.usedBy || []), profile.uid]
-      });
-
-      await batch.commit().catch(err => {
-        handleFirestoreError(err, OperationType.WRITE, "promo_batch");
+      // 2. Try Promo Code (promo_codes)
+      const promoDoc = await getDoc(doc(db, "promo_codes", inputCode)).catch(err => {
+        handleFirestoreError(err, OperationType.GET, `promo_codes/${inputCode}`);
         throw err;
       });
-      setRefStatus('success');
-      return;
-    }
+      if (promoDoc.exists()) {
+        const promo = promoDoc.data();
+        if (!promo.active || (promo.usedBy && promo.usedBy.includes(profile.uid))) {
+          setRefStatus('error');
+          playSound("error" as any);
+          return;
+        }
 
-    setRefStatus('error');
-  } catch (err) {
-    console.error("Referral/Promo error:", err);
-    // Already handled by throw from handleFirestoreError
-    setRefStatus('error');
-  }
-};
+        const batch = writeBatch(db);
+        
+        if (promo.type === 'balance') {
+           batch.update(doc(db, "users", profile.uid), { balance: increment(promo.value) });
+           batch.set(doc(collection(db, "transactions")), {
+             userId: profile.uid,
+             amount: promo.value,
+             type: 'bonus',
+             status: 'completed',
+             createdAt: new Date().toISOString(),
+             promoCode: inputCode
+           });
+        } else if (promo.type === 'double_rewards') {
+           const expiry = new Date();
+           expiry.setHours(expiry.getHours() + 24);
+           batch.update(doc(db, "users", profile.uid), { 
+             doubleRewardsUntil: expiry.toISOString(),
+             rewardMultiplier: 2
+           });
+           batch.set(doc(collection(db, "transactions")), {
+             userId: profile.uid,
+             amount: 0,
+             type: 'bonus',
+             status: 'completed',
+             createdAt: new Date().toISOString(),
+             promoCode: inputCode,
+             note: "Double Rewards Activated (24h)"
+           });
+        }
+        
+        batch.update(doc(db, "promo_codes", inputCode), {
+          usedBy: [...(promo.usedBy || []), profile.uid]
+        });
+
+        await batch.commit().catch(err => {
+          handleFirestoreError(err, OperationType.WRITE, "promo_batch");
+          throw err;
+        });
+        setRefStatus('success');
+        playSound("success" as any);
+        return;
+      }
+
+      setRefStatus('error');
+      playSound("error" as any);
+    } catch (err) {
+      console.error("Referral/Promo error:", err);
+      setRefStatus('error');
+    }
+  };
 
   if (activeSection === 'privacy') return <PrivacyView onBack={() => setActiveSection('main')} />;
 
   if (activeSection === 'notifications') {
     return (
-      <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="p-4 space-y-6 pb-24">
-        <header className="flex items-center gap-4">
-          <button onClick={() => setActiveSection('main')} className="p-2 hover:bg-neutral-100 rounded-full transition-colors text-neutral-900">
-            <ArrowLeft size={24} />
+      <div className="min-h-screen bg-[#F2F4F8] pb-32 text-neutral-800 font-sans select-none antialiased">
+        {/* Blue Top Action Header */}
+        <header className="bg-[#2196F3] text-white px-4 py-3.5 flex items-center justify-between shadow-md relative z-20">
+          <button 
+            onClick={() => {
+              playSound("click");
+              setActiveSection('main');
+            }}
+            className="p-1 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center animate-pulse"
+          >
+            <ArrowLeft size={22} className="text-white" />
           </button>
-          <h2 className="text-2xl font-black italic uppercase text-neutral-900">Notifications</h2>
+          
+          <h1 className="text-[19px] font-bold tracking-tight text-white pl-3">Notifications</h1>
+          <div className="w-10" />
         </header>
-        <div className="space-y-3 font-urdu">
+
+        <div className="max-w-xl mx-auto px-4 pt-6 space-y-4">
           {notifications.length === 0 ? (
-            <div className="bg-white border border-neutral-100 p-8 rounded-3xl text-center">
-              <Bell className="mx-auto text-neutral-200 mb-2" size={32} />
-              <p className="text-neutral-400 font-bold uppercase text-[10px]">No notifications yet</p>
+            <div className="bg-white border border-[#2196F3]/20 p-12 rounded-2xl text-center space-y-3 shadow-sm">
+              <Bell className="mx-auto text-neutral-300 animate-bounce" size={40} />
+              <p className="text-neutral-500 font-bold uppercase text-xs tracking-wider">No notifications yet</p>
             </div>
           ) : (
-            notifications.map(n => (
-              <div 
-                key={n.id} 
-                onClick={() => markAsRead(n.id)}
-                className={`p-4 rounded-2xl border ${n.read ? 'bg-neutral-50/50 border-neutral-100' : 'bg-white border-orange-500/20 shadow-sm'}`}
-              >
-                <div className="flex justify-between items-start mb-1">
-                  <p className={`font-bold text-sm ${n.read ? 'text-neutral-700' : 'text-orange-500'}`}>{n.title}</p>
-                  {!n.read && <div className="w-2 h-2 bg-orange-500 rounded-full mt-1" />}
+            <div className="space-y-3 font-urdu">
+              {notifications.map(n => (
+                <div 
+                  key={n.id} 
+                  onClick={() => {
+                    playSound("click");
+                    markAsRead(n.id);
+                  }}
+                  className={`p-4 rounded-xl border cursor-pointer hover:bg-neutral-50 transition-colors ${
+                    n.read 
+                      ? 'bg-white border-neutral-200/80 shadow-sm' 
+                      : 'bg-[#2196F3]/5 border-[#2196F3]/40 shadow-md ring-1 ring-offset-1 ring-[#2196F3]/10'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-1.5">
+                    <p className={`font-black text-xs uppercase tracking-wide ${n.read ? 'text-neutral-500' : 'text-[#2196F3]'}`}>{n.title}</p>
+                    {!n.read && <div className="w-2 h-2 bg-[#2196F3] rounded-full mt-1 animate-ping" />}
+                  </div>
+                  <p className="text-xs text-neutral-700 font-medium leading-relaxed">{n.body}</p>
+                  <p className="text-[9px] text-neutral-400 font-bold uppercase mt-2.5 font-mono">{new Date(n.createdAt).toLocaleString()}</p>
                 </div>
-                <p className="text-xs text-neutral-400 leading-relaxed">{n.body}</p>
-                <p className="text-[8px] text-neutral-400 font-bold uppercase mt-2">{new Date(n.createdAt).toLocaleString()}</p>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   if (activeSection === 'language') {
     return (
-      <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="p-4 space-y-6 pb-24">
-        <header className="flex items-center gap-4">
-          <button onClick={() => setActiveSection('main')} className="p-2 hover:bg-neutral-100 rounded-full transition-colors text-neutral-900">
-            <ArrowLeft size={24} />
+      <div className="min-h-screen bg-[#F2F4F8] pb-32 text-neutral-800 font-sans select-none antialiased">
+        {/* Blue Top Action Header */}
+        <header className="bg-[#2196F3] text-white px-4 py-3.5 flex items-center justify-between shadow-md relative z-20">
+          <button 
+            onClick={() => {
+              playSound("click");
+              setActiveSection('main');
+            }}
+            className="p-1 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center"
+          >
+            <ArrowLeft size={22} className="text-white" />
           </button>
-          <h2 className="text-2xl font-black italic uppercase text-neutral-900">Language / زبان</h2>
+          
+          <h1 className="text-[19px] font-bold tracking-tight text-white pl-3">Language / زبان</h1>
+          <div className="w-10" />
         </header>
-        <div className="space-y-4">
-          <button 
-            onClick={() => toggleLanguage('en')}
-            className={`w-full p-6 rounded-3xl border flex items-center justify-between group transition-all ${profile?.language === 'en' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white border-neutral-200 hover:border-neutral-300 text-neutral-900'}`}
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-neutral-100 rounded-xl flex items-center justify-center font-black text-neutral-900">EN</div>
-              <span className="font-bold">English (US)</span>
+
+        <div className="max-w-xl mx-auto px-4 pt-6">
+          <div className="bg-white border border-[#2196F3]/40 rounded-2xl p-5 shadow-sm space-y-4">
+            <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
+              Choose System Language:
+            </label>
+            <div className="space-y-3">
+              <button 
+                onClick={() => {
+                  playSound("click");
+                  toggleLanguage('en');
+                }}
+                className={`w-full p-4 rounded-xl border flex items-center justify-between group transition-all active:scale-[0.99] ${
+                  profile?.language === 'en' 
+                    ? 'bg-blue-50/50 border-[#2196F3] text-[#2196F3] shadow-sm' 
+                    : 'bg-white border-neutral-200 hover:border-neutral-300 text-neutral-700'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center font-bold text-xs text-neutral-700">EN</div>
+                  <span className="font-extrabold text-sm">English (US)</span>
+                </div>
+                {profile?.language === 'en' && <Check size={18} className="text-[#2196F3] stroke-[3]" />}
+              </button>
+
+              <button 
+                onClick={() => {
+                  playSound("click");
+                  toggleLanguage('ur');
+                }}
+                className={`w-full p-4 rounded-xl border flex items-center justify-between group transition-all active:scale-[0.99] ${
+                  profile?.language === 'ur' 
+                    ? 'bg-blue-50/50 border-[#2196F3] text-[#2196F3] shadow-sm' 
+                    : 'bg-white border-neutral-200 hover:border-neutral-300 text-neutral-700'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center font-urdu font-black text-base text-neutral-700">اردو</div>
+                  <div className="text-left font-urdu">
+                    <p className="font-extrabold text-sm">Urdu / اردو</p>
+                    <p className="text-[9px] text-neutral-400 font-semibold uppercase">اردو زبان منتخب کریں</p>
+                  </div>
+                </div>
+                {profile?.language === 'ur' && <Check size={18} className="text-[#2196F3] stroke-[3]" />}
+              </button>
             </div>
-            {profile?.language === 'en' && <Check size={20} />}
-          </button>
-          <button 
-            onClick={() => toggleLanguage('ur')}
-            className={`w-full p-6 rounded-3xl border flex items-center justify-between group transition-all ${profile?.language === 'ur' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white border-neutral-200 hover:border-neutral-300 text-neutral-900'}`}
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-neutral-100 rounded-xl flex items-center justify-center font-urdu font-black text-lg text-neutral-900">اردو</div>
-              <div className="text-left">
-                <p className="font-bold">Urdu</p>
-                <p className="text-[10px] opacity-70 uppercase font-bold tracking-widest font-urdu">اردو زبان منتخب کریں</p>
-              </div>
-            </div>
-            {profile?.language === 'ur' && <Check size={20} />}
-          </button>
+          </div>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className={`space-y-8 pb-24 ${profile?.language === 'ur' ? 'font-urdu' : ''} text-white`}
-    >
-      <header className="flex flex-col items-center py-8 space-y-6">
-        <div className="relative group p-3">
-          {/* Animated rings */}
-          <div className="absolute inset-0 rounded-full border border-dashed border-orange-500/10 animate-spin-slow" />
-          
-          <div className="relative">
-             <div className="absolute inset-0 bg-orange-500 rounded-[1.5rem] blur-xl opacity-10 group-hover:opacity-20 transition-opacity duration-700" />
-             <div className="relative w-24 h-24 rounded-[1.5rem] border-2 border-[#14254f] p-1 shadow-2xl bg-gradient-to-br from-orange-500 via-orange-600 to-red-600">
-               <img 
-                 src={profile?.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.uid}`} 
-                 alt="Profile" 
-                 className="w-full h-full rounded-[1.2rem] object-cover bg-[#0b0e11]"
-                 referrerPolicy="no-referrer"
-               />
-             </div>
-             
-             <div className="absolute -bottom-1 -right-1 bg-green-500 text-white p-1.5 rounded-lg shadow-xl border-2 border-[#1b2a5c]">
-                <Zap size={10} fill="currentColor" />
-             </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#F2F4F8] pb-32 text-neutral-800 font-sans select-none antialiased">
+      {/* Blue Top Action Header */}
+      <header className="bg-[#2196F3] text-white px-4 py-3.5 flex items-center justify-between shadow-md relative z-20">
+        <button 
+          onClick={() => {
+            playSound("click");
+            navigate(-1);
+          }}
+          className="p-1 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center"
+        >
+          <ArrowLeft size={22} className="text-white" />
+        </button>
 
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase leading-none">{profile?.displayName}</h2>
-          <div className="flex items-center justify-center gap-3">
-            <div className="flex items-center gap-1.5 bg-orange-500/10 px-2.5 py-0.5 rounded-full border border-orange-500/10">
-               <Shield size={8} className="text-orange-500" />
-               <span className="text-orange-500 text-[8px] font-black uppercase tracking-widest">{profile?.role}</span>
-            </div>
-            <p className="text-white/30 text-[9px] font-black uppercase tracking-[0.2em] font-mono">{profile?.email?.split('@')[0]}</p>
-          </div>
+        <h1 className="text-[19px] font-bold tracking-tight text-white pl-3">My Profile</h1>
+
+        <div className="bg-white text-neutral-900 font-bold px-3 py-1 rounded-full text-[14px] flex items-center gap-1 shadow-sm border border-black/5">
+          <span className="text-[#2196F3]">₹</span>
+          <span>{Number(profile?.balance || 0).toLocaleString()}</span>
         </div>
       </header>
 
-      {/* Admin Section */}
-      {(profile?.role === 'admin' || isAdminEmail) && (
-        <section className="mx-6 relative">
-          <div className="relative bg-[#14254f] border border-white/10 rounded-[1.5rem] p-6 space-y-4 shadow-2xl overflow-hidden group">
-            <div className="absolute top-0 right-0 p-5 opacity-5 group-hover:scale-110 transition-transform duration-700">
-               <Shield size={60} className="text-blue-500" />
+      {/* Main View Area */}
+      <div className="max-w-xl mx-auto px-4 pt-6 space-y-5">
+        
+        {/* User profile & Avatar Board */}
+        <div className="bg-white border border-[#2196F3]/40 rounded-2xl p-6 shadow-sm flex flex-col items-center space-y-4 text-center">
+          <div className="relative inline-block">
+            {/* Pulsing visual spinner boundary */}
+            <div className="absolute inset-0 rounded-full border border-dashed border-[#2196F3]/40 animate-spin-slow" />
+            
+            <div className="relative w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-[#2196F3] to-[#9C27B0]">
+              <img 
+                src={profile?.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.uid}`} 
+                alt="Profile" 
+                className="w-full h-full rounded-full object-cover bg-neutral-100"
+                referrerPolicy="no-referrer"
+              />
             </div>
-            <div className="space-y-0.5 relative z-10">
-              <h3 className="font-black text-white text-sm italic uppercase tracking-tight flex items-center gap-2">
-                <Shield size={16} className="text-blue-500" /> Admin Panel
-              </h3>
-              <p className="text-[8px] text-white/30 font-black uppercase tracking-widest font-mono">Admin Controls</p>
+            {/* Active badge representation spark */}
+            <div className="absolute bottom-0 right-0 bg-emerald-500 text-white p-1 rounded-full shadow-lg border-2 border-white">
+              <Zap size={8} fill="currentColor" />
             </div>
-            <button 
-              onClick={() => navigate('/admin')}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3.5 rounded-xl font-black italic uppercase tracking-[0.2em] text-[10px] shadow-xl active:scale-95 transition-all relative z-10"
-            >
-              Open Admin Panel
-            </button>
           </div>
-        </section>
-      )}
 
-      {/* Invite & Social */}
-      <section className="mx-6">
-        <div className="bg-[#14254f] border border-white/10 rounded-[1.5rem] overflow-hidden shadow-2xl relative">
-          <div className="absolute top-0 right-0 p-3">
-             <div className="px-2 py-0.5 bg-green-500/10 rounded-full text-[7px] font-black text-green-400 uppercase tracking-widest border border-green-500/10">Active</div>
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold text-neutral-800 uppercase tracking-tight">{profile?.displayName}</h2>
+            <div className="flex items-center justify-center gap-2">
+              <span className="bg-blue-50 border border-blue-200/80 text-[#2196F3] text-[9px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full">
+                {profile?.role || "Player"}
+              </span>
+              <span className="text-neutral-400 text-[10px] font-medium font-mono">{profile?.email?.split('@')[0]}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Invite & promo code center */}
+        <div className="bg-white border border-[#2196F3]/40 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Referrals & Promos</h3>
+            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-bold uppercase tracking-wider border border-emerald-100">Bonus Active</span>
           </div>
           
-          <div className="p-6 space-y-6">
+          {/* Own invite code */}
+          <div 
+            onClick={copyToClipboard}
+            className="bg-neutral-50 border border-neutral-200/80 rounded-xl p-3 flex justify-between items-center cursor-pointer hover:bg-neutral-100/50 transition-colors"
+          >
             <div className="space-y-0.5">
-              <h3 className="font-black italic text-white uppercase text-base tracking-tight flex items-center gap-2">
-                <Share2 size={18} className="text-orange-500" /> Referral Code
-              </h3>
-              <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] font-mono pl-1">Invite friends here</p>
+              <span className="text-[9px] text-neutral-400 font-bold uppercase">My Referral Code</span>
+              <p className="font-mono font-extrabold text-[#2196F3] text-lg tracking-wider italic">{profile?.inviteCode || "GETTING CODE..."}</p>
             </div>
-            
-            <div 
-              onClick={copyToClipboard}
-              className="flex items-center justify-between bg-black/20 border border-white/5 p-4 rounded-2xl cursor-pointer group hover:bg-white/5 transition-all relative overflow-hidden"
-            >
-              <div className="flex flex-col relative z-10">
-                 <span className="text-[7px] font-black text-white/10 uppercase tracking-widest mb-0.5 font-mono">My Code</span>
-                 <span className="font-mono font-black text-xl tracking-[0.2em] text-white italic">{profile?.inviteCode}</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl text-white/40 group-hover:text-white group-hover:bg-orange-500 transition-all relative z-10 shadow-lg">
-                <span className="text-[9px] font-black uppercase tracking-widest">{copied ? 'OK' : 'COPY'}</span>
-                {copied ? <Check size={14} className="text-white" /> : <Copy size={14} />}
-              </div>
-            </div>
+            <button className="flex items-center gap-1 bg-[#2196F3] text-white px-3.5 py-1.5 rounded-lg text-[10px] font-bold shadow-sm hover:opacity-90">
+              {copied ? "COPIED" : "COPY"}
+              {copied ? <Check size={12} /> : <Copy size={12} />}
+            </button>
           </div>
-        </div>
-      </section>
 
-      {/* Protocols Selection */}
-      <section className="px-6 space-y-3">
-        <div className="flex items-center justify-between px-1">
-           <h3 className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] font-mono">Settings</h3>
-           <div className="h-px flex-1 mx-3 bg-white/5" />
+          {/* Invitation and code entry field */}
+          {!profile?.referredBy && (
+            <div className="space-y-2 pt-1.5 border-t border-neutral-100">
+              <p className="text-[10px] font-bold text-neutral-400 uppercase">Redeem Promo or Friend's Invite Code</p>
+              <div className="flex gap-2">
+                <div className="flex-1 bg-white border border-neutral-200/60 rounded-xl p-1 px-3 flex items-center shadow-inner">
+                  <Gift size={16} className="text-[#2196F3] shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="Enter Invite / Promo Code"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value)}
+                    className="w-full py-2 px-2 bg-transparent text-neutral-800 placeholder-neutral-400 text-xs font-semibold outline-none uppercase"
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    playSound("click");
+                    submitReferral();
+                  }}
+                  disabled={refStatus === "loading" || !referralCode.trim()}
+                  className="bg-gradient-to-r from-[#2196F3] to-[#9C27B0] text-white font-bold text-xs px-4 rounded-xl shadow transition-all active:scale-95 disabled:opacity-40"
+                >
+                  {refStatus === "loading" ? "..." : "Claim"}
+                </button>
+              </div>
+
+              {/* Refer Status indicators */}
+              {refStatus === "success" && (
+                <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 text-[10px] p-2.5 rounded-lg border border-emerald-100">
+                  <CheckCircle2 size={13} />
+                  <span className="font-semibold">Code redeemed successfully! Bonus reward loaded.</span>
+                </div>
+              )}
+              {refStatus === "error" && (
+                <div className="flex items-center gap-1.5 bg-red-50 text-red-600 text-[10px] p-2.5 rounded-lg border border-red-100">
+                  <AlertCircle size={13} />
+                  <span className="font-semibold">Invalid, unused, or expired code. Please retry.</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        
-        <div className="grid grid-cols-1 gap-3">
+
+        {/* Administration console if user is administrator */}
+        {(profile?.role === 'admin' || isAdminEmail) && (
+          <div className="bg-white border border-red-500/30 rounded-2xl p-5 shadow-sm space-y-3">
+            <div className="flex justify-between items-center pb-2 border-b border-rose-100">
+              <h3 className="text-xs font-bold text-rose-600 uppercase tracking-wider flex items-center gap-1.5">
+                <Shield size={14} /> Admin Controls
+              </h3>
+              <span className="text-[8px] font-mono font-bold text-neutral-400">AUTHORIZED MEMBERS ONLY</span>
+            </div>
+            <button 
+              onClick={() => {
+                playSound("click");
+                navigate('/admin');
+              }}
+              className="w-full bg-[#1C2070] text-white py-3 rounded-xl font-bold tracking-wider text-xs uppercase flex items-center justify-center gap-1.5 hover:bg-neutral-800 transition-colors shadow-sm"
+            >
+              Open Admin Board
+            </button>
+          </div>
+        )}
+
+        {/* Settings Links List Card Container */}
+        <div className="bg-white border border-[#2196F3]/40 rounded-2xl p-2.5 shadow-sm divide-y divide-neutral-100">
           {[
-            { id: 'notifications', icon: Bell, label: "Relay Node", color: "text-blue-400", bg: "bg-blue-400/5", border: "border-blue-500/10", badge: notifications.filter(n => !n.read).length, desc: "My messages" },
-            { id: 'privacy', icon: Shield, label: "Encryption", color: "text-green-400", bg: "bg-green-400/5", border: "border-green-500/10", desc: "Account privacy" },
-            { id: 'language', icon: Globe, label: "Localization", color: "text-orange-400", bg: "bg-orange-400/5", border: "border-orange-500/10", desc: "Choose your language" },
+            { id: 'notifications', icon: Bell, label: "Notifications", color: "text-blue-500", bg: "bg-blue-50 p-2.5 rounded-lg border border-blue-100", badge: notifications.filter(n => !n.read).length, desc: "System alerts and transaction notices" },
+            { id: 'privacy', icon: Shield, label: "Security & Encryption", color: "text-emerald-500", bg: "bg-emerald-50 p-2.5 rounded-lg border border-emerald-100", desc: "Terms, guidelines & privacy settings" },
+            { id: 'language', icon: Globe, label: "Localization / زبان", color: "text-indigo-500", bg: "bg-indigo-50 p-2.5 rounded-lg border border-indigo-100", desc: "Change language settings of App" },
           ].map((item) => (
             <button 
               key={item.id} 
-              onClick={() => setActiveSection(item.id as ActiveSection)}
-              className="w-full flex items-center justify-between bg-[#14254f] p-4 rounded-2xl hover:bg-white/5 transition-all group border border-white/5 shadow-xl relative overflow-hidden"
+              onClick={() => {
+                playSound("click");
+                setActiveSection(item.id as ActiveSection);
+              }}
+              className="w-full flex items-center justify-between p-3 px-4 hover:bg-neutral-50/70 transition-all rounded-xl group text-left"
             >
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-xl ${item.bg} flex items-center justify-center ${item.color} border ${item.border}`}>
-                  <item.icon size={20} />
+              <div className="flex items-center gap-3">
+                <div className={`${item.bg} flex items-center justify-center ${item.color}`}>
+                  <item.icon size={18} />
                 </div>
-                <div className="flex flex-col items-start">
-                  <span className="font-black italic text-base text-white uppercase tracking-tight leading-none">{item.id === 'notifications' ? 'Notifications' : item.id === 'privacy' ? 'Privacy' : 'Language'}</span>
-                  <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.1em] font-mono mt-1">{item.desc}</span>
+                <div className="flex flex-col">
+                  <span className="font-bold text-sm text-neutral-800 tracking-tight leading-none">
+                    {item.label}
+                  </span>
+                  <span className="text-[10px] text-neutral-400 mt-1 font-semibold">{item.desc}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              
+              <div className="flex items-center gap-2">
                 {item.badge ? (
-                  <span className="bg-red-500 text-white px-2 py-0.5 rounded-lg text-[9px] font-black shadow-lg shadow-red-500/20 animate-pulse">
+                  <span className="bg-red-500 text-white px-2 py-0.5 rounded-md text-[9px] font-black shadow-sm animate-pulse">
                     {item.badge}
                   </span>
                 ) : null}
-                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/10 group-hover:bg-orange-500 group-hover:text-white transition-all">
-                   <ChevronRight size={16} />
+                <div className="w-7 h-7 rounded-full bg-neutral-50 flex items-center justify-center text-neutral-300 group-hover:bg-[#2196F3] group-hover:text-white transition-all">
+                   <ChevronRight size={14} />
                 </div>
               </div>
             </button>
           ))}
         </div>
-      </section>
 
-      <div className="px-6 pt-4 pb-12">
-        <button 
-          onClick={() => signOut(auth)}
-          className="w-full bg-[#0b0e11]/50 border border-red-500/10 text-red-500/60 py-4 rounded-xl font-black italic uppercase tracking-[0.25em] flex items-center justify-center gap-3 hover:bg-red-500 hover:text-white transition-all text-xs"
-        >
-          <LogOut size={16} /> 
-          Log Out
-        </button>
+        {/* Sign Out Container block */}
+        <div className="pt-2">
+          <button 
+            onClick={() => {
+              playSound("click");
+              signOut(auth);
+            }}
+            className="w-full bg-red-50 border border-red-200 text-red-600 py-3.5 rounded-full font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 hover:bg-red-100 transition-all text-xs shadow-sm"
+          >
+            <LogOut size={16} /> 
+            Sign Out
+          </button>
+        </div>
+
       </div>
-    </motion.div>
+    </div>
   );
 }

@@ -11,6 +11,7 @@ import {
 } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { playSound } from "../lib/sounds";
+import { uploadToCloudinary } from "../lib/cloudinary";
 
 type Tab = "deposit" | "withdraw" | "history";
 
@@ -41,6 +42,7 @@ export default function WalletView({ profile }: { profile: any }) {
   const [depositTid, setDepositTid] = useState("");
   const [depositProof, setDepositProof] = useState<string | null>(null);
   const [depositLoading, setDepositLoading] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
   const [depositError, setDepositError] = useState("");
   const [depositSuccess, setDepositSuccess] = useState(false);
 
@@ -53,6 +55,10 @@ export default function WalletView({ profile }: { profile: any }) {
   const [withdrawLoading, setWithdrawLoading] = useState(false);
   const [withdrawError, setWithdrawError] = useState("");
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
+
+  // Dropdown states for dynamic gate selectors
+  const [depositDropdownOpen, setDepositDropdownOpen] = useState(false);
+  const [withdrawDropdownOpen, setWithdrawDropdownOpen] = useState(false);
 
   // Listen to platform configurations dynamically
   useEffect(() => {
@@ -206,6 +212,60 @@ export default function WalletView({ profile }: { profile: any }) {
     }
   };
 
+  const getActiveGateways = () => {
+    const methods = [];
+    
+    if (systemConfig?.easypaisaNumber) {
+      methods.push({
+        id: "EasyPaisa",
+        name: "EasyPaisa",
+        logo: systemConfig.easypaisaLogo || "https://cdn-icons-png.flaticon.com/512/3039/3039431.png",
+        number: systemConfig.easypaisaNumber,
+        accountName: systemConfig.easypaisaName || "EasyPaisa",
+      });
+    }
+    
+    if (systemConfig?.jazzcashNumber) {
+      methods.push({
+        id: "JazzCash",
+        name: "JazzCash",
+        logo: systemConfig.jazzcashLogo || "https://cdn-icons-png.flaticon.com/512/1041/1041844.png",
+        number: systemConfig.jazzcashNumber,
+        accountName: systemConfig.jazzcashName || "JazzCash",
+      });
+    }
+
+    if (systemConfig?.bankNumber) {
+      methods.push({
+        id: "BankTransfer",
+        name: "Bank Transfer",
+        logo: "https://cdn-icons-png.flaticon.com/512/2830/2830284.png",
+        number: systemConfig.bankNumber,
+        accountName: systemConfig.bankName || "Bank Account",
+      });
+    }
+
+    // Fallback default systems if config has not been fully configured yet
+    if (methods.length === 0) {
+      methods.push({
+        id: "EasyPaisa",
+        name: "EasyPaisa",
+        logo: "https://cdn-icons-png.flaticon.com/512/3039/3039431.png",
+        number: systemConfig?.easypaisaNumber || "03001234567",
+        accountName: systemConfig?.easypaisaName || "Admin Wallet",
+      });
+      methods.push({
+        id: "JazzCash",
+        name: "JazzCash",
+        logo: "https://cdn-icons-png.flaticon.com/512/1041/1041844.png",
+        number: systemConfig?.jazzcashNumber || "03107654321",
+        accountName: systemConfig?.jazzcashName || "Main Office",
+      });
+    }
+
+    return methods;
+  };
+
   // Dynamic input placeholder matching selection
   const getPlaceholderLabel = () => {
     if (!selectedGateway) return "Account Number";
@@ -317,64 +377,129 @@ export default function WalletView({ profile }: { profile: any }) {
               <div className="bg-white border border-[#2196F3]/40 rounded-2xl p-5 shadow-sm space-y-5">
                 
                 {/* Custom Payment dropdown select */}
-                <div className="relative">
-                  <select
-                    value={depositGateway}
-                    onChange={(e) => {
-                      playSound("click");
-                      setDepositGateway(e.target.value);
-                    }}
-                    className="w-full bg-white border border-[#2196F3]/40 text-neutral-600 font-bold rounded-xl px-4 py-3 text-xs outline-none focus:border-[#2196F3] transition-all cursor-pointer appearance-none"
-                  >
-                    <option value="">Select Deposit Method: - Select -</option>
-                    <option value="Paytm">Paytm</option>
-                    <option value="UPI">UPI Payment</option>
-                    <option value="GooglePay">Google Pay</option>
-                    <option value="PhonePe">PhonePe</option>
-                    <option value="EasyPaisa">EasyPaisa</option>
-                    <option value="JazzCash">JazzCash</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#2196F3]">
-                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                    </svg>
+                <div className="space-y-2 relative z-50">
+                  <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
+                    Choose Deposit Method:
+                  </label>
+                  
+                  {/* Custom selection popup button */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playSound("click");
+                        setDepositDropdownOpen(!depositDropdownOpen);
+                      }}
+                      className="w-full bg-white border border-[#2196F3]/40 text-neutral-700 font-bold rounded-xl px-4 py-3.5 text-xs text-left outline-none focus:border-[#2196F3] transition-all cursor-pointer flex items-center justify-between shadow-sm"
+                    >
+                      {depositGateway ? (
+                        (() => {
+                          const method = getActiveGateways().find(m => m.id === depositGateway);
+                          return (
+                            <div className="flex items-center gap-2.5">
+                              {method?.logo && (
+                                <img 
+                                  src={method.logo} 
+                                  alt={method.name} 
+                                  className="w-5 h-5 object-contain rounded-md" 
+                                  referrerPolicy="no-referrer"
+                                />
+                              )}
+                              <span className="text-neutral-700 font-extrabold">{method?.name}</span>
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        <span className="text-neutral-400">Select Deposit Method: - Select -</span>
+                      )}
+                      <svg className="fill-current h-4 w-4 text-[#2196F3] transition-transform duration-200" style={{ transform: depositDropdownOpen ? 'rotate(180deg)' : 'none' }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                      </svg>
+                    </button>
+
+                    {/* Pop-up dropdown option selection with logos and names */}
+                    <AnimatePresence>
+                      {depositDropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          className="absolute left-0 right-0 mt-1 bg-white border border-[#2196F3]/30 rounded-xl shadow-lg z-[99] max-h-60 overflow-y-auto"
+                        >
+                          {getActiveGateways().map((method) => {
+                            const isSelected = depositGateway === method.id;
+                            return (
+                              <button
+                                type="button"
+                                key={method.id}
+                                onClick={() => {
+                                  playSound("click");
+                                  setDepositGateway(method.id);
+                                  setDepositDropdownOpen(false);
+                                }}
+                                className={`w-full flex items-center gap-3 px-4 py-3.5 text-xs text-left hover:bg-neutral-50 border-b border-neutral-100 last:border-b-0 transition-colors ${
+                                  isSelected ? "bg-blue-50/50 text-blue-600 font-black" : "text-neutral-700 font-bold"
+                                }`}
+                              >
+                                {method.logo && (
+                                  <img 
+                                    src={method.logo} 
+                                    alt={method.name} 
+                                    className="w-6 h-6 object-contain rounded-md shadow-sm" 
+                                    referrerPolicy="no-referrer"
+                                  />
+                                )}
+                                <span className="flex-1">{method.name}</span>
+                                {isSelected && (
+                                  <Check size={14} className="text-blue-600 ml-auto" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
 
-                {depositGateway && (
-                  <div className="bg-neutral-50 border border-neutral-200 rounded-xl p-3.5 space-y-2 text-xs">
-                    <div className="flex justify-between items-center border-b border-neutral-200 pb-2">
-                      <span className="font-bold text-neutral-500 uppercase tracking-wide">Merchant Details</span>
-                      <span className="text-[10px] font-mono font-bold text-blue-600 uppercase">Send Amount First</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 pt-1">
-                      <div 
-                        onClick={() => copyToClipboard(depositGateway === "EasyPaisa" ? systemConfig.easypaisaNumber : (depositGateway === "JazzCash" ? systemConfig.jazzcashNumber : "03001234567"), "depNum")} 
-                        className="p-2 bg-white rounded border border-neutral-100 cursor-pointer active:bg-neutral-100 transition-colors"
-                      >
-                        <p className="text-[9px] text-neutral-400 font-bold uppercase">Account Number</p>
-                        <div className="flex items-center justify-between mt-1">
-                          <span className="font-mono font-bold text-neutral-800">
-                            {depositGateway === "EasyPaisa" ? systemConfig.easypaisaNumber : (depositGateway === "JazzCash" ? systemConfig.jazzcashNumber : "03001234567")}
-                          </span>
-                          {copiedText === "depNum" ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} className="text-neutral-400" />}
+                {depositGateway && (() => {
+                  const selectedDepositMethod = getActiveGateways().find(m => m.id === depositGateway);
+                  if (!selectedDepositMethod) return null;
+                  return (
+                    <div className="bg-neutral-50 border border-neutral-200/80 rounded-xl p-3.5 space-y-2 text-xs">
+                      <div className="flex justify-between items-center border-b border-neutral-200 pb-2">
+                        <span className="font-bold text-neutral-500 uppercase tracking-wide">Merchant Details</span>
+                        <span className="text-[10px] font-mono font-bold text-blue-600 uppercase">Send Amount First</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 pt-1">
+                        <div 
+                          onClick={() => copyToClipboard(selectedDepositMethod.number || "", "depNum")} 
+                          className="p-2 bg-white rounded border border-neutral-100 cursor-pointer active:bg-neutral-100 transition-colors"
+                        >
+                          <p className="text-[9px] text-neutral-400 font-bold uppercase">Account Number</p>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="font-mono font-bold text-neutral-800">
+                              {selectedDepositMethod.number}
+                            </span>
+                            {copiedText === "depNum" ? <Check size={12} className="text-emerald-500 font-bold" /> : <Copy size={12} className="text-neutral-400" />}
+                          </div>
+                        </div>
+                        <div 
+                          onClick={() => copyToClipboard(selectedDepositMethod.accountName || "", "depName")} 
+                          className="p-2 bg-white rounded border border-neutral-100 cursor-pointer active:bg-neutral-100 transition-colors"
+                        >
+                          <p className="text-[9px] text-neutral-400 font-bold uppercase">Account Name</p>
+                          <div className="flex items-center justify-between mt-1 transition-all">
+                            <span className="font-bold text-neutral-800 truncate block max-w-[80px]">
+                              {selectedDepositMethod.accountName}
+                            </span>
+                            {copiedText === "depName" ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} className="text-neutral-400" />}
+                          </div>
                         </div>
                       </div>
-                      <div 
-                        onClick={() => copyToClipboard(depositGateway === "EasyPaisa" ? systemConfig.easypaisaName : (depositGateway === "JazzCash" ? systemConfig.jazzcashName : "Main Office"), "depName")} 
-                        className="p-2 bg-white rounded border border-neutral-100 cursor-pointer active:bg-neutral-100 transition-colors"
-                      >
-                        <p className="text-[9px] text-neutral-400 font-bold uppercase">Account Name</p>
-                        <div className="flex items-center justify-between mt-1">
-                          <span className="font-bold text-neutral-800 truncate block max-w-[80px]">
-                            {depositGateway === "EasyPaisa" ? systemConfig.easypaisaName : (depositGateway === "JazzCash" ? systemConfig.jazzcashName : "Main Office")}
-                          </span>
-                          {copiedText === "depName" ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} className="text-neutral-400" />}
-                        </div>
-                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Main Form Fields */}
                 <form onSubmit={handleDepositSubmit} className="space-y-4">
@@ -428,23 +553,55 @@ export default function WalletView({ profile }: { profile: any }) {
                     />
                   </div>
 
-                  {/* Receipt screenshot simulation attach */}
+                  {/* Invisible file input element */}
+                  <input
+                    type="file"
+                    id="proof-screenshot"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setUploadLoading(true);
+                        setDepositError("");
+                        try {
+                          const url = await uploadToCloudinary(file);
+                          setDepositProof(url);
+                          playSound("success" as any);
+                        } catch (err: any) {
+                          console.error("Upload error:", err);
+                          setDepositError(err.message || "Failed to upload screenshot. Please try again.");
+                        } finally {
+                          setUploadLoading(false);
+                        }
+                      }
+                    }}
+                  />
+
+                  {/* Receipt screenshot gallery trigger box */}
                   <div 
                     onClick={() => {
                       playSound("click");
-                      setDepositProof("https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?q=80&w=400&auto=format&fit=crop");
+                      document.getElementById("proof-screenshot")?.click();
                     }}
                     className="border border-dashed border-neutral-300 rounded-2xl p-4 flex flex-col items-center justify-center gap-1.5 cursor-pointer hover:border-[#2196F3]/50 transition-all bg-neutral-50/50"
                   >
-                    {depositProof ? (
+                    {uploadLoading ? (
+                      <div className="flex flex-col items-center gap-1.5 text-center">
+                        <div className="w-5 h-5 border-2 border-[#2196F3] border-t-transparent rounded-full animate-spin" />
+                        <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wide">Uploading Screenshot...</span>
+                      </div>
+                    ) : depositProof ? (
                       <div className="flex flex-col items-center gap-1 text-center">
-                        <CheckCircle2 size={16} className="text-emerald-500 animate-bounce" />
+                        <CheckCircle2 size={16} className="text-emerald-500 animate-pulse" />
                         <span className="text-[10px] font-bold text-emerald-600 uppercase">Screenshot Receipt Attached</span>
+                        <span className="text-[8px] text-neutral-400 font-mono truncate max-w-[200px]">{depositProof}</span>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-1 text-center">
-                        <Upload size={16} className="text-neutral-400" />
-                        <span className="text-[10px] font-bold uppercase text-neutral-400 tracking-wider">Tap to Mock-Attach Receipt Screenshot</span>
+                        <Upload size={16} className="text-[#2196F3] animate-bounce" />
+                        <span className="text-[10px] font-bold uppercase text-neutral-600 tracking-wider">Upload screenshot from gallery</span>
+                        <span className="text-[8px] text-neutral-400">Tap to choose phone's photo library</span>
                       </div>
                     )}
                   </div>
@@ -497,27 +654,88 @@ export default function WalletView({ profile }: { profile: any }) {
               <div className="bg-white border border-[#2196F3]/40 rounded-2xl p-5 shadow-sm space-y-5">
                 
                 {/* Custom Payment dropdown select */}
-                <div className="relative">
-                  <select
-                    value={selectedGateway}
-                    onChange={(e) => {
-                      playSound("click");
-                      setSelectedGateway(e.target.value);
-                    }}
-                    className="w-full bg-white border border-[#2196F3]/40 text-neutral-600 font-bold rounded-xl px-4 py-3 text-xs outline-none focus:border-[#2196F3] transition-all cursor-pointer appearance-none"
-                  >
-                    <option value="">Select Payment Method: - Select -</option>
-                    <option value="Paytm">Paytm</option>
-                    <option value="UPI">UPI Payment</option>
-                    <option value="GooglePay">Google Pay</option>
-                    <option value="PhonePe">PhonePe</option>
-                    <option value="EasyPaisa">EasyPaisa</option>
-                    <option value="JazzCash">JazzCash</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[#2196F3]">
-                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                    </svg>
+                <div className="space-y-2 relative z-50">
+                  <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
+                    Choose Payout Channel:
+                  </label>
+                  
+                  {/* Custom selection popup button */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playSound("click");
+                        setWithdrawDropdownOpen(!withdrawDropdownOpen);
+                      }}
+                      className="w-full bg-white border border-[#2196F3]/40 text-neutral-700 font-bold rounded-xl px-4 py-3.5 text-xs text-left outline-none focus:border-[#2196F3] transition-all cursor-pointer flex items-center justify-between shadow-sm"
+                    >
+                      {selectedGateway ? (
+                        (() => {
+                          const method = getActiveGateways().find(m => m.id === selectedGateway);
+                          return (
+                            <div className="flex items-center gap-2.5">
+                              {method?.logo && (
+                                <img 
+                                  src={method.logo} 
+                                  alt={method.name} 
+                                  className="w-5 h-5 object-contain rounded-md" 
+                                  referrerPolicy="no-referrer"
+                                />
+                              )}
+                              <span className="text-neutral-700 font-extrabold">{method?.name}</span>
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        <span className="text-neutral-400">Select Payout Method: - Select -</span>
+                      )}
+                      <svg className="fill-current h-4 w-4 text-[#2196F3] transition-transform duration-200" style={{ transform: withdrawDropdownOpen ? 'rotate(180deg)' : 'none' }} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                      </svg>
+                    </button>
+
+                    {/* Pop-up dropdown option selection with logos and names */}
+                    <AnimatePresence>
+                      {withdrawDropdownOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          className="absolute left-0 right-0 mt-1 bg-white border border-[#2196F3]/30 rounded-xl shadow-lg z-[99] max-h-60 overflow-y-auto"
+                        >
+                          {getActiveGateways().map((method) => {
+                            const isSelected = selectedGateway === method.id;
+                            return (
+                              <button
+                                type="button"
+                                key={method.id}
+                                onClick={() => {
+                                  playSound("click");
+                                  setSelectedGateway(method.id);
+                                  setWithdrawDropdownOpen(false);
+                                }}
+                                className={`w-full flex items-center gap-3 px-4 py-3.5 text-xs text-left hover:bg-neutral-50 border-b border-neutral-100 last:border-b-0 transition-colors ${
+                                  isSelected ? "bg-blue-50/50 text-blue-600 font-black" : "text-neutral-700 font-bold"
+                                }`}
+                              >
+                                {method.logo && (
+                                  <img 
+                                    src={method.logo} 
+                                    alt={method.name} 
+                                    className="w-6 h-6 object-contain rounded-md shadow-sm" 
+                                    referrerPolicy="no-referrer"
+                                  />
+                                )}
+                                <span className="flex-1">{method.name}</span>
+                                {isSelected && (
+                                  <Check size={14} className="text-blue-600 ml-auto" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
 

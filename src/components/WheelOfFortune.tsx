@@ -84,20 +84,26 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({
       <div className="absolute top-0 inset-x-0 h-64 bg-[radial-gradient(circle_at_20%_0%,_rgba(168,85,247,0.3),_transparent_70%)]" />
       <div className="absolute top-0 inset-x-0 h-64 bg-[radial-gradient(circle_at_80%_0%,_rgba(236,72,153,0.3),_transparent_70%)]" />
 
-      <header className="flex items-center justify-between px-6 h-20 bg-black/60 border-b border-white/5 backdrop-blur-xl shrink-0 z-50">
-        <button onClick={onExit} className="p-2.5 bg-white/5 text-white/50 rounded-xl border border-white/5 hover:bg-white/10 hover:text-white transition-all shadow-lg active:scale-90">
-          <LogOut size={24} />
+      <header className="flex items-center justify-between px-3 h-14 bg-[#0a121e] border-b border-[#1a2b45] relative z-20 shrink-0">
+        <div className="flex items-center gap-2">
+          <RotateCw className="text-[#a855f7] animate-spin-slow" size={20} />
+          <span className="text-white font-black italic tracking-tighter text-lg uppercase whitespace-nowrap">Royal Wheel</span>
+        </div>
+        
+        <div className="flex items-center gap-2 bg-black/60 rounded-full px-3 py-1.5 border border-[#1a2b45] shadow-lg">
+          <div className="w-3.5 h-3.5 rounded-full bg-[#FBCB35] flex items-center justify-center shadow-[0_0_10px_rgba(251,203,53,0.3)]">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#14171A]" />
+          </div>
+          <span className="text-[#32D74B] font-black text-xs leading-none">RS {balance.toFixed(0)}</span>
+        </div>
+
+        <button 
+          onClick={onExit}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 text-red-500 rounded-lg border border-red-500/20 active:scale-95 transition-all hover:bg-red-500/20 shadow-lg"
+        >
+          <LogOut size={14} />
+          <span className="text-[10px] font-black uppercase tracking-widest">Quit</span>
         </button>
-        <div className="flex flex-col items-center">
-            <div className="flex items-center gap-2">
-                <Trophy size={20} className="text-yellow-400 animate-pulse" />
-                <span className="text-white font-black italic tracking-tighter text-2xl uppercase">Royal Wheel</span>
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-yellow-400/60">Grand Prize Stage</span>
-        </div>
-        <div className="bg-yellow-500/10 px-4 py-2 rounded-2xl border border-yellow-500/20 backdrop-blur-xl">
-          <span className="text-yellow-400 font-black text-sm tracking-tight uppercase">RS {balance.toFixed(0)}</span>
-        </div>
       </header>
 
       <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-12 relative z-10">
