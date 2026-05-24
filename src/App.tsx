@@ -213,50 +213,52 @@ function AppContent({ user, profile, systemConfig }: any) {
   return (
     <div className="min-h-screen bg-[#0b0e11] text-white font-sans selection:bg-orange-500/30">
       <div className="pb-24 max-w-lg mx-auto bg-[#1b2a5c] border-x border-white/5 min-h-screen relative shadow-2xl overflow-x-hidden">
-        <header className="sticky top-0 z-50 bg-[#14254f]/90 backdrop-blur-xl border-b border-white/5 px-4 py-2.5 flex items-center justify-between shadow-lg">
-          <div className="flex items-center gap-2">
-            {systemConfig?.appLogo ? (
-              <img 
-                src={systemConfig.appLogo} 
-                alt="Logo" 
-                className="h-6 w-6 object-contain opacity-90 rounded-[5px]"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <img 
-                src="https://res.cloudinary.com/dpmjzqhdh/image/upload/v1779478958/IMG-20260522-WA0007_ksqm2p.jpg" 
-                alt="Logo" 
-                className="h-6 w-6 object-contain opacity-90 rounded-[5px]"
-                referrerPolicy="no-referrer"
-              />
-            )}
-            <h1 className="text-sm font-black tracking-tighter italic text-white leading-none">
-              {systemConfig?.appName || (
-                <>H<span className="text-[#65E902]">666</span></>
+        {location.pathname !== "/wallet" && (
+          <header className="sticky top-0 z-50 bg-[#14254f]/90 backdrop-blur-xl border-b border-white/5 px-4 py-2.5 flex items-center justify-between shadow-lg">
+            <div className="flex items-center gap-2">
+              {systemConfig?.appLogo ? (
+                <img 
+                  src={systemConfig.appLogo} 
+                  alt="Logo" 
+                  className="h-6 w-6 object-contain opacity-90 rounded-[5px]"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <img 
+                  src="https://res.cloudinary.com/dpmjzqhdh/image/upload/v1779478958/IMG-20260522-WA0007_ksqm2p.jpg" 
+                  alt="Logo" 
+                  className="h-6 w-6 object-contain opacity-90 rounded-[5px]"
+                  referrerPolicy="no-referrer"
+                />
               )}
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            {location.pathname === '/games' && systemConfig?.appDownloadUrl && (
-              <a 
-                href={systemConfig.appDownloadUrl}
-                download
-                className="bg-gradient-to-r from-[#65E902] to-emerald-500 text-black px-2.5 py-1 rounded-lg flex items-center gap-1 hover:scale-105 active:scale-95 transition-all shadow-[0_0_12px_rgba(101,233,2,0.4)] border border-lime-400/30 font-black animate-pulse"
-              >
-                <Download size={10} className="stroke-[3]" />
-                <span className="text-[8.5px] uppercase tracking-wider italic">App</span>
-              </a>
-            )}
-            {profile?.balance !== undefined ? (
-              <div className="bg-black/40 px-2.5 py-1 rounded-lg border border-white/5 flex items-center gap-2 shadow-inner">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-[9px] font-black italic tracking-tighter text-white/90">PKR {profile.balance.toLocaleString()}</span>
-              </div>
-            ) : (
-              <Search size={16} className="text-white/20 hover:text-white transition-colors cursor-pointer" />
-            )}
-          </div>
-        </header>
+              <h1 className="text-sm font-black tracking-tighter italic text-white leading-none">
+                {systemConfig?.appName || (
+                  <>H<span className="text-[#65E902]">666</span></>
+                )}
+              </h1>
+            </div>
+            <div className="flex items-center gap-2">
+              {location.pathname === '/games' && systemConfig?.appDownloadUrl && (
+                <a 
+                  href={systemConfig.appDownloadUrl}
+                  download
+                  className="bg-gradient-to-r from-[#65E902] to-emerald-500 text-black px-2.5 py-1 rounded-lg flex items-center gap-1 hover:scale-105 active:scale-95 transition-all shadow-[0_0_12px_rgba(101,233,2,0.4)] border border-lime-400/30 font-black animate-pulse"
+                >
+                  <Download size={10} className="stroke-[3]" />
+                  <span className="text-[8.5px] uppercase tracking-wider italic">App</span>
+                </a>
+              )}
+              {profile?.balance !== undefined ? (
+                <div className="bg-black/40 px-2.5 py-1 rounded-lg border border-white/5 flex items-center gap-2 shadow-inner">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                  <span className="text-[9px] font-black italic tracking-tighter text-white/90">RS {profile.balance.toLocaleString()}</span>
+                </div>
+              ) : (
+                <Search size={16} className="text-white/20 hover:text-white transition-colors cursor-pointer" />
+              )}
+            </div>
+          </header>
+        )}
 
         <AnimatePresence mode="wait">
           <Routes>

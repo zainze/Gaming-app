@@ -426,28 +426,28 @@ const BetPanel: React.FC<any> = ({ data, gameState, multiplier, onAction, onAmou
         >
           {isCashingOut ? (
             <>
-              <span className="text-[12px] opacity-80">CASHOUT</span>
+              <span className="text-[12px] opacity-80">TAKE WIN</span>
               <div className="flex items-baseline gap-1">
                 <span className="text-2xl leading-none">{(data.amount * multiplier).toFixed(2)}</span>
-                <span className="text-[10px] opacity-60">USD</span>
+                <span className="text-[10px] opacity-60">RS</span>
               </div>
             </>
           ) : isWaitingForNext ? (
             <>
               <span className="text-sm opacity-80">WAITING...</span>
-              <span className="text-xs leading-none opacity-60">NEXT ROUND</span>
+              <span className="text-xs leading-none opacity-60">NEXT PLAY</span>
             </>
           ) : isFinished ? (
             <>
               <span className="text-sm">WAIT FOR</span>
-              <span className="text-xs">NEXT ROUND</span>
+              <span className="text-xs">NEXT PLAY</span>
             </>
           ) : (
             <>
-              <span className="text-lg leading-none">{data.active ? 'CANCEL' : 'BET'}</span>
+              <span className="text-lg leading-none">{data.active ? 'CANCEL' : 'PLAY'}</span>
               <div className="flex items-baseline gap-1">
                 <span className="text-xl leading-none">{data.amount.toFixed(2)}</span>
-                <span className="text-[10px] opacity-60">USD</span>
+                <span className="text-[10px] opacity-60">RS</span>
               </div>
             </>
           )}

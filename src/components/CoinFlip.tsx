@@ -22,7 +22,7 @@ export default function CoinFlip({
   winRate = 50, 
   multiplier = 2 
 }: CoinFlipProps) {
-  const [selectedChoice, setSelectedChoice] = useState<'heads' | 'tails'>('heads');
+  const [selectedChoice, setSelectedChoice] = useState<'heads' | 'tails' | 'heads_and_tails'>('heads');
   const [side, setSide] = useState<'heads' | 'tails' | null>(null);
   const [flipping, setFlipping] = useState(false);
   const [bet, setBet] = useState(minBet);
@@ -44,8 +44,20 @@ export default function CoinFlip({
     
     setTimeout(() => {
       stopSound('coin');
-      const willWin = Math.random() * 100 < winRate;
-      const finalSide = willWin ? selectedChoice : (selectedChoice === 'heads' ? 'tails' : 'heads');
+      
+      let finalSide: 'heads' | 'tails' = 'heads';
+      let willWin = false;
+      let payoutMultiplier = multiplier;
+
+      if (selectedChoice === 'heads_and_tails') {
+        willWin = true;
+        payoutMultiplier = 1; // 1x returns the bet (since both options are covered)
+        finalSide = Math.random() < 0.5 ? 'heads' : 'tails';
+      } else {
+        willWin = Math.random() * 100 < winRate;
+        finalSide = willWin ? selectedChoice : (selectedChoice === 'heads' ? 'tails' : 'heads');
+      }
+
       setSide(finalSide);
       setFlipping(false);
       setShowResult(true);
@@ -53,7 +65,7 @@ export default function CoinFlip({
       
       if (willWin) {
         playSound('win');
-        onWin(bet * multiplier);
+        onWin(bet * payoutMultiplier);
       } else {
         playSound('lose');
       }
@@ -114,32 +126,42 @@ export default function CoinFlip({
               >
                 <div className="space-y-1">
                   <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white drop-shadow-lg">Heads or Tails?</h2>
-                  <p className="text-[10px] font-black uppercase text-[#6B6D6F] tracking-[.3em]">Fortune favors the bold</p>
+                  <p className="text-[10px] font-black uppercase text-[#6B6D6F] tracking-[.3em]">Pick one and try your luck</p>
                 </div>
                 
-                {/* Select Option HEADS / TAILS */}
-                <div className="flex bg-black/40 rounded-2xl p-1 border border-[#1a2b45] w-64 shadow-inner">
-                  <button
-                    onClick={() => { setSelectedChoice('heads'); playSound('click'); }}
-                    className={`flex-1 py-2 px-4 rounded-xl font-black uppercase text-xs tracking-wider transition-all duration-300 ${
-                      selectedChoice === 'heads'
-                        ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/30 font-bold scale-[1.03]'
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    Heads
-                  </button>
-                  <button
-                    onClick={() => { setSelectedChoice('tails'); playSound('click'); }}
-                    className={`flex-1 py-2 px-4 rounded-xl font-black uppercase text-xs tracking-wider transition-all duration-300 ${
-                      selectedChoice === 'tails'
-                        ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/30 font-bold scale-[1.03]'
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    Tails
-                  </button>
-                </div>
+                 {/* Select Option HEADS / TAILS / HEAD & TAIL */}
+                 <div className="flex bg-black/40 rounded-2xl p-1 border border-[#1a2b45] w-80 shadow-inner">
+                   <button
+                     onClick={() => { setSelectedChoice('heads'); playSound('click'); }}
+                     className={`flex-1 py-2 px-3 rounded-xl font-black uppercase text-[10px] tracking-wider transition-all duration-300 ${
+                       selectedChoice === 'heads'
+                         ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/30 font-bold scale-[1.03]'
+                         : 'text-neutral-400 hover:text-white'
+                     }`}
+                   >
+                     Heads
+                   </button>
+                   <button
+                     onClick={() => { setSelectedChoice('tails'); playSound('click'); }}
+                     className={`flex-1 py-2 px-3 rounded-xl font-black uppercase text-[10px] tracking-wider transition-all duration-300 ${
+                       selectedChoice === 'tails'
+                         ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/30 font-bold scale-[1.03]'
+                         : 'text-neutral-400 hover:text-white'
+                     }`}
+                   >
+                     Tails
+                   </button>
+                   <button
+                     onClick={() => { setSelectedChoice('heads_and_tails'); playSound('click'); }}
+                     className={`flex-1 py-2 px-3 rounded-xl font-black uppercase text-[10px] tracking-wider transition-all duration-300 ${
+                       selectedChoice === 'heads_and_tails'
+                         ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/30 font-bold scale-[1.03]'
+                         : 'text-neutral-400 hover:text-white'
+                     }`}
+                   >
+                     Both
+                   </button>
+                 </div>
               </motion.div>
             )}
             
@@ -165,8 +187,8 @@ export default function CoinFlip({
                   <p className="text-[12px] font-black uppercase text-amber-500 tracking-[0.4em] animate-pulse">
                     Flipping Coin...
                   </p>
-                  <p className="text-[9px] font-bold text-neutral-500 uppercase tracking-widest">
-                    BET ON: {selectedChoice.toUpperCase()}
+                   <p className="text-[9px] font-bold text-neutral-500 uppercase tracking-widest">
+                    BET ON: {selectedChoice === 'heads_and_tails' ? 'BOTH HEADS & TAILS' : selectedChoice.toUpperCase()}
                   </p>
                 </div>
               </motion.div>
@@ -180,12 +202,12 @@ export default function CoinFlip({
                 className="flex flex-col items-center"
               >
                 <div className={`text-5xl font-black italic tracking-tighter drop-shadow-[0_0_20px_rgba(0,0,0,0.5)] ${isWin ? 'text-[#32D74B]' : 'text-red-500'}`}>
-                  {isWin ? 'JACKPOT!' : `${side?.toUpperCase()}: LOSS`}
+                  {isWin ? 'YOU WIN!' : 'YOU LOSE'}
                 </div>
                 <div className="mt-2 text-xs font-black uppercase tracking-[0.2em] text-[#6B6D6F]">
                   {isWin 
-                    ? `CONGRATS! GUESSED ${selectedChoice.toUpperCase()} & WON RS ${bet * multiplier}` 
-                    : `GUESSED ${selectedChoice.toUpperCase()} | LANDED ON ${side?.toUpperCase()}`
+                    ? `WIN! You picked ${selectedChoice === 'heads_and_tails' ? 'Both' : selectedChoice.toUpperCase()} and won RS ${bet * (selectedChoice === 'heads_and_tails' ? 1 : multiplier)}` 
+                    : `Pick: ${selectedChoice === 'heads_and_tails' ? 'Both' : selectedChoice.toUpperCase()} | Coin: ${side?.toUpperCase()}`
                   }
                 </div>
               </motion.div>

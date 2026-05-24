@@ -185,7 +185,7 @@ export const DojoCards: React.FC<DojoCardsProps> = ({
                     result === 'win' ? 'text-green-500 bg-green-500/20 border-green-500/30' : 'text-red-500 bg-red-500/20 border-red-500/30'
                 }`}
             >
-                {result === 'win' ? 'Victory' : 'Defeat'}
+                {result === 'win' ? 'YOU WIN!' : 'YOU LOSE'}
             </motion.div>
         )}
       </AnimatePresence>

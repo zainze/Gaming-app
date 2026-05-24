@@ -200,7 +200,7 @@ export default function ThreeCardSlipper({
             onClick={() => setGameState('idle')}
             className={`mt-4 text-center py-2 rounded-xl border font-black uppercase text-[10px] cursor-pointer transition-all hover:scale-[1.02] ${selectedIndex === winningIndex ? 'bg-green-500 border-green-600 text-white shadow-lg' : 'bg-red-500 border-red-600 text-white shadow-lg'}`}
           >
-            {selectedIndex === winningIndex ? "SUCCESS" : "FAILED"} - TAP TO RESET
+            {selectedIndex === winningIndex ? "YOU WIN!" : "YOU LOSE"} - TAP TO RESET
           </motion.div>
         )}
       </AnimatePresence>

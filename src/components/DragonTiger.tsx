@@ -173,7 +173,7 @@ export const DragonTiger: React.FC<DragonTigerProps> = ({
             {gameResult && (
                 <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="absolute inset-center z-50 pointer-events-none">
                     <div className={`text-8xl font-black italic uppercase tracking-tighter drop-shadow-[0_0_30px_rgba(255,255,255,0.4)] ${gameResult === 'win' ? 'text-yellow-400' : 'text-white/20'}`}>
-                        {gameResult === 'win' ? 'VICTORY' : 'DEFEAT'}
+                        {gameResult === 'win' ? 'YOU WIN!' : 'YOU LOSE'}
                     </div>
                 </motion.div>
             )}

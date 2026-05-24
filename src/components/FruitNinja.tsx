@@ -246,7 +246,7 @@ export const FruitNinja: React.FC<FruitNinjaProps> = ({
              className="text-center space-y-6 z-20 bg-black/60 p-10 rounded-[3rem] border border-white/10 backdrop-blur-3xl shadow-2xl"
            >
               <div className={`text-7xl font-black italic uppercase tracking-tighter ${gameResult === 'win' ? 'text-green-500 drop-shadow-[0_0_20px_rgba(34,197,94,0.4)]' : 'text-red-500 drop-shadow-[0_0_20px_rgba(239,68,68,0.4)]'}`}>
-                 {gameResult === 'win' ? 'MASTERED' : 'DEFEATED'}
+                 {gameResult === 'win' ? 'YOU WIN!' : 'YOU LOSE'}
               </div>
               <div className="flex flex-col items-center gap-1">
                 <p className="text-2xl font-black uppercase tracking-widest text-white/90">

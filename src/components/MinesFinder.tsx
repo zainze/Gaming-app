@@ -152,11 +152,11 @@ export const MinesFinder: React.FC<MinesProps> = ({
           <div className="flex-1 flex flex-col justify-end">
             {!isPlaying ? (
               <button onClick={startGame} disabled={balance < bet} className="w-full bg-[#32D74B] hover:bg-[#2BBF40] text-black font-black py-4 rounded-2xl shadow-[0_4px_0_#1E7E34] active:shadow-none active:translate-y-1 transition-all uppercase tracking-widest text-sm disabled:opacity-50">
-                Bet
+                START PLAY
               </button>
             ) : (
               <button onClick={handleCashout} disabled={revealedCount === 0 || status !== 'playing'} className="w-full bg-[#FBCB35] hover:bg-[#F9C110] text-black font-black py-4 rounded-2xl shadow-[0_4px_0_#C99A0D] active:shadow-none active:translate-y-1 transition-all uppercase tracking-widest text-sm disabled:opacity-50 flex flex-col items-center justify-center">
-                <span>Cashout</span>
+                <span>TAKE WIN</span>
                 <span className="text-[10px] opacity-70">RS {profit} ({currentMultiplier}x)</span>
               </button>
             )}
@@ -188,9 +188,9 @@ export const MinesFinder: React.FC<MinesProps> = ({
                   <motion.div animate={{ rotate: [0, -10, 10, -10, 0] }} transition={{ duration: 0.4 }} className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mb-6">
                     <Bomb size={64} className="text-red-500" />
                   </motion.div>
-                  <h2 className="text-4xl font-black italic uppercase tracking-tighter text-red-500 mb-2">BOOM!</h2>
-                  <p className="text-white/60 font-black uppercase tracking-[0.3em] text-xs">Mine Tripped. RS {bet} lost.</p>
-                  <button onClick={() => setStatus('idle')} className="mt-8 px-8 py-3 bg-[#23262B] rounded-xl font-black uppercase text-xs tracking-widest hover:bg-[#2C3035] transition-colors">Dismiss</button>
+                  <h2 className="text-4xl font-black italic uppercase tracking-tighter text-red-500 mb-2">YOU LOSE</h2>
+                  <p className="text-white/60 font-black uppercase tracking-[0.3em] text-xs">You hit a bomb! You lose RS {bet}.</p>
+                  <button onClick={() => setStatus('idle')} className="mt-8 px-8 py-3 bg-[#23262B] rounded-xl font-black uppercase text-xs tracking-widest hover:bg-[#2C3035] transition-colors">OK</button>
                 </motion.div>
              )}
              {status === 'cashout' && (
@@ -198,9 +198,9 @@ export const MinesFinder: React.FC<MinesProps> = ({
                   <div className="w-24 h-24 bg-[#32D74B]/10 rounded-full flex items-center justify-center mb-6">
                     <Shield size={64} className="text-[#32D74B]" />
                   </div>
-                  <h2 className="text-4xl font-black italic uppercase tracking-tighter text-[#32D74B] mb-2">RS {profit}</h2>
-                  <p className="text-white/60 font-black uppercase tracking-[0.3em] text-xs">Successfully Cashed Out at {currentMultiplier}x</p>
-                  <button onClick={() => setStatus('idle')} className="mt-8 px-8 py-3 bg-[#23262B] rounded-xl font-black uppercase text-xs tracking-widest hover:bg-[#2C3035] transition-colors">Dismiss</button>
+                  <h2 className="text-4xl font-black italic uppercase tracking-tighter text-[#32D74B] mb-2">YOU WIN!</h2>
+                  <p className="text-white/60 font-black uppercase tracking-[0.3em] text-xs">You took RS {profit} at {currentMultiplier}x</p>
+                  <button onClick={() => setStatus('idle')} className="mt-8 px-8 py-3 bg-[#23262B] rounded-xl font-black uppercase text-xs tracking-widest hover:bg-[#2C3035] transition-colors">OK</button>
                 </motion.div>
              )}
           </AnimatePresence>

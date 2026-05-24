@@ -332,8 +332,8 @@ export default function HomeView({ profile, onNavigate }: { profile: any, onNavi
                   <Gift size={24} />
                </div>
                <div className="space-y-0.5">
-                  <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.4em] font-mono">Yield Protocol</p>
-                  <h3 className="text-xl font-black italic text-white uppercase tracking-tighter">Harvest Daily</h3>
+                  <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.4em] font-mono">Free Gift</p>
+                  <h3 className="text-xl font-black italic text-white uppercase tracking-tighter">Get Free Money</h3>
                </div>
             </div>
 
@@ -352,7 +352,7 @@ export default function HomeView({ profile, onNavigate }: { profile: any, onNavi
                   disabled={bonusLoading}
                   className="w-full bg-orange-500 hover:bg-orange-400 text-white py-4 rounded-xl font-black italic uppercase tracking-[0.2em] shadow-lg active:scale-[0.98] transition-all text-[10px] relative overflow-hidden"
                 >
-                  {bonusLoading ? 'SYNCING...' : `CLAIM RS ${bonusAmount}`}
+                  {bonusLoading ? 'CLAIMING...' : `CLAIM RS ${bonusAmount}`}
                 </button>
               )}
             </div>
@@ -413,8 +413,8 @@ export default function HomeView({ profile, onNavigate }: { profile: any, onNavi
               </div>
               
               <div className="flex flex-col gap-0.5 relative z-10 pl-1">
-                 <h4 className="font-black italic text-base uppercase tracking-tight text-white">Injection Key</h4>
-                 <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em] font-mono">System Protocol</p>
+                 <h4 className="font-black italic text-base uppercase tracking-tight text-white">Promo Code</h4>
+                 <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em] font-mono">Enter your code below</p>
               </div>
 
               <div className="relative z-10 pt-1">
@@ -423,7 +423,7 @@ export default function HomeView({ profile, onNavigate }: { profile: any, onNavi
                    value={promoCode}
                    onChange={(e) => setPromoCode(e.target.value)}
                    disabled={promoLoading}
-                   placeholder="CODE_HASH"
+                   placeholder="ENTER CODE"
                    className={`w-full bg-black/20 border ${promoStatus.type === 'error' ? 'border-red-500/20' : promoStatus.type === 'success' ? 'border-green-500/20' : 'border-white/5 focus:border-orange-500/30'} outline-none rounded-xl p-3.5 text-xs font-black uppercase tracking-[0.2em] font-mono placeholder:text-white/5 transition-all text-white`}
                  />
                  <button 
@@ -431,7 +431,7 @@ export default function HomeView({ profile, onNavigate }: { profile: any, onNavi
                    disabled={promoLoading}
                    className="mt-3 w-full bg-white text-black hover:bg-neutral-100 py-3 rounded-xl font-black italic text-[10px] uppercase tracking-[0.3em] active:scale-[0.98] transition-all"
                  >
-                   {promoLoading ? 'BUSY...' : 'ACTIVATE'}
+                   {promoLoading ? 'CHECKING...' : 'REDEEM'}
                  </button>
               </div>
           </div>

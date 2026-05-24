@@ -52,7 +52,7 @@ export default function AuthView() {
           </motion.div>
           <div className="space-y-1">
             <h1 className="text-5xl font-black tracking-tighter uppercase italic text-neutral-900">H<span className="text-[#65E902]">666</span></h1>
-            <p className="text-neutral-400 text-sm font-bold uppercase tracking-[0.3em]">H666.COM Flight Hub</p>
+            <p className="text-neutral-400 text-sm font-bold uppercase tracking-[0.3em]">H666.COM Games Hub</p>
           </div>
         </div>
 
@@ -60,13 +60,13 @@ export default function AuthView() {
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white border border-neutral-100 p-4 rounded-3xl space-y-2 shadow-sm">
               <Coins className="text-orange-500" size={24} />
-              <h3 className="font-bold text-xs uppercase italic text-neutral-900">Real Wallet</h3>
-              <p className="text-[10px] text-neutral-400 leading-tight">Instant deposits & 2hr withdrawals.</p>
+              <h3 className="font-bold text-xs uppercase italic text-neutral-900">Real Money</h3>
+              <p className="text-[10px] text-neutral-400 leading-tight">Fast deposits and cash out.</p>
             </div>
             <div className="bg-white border border-neutral-100 p-4 rounded-3xl space-y-2 shadow-sm">
               <ShieldCheck className="text-blue-500" size={24} />
-              <h3 className="font-bold text-xs uppercase italic text-neutral-900">Safe Gaming</h3>
-              <p className="text-[10px] text-neutral-400 leading-tight">Provably fair games & SSL encryption.</p>
+              <h3 className="font-bold text-xs uppercase italic text-neutral-900">Secure Play</h3>
+              <p className="text-[10px] text-neutral-400 leading-tight">Fair games and safe info.</p>
             </div>
           </div>
 
@@ -76,10 +76,10 @@ export default function AuthView() {
               className="w-full bg-neutral-900 text-white py-4 rounded-3xl font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl hover:bg-neutral-800 transition-all active:scale-95"
             >
               <img src="https://www.google.com/favicon.ico" className="w-5 h-5 bg-white rounded-full p-0.5" alt="Google" />
-              Continue with Google
+              Sign in with Google
             </button>
             <p className="text-[10px] text-center text-neutral-400 font-bold uppercase tracking-widest leading-loose">
-              By joining, you agree to our <span className="text-neutral-600">Terms of Service</span> and <span className="text-neutral-600">Privacy Policy</span>.
+              By playing, you agree to our Rules.
             </p>
           </div>
         </section>
@@ -89,8 +89,8 @@ export default function AuthView() {
             <Sparkles size={24} />
           </div>
           <div className="flex-1">
-            <h4 className="font-black text-sm uppercase italic text-orange-500">Early Access Offer</h4>
-            <p className="text-[10px] text-neutral-600 font-medium">Join now and get RS 500 first deposit bonus!</p>
+            <h4 className="font-black text-sm uppercase italic text-orange-500">New Player Gift</h4>
+            <p className="text-[10px] text-neutral-600 font-medium">Join today and get RS 500 first deposit gift!</p>
           </div>
         </section>
       </motion.div>

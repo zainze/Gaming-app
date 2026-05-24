@@ -347,15 +347,15 @@ export default function ProfileView({ profile }: { profile: any }) {
             </div>
             <div className="space-y-0.5 relative z-10">
               <h3 className="font-black text-white text-sm italic uppercase tracking-tight flex items-center gap-2">
-                <Shield size={16} className="text-blue-500" /> System Core
+                <Shield size={16} className="text-blue-500" /> Admin Panel
               </h3>
-              <p className="text-[8px] text-white/30 font-black uppercase tracking-widest font-mono">Administrative Matrix</p>
+              <p className="text-[8px] text-white/30 font-black uppercase tracking-widest font-mono">Admin Controls</p>
             </div>
             <button 
               onClick={() => navigate('/admin')}
               className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3.5 rounded-xl font-black italic uppercase tracking-[0.2em] text-[10px] shadow-xl active:scale-95 transition-all relative z-10"
             >
-              Control Center
+              Open Admin Panel
             </button>
           </div>
         </section>
@@ -371,9 +371,9 @@ export default function ProfileView({ profile }: { profile: any }) {
           <div className="p-6 space-y-6">
             <div className="space-y-0.5">
               <h3 className="font-black italic text-white uppercase text-base tracking-tight flex items-center gap-2">
-                <Share2 size={18} className="text-orange-500" /> Referral Hash
+                <Share2 size={18} className="text-orange-500" /> Referral Code
               </h3>
-              <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] font-mono pl-1">Network Identity</p>
+              <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em] font-mono pl-1">Invite friends here</p>
             </div>
             
             <div 
@@ -381,7 +381,7 @@ export default function ProfileView({ profile }: { profile: any }) {
               className="flex items-center justify-between bg-black/20 border border-white/5 p-4 rounded-2xl cursor-pointer group hover:bg-white/5 transition-all relative overflow-hidden"
             >
               <div className="flex flex-col relative z-10">
-                 <span className="text-[7px] font-black text-white/10 uppercase tracking-widest mb-0.5 font-mono">Unique Identifier</span>
+                 <span className="text-[7px] font-black text-white/10 uppercase tracking-widest mb-0.5 font-mono">My Code</span>
                  <span className="font-mono font-black text-xl tracking-[0.2em] text-white italic">{profile?.inviteCode}</span>
               </div>
               <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl text-white/40 group-hover:text-white group-hover:bg-orange-500 transition-all relative z-10 shadow-lg">
@@ -396,15 +396,15 @@ export default function ProfileView({ profile }: { profile: any }) {
       {/* Protocols Selection */}
       <section className="px-6 space-y-3">
         <div className="flex items-center justify-between px-1">
-           <h3 className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] font-mono">Protocols</h3>
+           <h3 className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em] font-mono">Settings</h3>
            <div className="h-px flex-1 mx-3 bg-white/5" />
         </div>
         
         <div className="grid grid-cols-1 gap-3">
           {[
-            { id: 'notifications', icon: Bell, label: "Relay Node", color: "text-blue-400", bg: "bg-blue-400/5", border: "border-blue-500/10", badge: notifications.filter(n => !n.read).length, desc: "Global broadcasts" },
-            { id: 'privacy', icon: Shield, label: "Encryption", color: "text-green-400", bg: "bg-green-400/5", border: "border-green-500/10", desc: "Data & sessions" },
-            { id: 'language', icon: Globe, label: "Localization", color: "text-orange-400", bg: "bg-orange-400/5", border: "border-orange-500/10", desc: "Language selection" },
+            { id: 'notifications', icon: Bell, label: "Relay Node", color: "text-blue-400", bg: "bg-blue-400/5", border: "border-blue-500/10", badge: notifications.filter(n => !n.read).length, desc: "My messages" },
+            { id: 'privacy', icon: Shield, label: "Encryption", color: "text-green-400", bg: "bg-green-400/5", border: "border-green-500/10", desc: "Account privacy" },
+            { id: 'language', icon: Globe, label: "Localization", color: "text-orange-400", bg: "bg-orange-400/5", border: "border-orange-500/10", desc: "Choose your language" },
           ].map((item) => (
             <button 
               key={item.id} 
@@ -416,7 +416,7 @@ export default function ProfileView({ profile }: { profile: any }) {
                   <item.icon size={20} />
                 </div>
                 <div className="flex flex-col items-start">
-                  <span className="font-black italic text-base text-white uppercase tracking-tight leading-none">{item.label}</span>
+                  <span className="font-black italic text-base text-white uppercase tracking-tight leading-none">{item.id === 'notifications' ? 'Notifications' : item.id === 'privacy' ? 'Privacy' : 'Language'}</span>
                   <span className="text-[8px] font-black text-white/20 uppercase tracking-[0.1em] font-mono mt-1">{item.desc}</span>
                 </div>
               </div>
@@ -441,7 +441,7 @@ export default function ProfileView({ profile }: { profile: any }) {
           className="w-full bg-[#0b0e11]/50 border border-red-500/10 text-red-500/60 py-4 rounded-xl font-black italic uppercase tracking-[0.25em] flex items-center justify-center gap-3 hover:bg-red-500 hover:text-white transition-all text-xs"
         >
           <LogOut size={16} /> 
-          Terminate Session
+          Log Out
         </button>
       </div>
     </motion.div>
