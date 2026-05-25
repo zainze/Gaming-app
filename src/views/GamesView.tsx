@@ -57,9 +57,12 @@ import { SpaceDice } from "../components/SpaceDice";
 import { DragonTiger } from "../components/DragonTiger";
 import { GoalKick } from "../components/GoalKick";
 import { SushiStrike } from "../components/SushiStrike";
+import { SnakeGame } from "../components/SnakeGame";
+import { GameExplainer } from "../components/GameExplainer";
 
 export default function GamesView({ profile, onNavigate }: { profile: any, onNavigate: (view: string) => void }) {
   const [activeGame, setActiveGame] = useState<string | null>(null);
+  const [explainingGame, setExplainingGame] = useState<any | null>(null);
   const [arcadeGames, setArcadeGames] = useState<any[]>([]);
   const [minBet, setMinBet] = useState(10);
   const [gamesConfig, setGamesConfig] = useState<Record<string, any>>({});
@@ -145,14 +148,6 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
     { name: "Arcade", icon: Gamepad2, color: "text-red-500" },
   ];
 
-  const quickLinks = [
-    { name: "Invitation", icon: UserPlus, color: "from-green-400 to-green-600", action: () => setShowReferral(true) },
-    { name: "Newplayer", icon: Gift, color: "from-blue-400 to-blue-600", action: () => setShowNewPlayers(true) },
-    { name: "Deposit", icon: Coins, color: "from-yellow-400 to-yellow-600", action: () => onNavigate('wallet') },
-    { name: "Spins", icon: Radio, color: "from-orange-400 to-orange-600", action: () => setActiveGame('spin') },
-    { name: "VIP", icon: Gem, color: "from-purple-400 to-purple-600", action: () => setShowVIP(true) },
-  ];
-
   const defaultGamesMeta: Record<string, any> = {
     slipper: { title: "Slipper Monte", category: "Cards", image: "https://images.unsplash.com/photo-1626775238053-4315516ebaec?q=80&w=400&auto=format&fit=crop" },
     spin: { title: "Spin Wheel", category: "Slot", image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
@@ -177,6 +172,7 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
     dragon_tiger: { title: "Dragon Tiger", category: "Cards", image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
     goal_kick: { title: "Penalty Royale", category: "Skill", image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
     sushi_strike: { title: "Sushi Strike", category: "Classic", image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
+    snake_league: { title: "Python League", category: "Skill", image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" },
     web_cyber: { title: "Cyber City", category: "Arcade", url: "https://www.crazygames.com/embed/block-rush", image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=400&auto=format&fit=crop", time: 60, reward: 25 },
     web_drift: { title: "Drift King", category: "Arcade", url: "https://www.crazygames.com/embed/cyber-surfer", image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop", time: 45, reward: 20 },
   };
@@ -189,10 +185,28 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
     players: Math.floor(Math.random() * 500) + 100
   }));
 
+  const triggerGameExplanation = (gameOrId: any) => {
+    if (!gameOrId) return;
+    if (typeof gameOrId === "string") {
+      const found = displayedGames.find(g => g.id === gameOrId) || { id: gameOrId, title: defaultGamesMeta[gameOrId]?.title || gameOrId };
+      setExplainingGame(found);
+    } else {
+      setExplainingGame(gameOrId);
+    }
+  };
+
+  const quickLinks = [
+    { name: "Invitation", icon: UserPlus, color: "from-green-400 to-green-600", action: () => setShowReferral(true) },
+    { name: "Newplayer", icon: Gift, color: "from-blue-400 to-blue-600", action: () => setShowNewPlayers(true) },
+    { name: "Deposit", icon: Coins, color: "from-yellow-400 to-yellow-600", action: () => onNavigate('wallet') },
+    { name: "Spins", icon: Radio, color: "from-orange-400 to-orange-600", action: () => triggerGameExplanation('spin') },
+    { name: "VIP", icon: Gem, color: "from-purple-400 to-purple-600", action: () => setShowVIP(true) },
+  ];
+
   const filteredGames = displayedGames.filter(g => 
     activeCategory === "All" || 
     g.category === activeCategory || 
-    (activeCategory === "Hot" && (g.id === "aviator" || g.id === "mines" || g.id === "swipe" || g.id === "slipper" || g.id === "rocket_crash" || g.id === "moon_crash" || g.id === "fruit_slots" || g.id === "treasure_hunt" || g.id === "wheel_fortune" || g.id === "color_match" || g.id === "fruit_ninja" || g.id === "teen_patti" || g.id === "dojo_cards" || g.id === "space_dice" || g.id === "dragon_tiger" || g.id === "goal_kick" || g.id === "sushi_strike"))
+    (activeCategory === "Hot" && (g.id === "aviator" || g.id === "mines" || g.id === "swipe" || g.id === "slipper" || g.id === "rocket_crash" || g.id === "moon_crash" || g.id === "fruit_slots" || g.id === "treasure_hunt" || g.id === "wheel_fortune" || g.id === "color_match" || g.id === "fruit_ninja" || g.id === "teen_patti" || g.id === "dojo_cards" || g.id === "space_dice" || g.id === "dragon_tiger" || g.id === "goal_kick" || g.id === "sushi_strike" || g.id === "snake_league"))
   );
 
   const handleWin = async (amount: number) => {
@@ -362,6 +376,26 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
   return (
     <div className={`relative w-full h-full bg-[#1b2a5c] ${isFullScreen ? 'overflow-hidden' : ''} text-white`}>
       <AnimatePresence mode="wait">
+        {explainingGame && (
+          <GameExplainer 
+            gameId={explainingGame.id}
+            gameTitle={explainingGame.title}
+            minBet={gamesConfig[explainingGame.id]?.minBet || minBet}
+            winRate={gamesConfig[explainingGame.id]?.winRate || 45}
+            multiplier={gamesConfig[explainingGame.id]?.multiplier || 2.5}
+            onClose={() => setExplainingGame(null)}
+            onPlay={() => {
+              const game = explainingGame;
+              setExplainingGame(null);
+              if (game.url) {
+                handleLaunchWebGame(game);
+              } else {
+                setActiveGame(game.id);
+              }
+            }}
+          />
+        )}
+
         {showVIP && (
            <InvestmentView profile={profile} onBack={() => setShowVIP(false)} />
         )}
@@ -618,6 +652,21 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
           </motion.div>
         )}
 
+        {activeGame === 'snake_league' && (
+          <motion.div key="snake_league" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#05110a]">
+             <SnakeGame 
+               onWin={handleWin} 
+               onBet={handleBet} 
+               balance={profile?.balance || 0} 
+               onExit={() => setActiveGame(null)} 
+               difficulty={gamesConfig['snake_league']?.difficulty || 'low'}
+               targetScore={gamesConfig['snake_league']?.targetScore || 15}
+               minBet={gamesConfig['snake_league']?.minBet || 10}
+               multiplier={gamesConfig['snake_league']?.multiplier || 2.5}
+             />
+          </motion.div>
+        )}
+
 
 
         {!activeGame && (
@@ -721,7 +770,7 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
                     initial={{ opacity: 0, y: 20 }} 
                     animate={{ opacity: 1, y: 0 }} 
                     transition={{ delay: idx * 0.03 }} 
-                    onClick={() => game.url ? handleLaunchWebGame(game) : setActiveGame(game.id)} 
+                    onClick={() => triggerGameExplanation(game)} 
                     className={`relative group cursor-pointer ${isArcade ? 'col-span-2' : ''}`}
                   >
                     <div className={`${isArcade ? 'aspect-[21/9]' : 'aspect-[3/4.2]'} rounded-[1.5rem] overflow-hidden border border-white/5 bg-[#14254f] shadow-2xl relative transition-transform duration-500 group-hover:scale-[1.02]`}>

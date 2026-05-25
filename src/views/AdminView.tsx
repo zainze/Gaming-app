@@ -1035,7 +1035,8 @@ export default function AdminView() {
                           { id: 'space_dice', name: 'Space Dice', category: 'Blockchain', minBet: 10, winRate: 50, multiplier: 1.9, image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=400&auto=format&fit=crop" },
                           { id: 'dragon_tiger', name: 'Dragon Tiger', category: 'Cards', minBet: 10, winRate: 45, multiplier: 2, image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
                           { id: 'goal_kick', name: 'Penalty Royale', category: 'Skill', minBet: 10, winRate: 45, multiplier: 1.9, image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
-                          { id: 'sushi_strike', name: 'Sushi Strike', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.8, image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" }
+                          { id: 'sushi_strike', name: 'Sushi Strike', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.8, image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
+                          { id: 'snake_league', name: 'Python League', category: 'Skill', minBet: 10, winRate: 45, multiplier: 2.5, targetScore: 15, difficulty: 'low', image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" }
                         ];
                         for (const g of initialGames) {
                           const docRef = doc(db, "games", g.id);
@@ -1096,7 +1097,8 @@ export default function AdminView() {
                         { id: 'space_dice', name: 'Space Dice', category: 'Blockchain', minBet: 10, winRate: 50, multiplier: 1.9, image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=400&auto=format&fit=crop" },
                         { id: 'dragon_tiger', name: 'Dragon Tiger', category: 'Cards', minBet: 10, winRate: 45, multiplier: 2, image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
                         { id: 'goal_kick', name: 'Penalty Royale', category: 'Skill', minBet: 10, winRate: 45, multiplier: 1.9, image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
-                        { id: 'sushi_strike', name: 'Sushi Strike', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.8, image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" }
+                        { id: 'sushi_strike', name: 'Sushi Strike', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.8, image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
+                        { id: 'snake_league', name: 'Python League', category: 'Skill', minBet: 10, winRate: 45, multiplier: 2.5, targetScore: 15, difficulty: 'low', image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" }
                       ];
                       for (const g of initialGames) {
                         await setDoc(doc(db, "games", g.id), { ...g, active: true, createdAt: new Date().toISOString() }, { merge: true });
@@ -1226,6 +1228,30 @@ export default function AdminView() {
                               className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500 text-neutral-900" 
                             />
                           </div>
+                        )}
+                        {game.id === 'snake_league' && (
+                          <>
+                            <div className="space-y-1.5">
+                              <label className="text-[8px] font-black uppercase text-neutral-400">Winning Target Score</label>
+                              <input 
+                                type="number" 
+                                value={game.targetScore || 15}
+                                onChange={(e) => updateGameConfig(game.id, { targetScore: Number(e.target.value) || 15 })}
+                                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500 text-neutral-900" 
+                              />
+                            </div>
+                            <div className="space-y-1.5 flex flex-col justify-end whitespace-nowrap">
+                              <label className="text-[8px] font-black uppercase text-neutral-400">Snake Speed Difficulty</label>
+                              <select 
+                                value={game.difficulty || 'low'}
+                                onChange={(e) => updateGameConfig(game.id, { difficulty: e.target.value })}
+                                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500 text-neutral-900 appearance-none"
+                              >
+                                <option value="low">Low (Easy Speed)</option>
+                                <option value="hard">Hard (Fast Speed + Wall Death)</option>
+                              </select>
+                            </div>
+                          </>
                         )}
                         <div className="space-y-1.5 flex flex-col justify-end">
                            <label className="text-[8px] font-black uppercase text-neutral-400">Game Category</label>

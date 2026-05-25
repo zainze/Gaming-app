@@ -8,7 +8,8 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firestore with long-polling and no streams to handle sandboxed environment connectivity issues
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
-}, (firebaseConfig as any).firestoreDatabaseId);
+  useFetchStreams: false,
+} as any, (firebaseConfig as any).firestoreDatabaseId);
 
 export const auth = getAuth(app);
 
