@@ -165,12 +165,16 @@ export const DojoCards: React.FC<DojoCardsProps> = ({
 
         <div className="w-full max-w-sm space-y-6">
             <div className="flex items-center justify-between bg-black/60 p-4 rounded-3xl border border-white/5 shadow-2xl">
-                <button onClick={() => setBet(Math.max(minBet, bet - 10))} className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center disabled:opacity-30" disabled={playing}>-</button>
+                <button onClick={() => setBet(Math.max(minBet, bet - 10))} className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center disabled:opacity-30 hover:bg-white/10 active:scale-95 duration-100" disabled={playing}>
+                  <Minus size={18} className="text-white" />
+                </button>
                 <div className="text-center">
                     <span className="text-[10px] font-black uppercase text-white/30 tracking-[0.2em] block mb-1">Honor Stakes</span>
                     <span className="text-2xl font-black italic">RS {bet}</span>
                 </div>
-                <button onClick={() => setBet(bet + 10)} className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center disabled:opacity-30" disabled={playing}>+</button>
+                <button onClick={() => setBet(bet + 10)} className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center disabled:opacity-30 hover:bg-white/10 active:scale-95 duration-100" disabled={playing}>
+                  <Plus size={18} className="text-white" />
+                </button>
             </div>
         </div>
       </div>

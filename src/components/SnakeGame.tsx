@@ -17,7 +17,9 @@ import {
   ShieldAlert,
   Coins,
   ChevronRight,
-  Sparkle
+  Sparkle,
+  Plus,
+  Minus
 } from "lucide-react";
 import { playSound } from "../lib/sounds";
 
@@ -829,16 +831,16 @@ export const SnakeGame: React.FC<SnakeGameProps> = ({
                   <button 
                     onClick={() => adjustBet(-20)}
                     disabled={bet <= minBet}
-                    className="w-8 h-8 font-black bg-neutral-800 hover:bg-neutral-700 rounded-lg flex items-center justify-center transition-transform active:scale-95 text-xs border border-white/5 disabled:opacity-40"
+                    className="w-10 h-10 font-black bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl flex items-center justify-center transition-transform active:scale-95 border border-white/10 disabled:opacity-30"
                   >
-                    -
+                    <Minus size={14} className="shrink-0" />
                   </button>
                   <button 
                     onClick={() => adjustBet(20)}
                     disabled={bet >= balance}
-                    className="w-8 h-8 font-black bg-neutral-800 hover:bg-neutral-700 rounded-lg flex items-center justify-center transition-transform active:scale-95 text-xs border border-white/5"
+                    className="w-10 h-10 font-black bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl flex items-center justify-center transition-transform active:scale-95 border border-white/10 disabled:opacity-30"
                   >
-                    +
+                    <Plus size={14} className="shrink-0" />
                   </button>
                 </div>
               </div>

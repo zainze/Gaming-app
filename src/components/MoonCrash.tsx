@@ -1,6 +1,20 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { LogOut, Plus, Minus, Moon, Star, Ghost } from 'lucide-react';
+import { 
+  LogOut, 
+  Volume2, 
+  VolumeX, 
+  Zap, 
+  Flame, 
+  History, 
+  Coins, 
+  Sparkles,
+  TrendingUp,
+  RotateCcw,
+  ShieldAlert,
+  ArrowUpRight,
+  Info
+} from 'lucide-react';
 import { playSound, stopSound } from '../lib/sounds';
 
 interface MoonCrashProps {
@@ -11,356 +25,841 @@ interface MoonCrashProps {
   winRate?: number;
 }
 
-interface UserBet {
-  id: string;
-  user: string;
-  amount: number;
-  multiplier?: number;
-  win?: number;
-  status: 'pending' | 'cashed' | 'lost';
+interface Star {
+  id: number;
+  x: number;
+  y: number;
+  size: number;
+  speed: number;
+  opacity: number;
 }
 
-export const MoonCrash: React.FC<MoonCrashProps> = ({ balance, onWin, onBet, onExit, winRate = 50 }) => {
-  const [gameState, setGameState] = useState<'idle' | 'waiting' | 'running' | 'crashed'>('idle');
-  const [multiplier, setMultiplier] = useState(1.0);
-  const [history, setHistory] = useState<number[]>([1.12, 12.04, 1.05, 2.10, 1.50, 6.42, 1.00, 1.99]);
-  const [crashPoint, setCrashPoint] = useState(0);
-  
-  const [bet, setBet] = useState({ amount: 10.00, active: false, activeInRound: false, hasFinished: false });
-  const [bet2, setBet2] = useState({ amount: 10.00, active: false, activeInRound: false, hasFinished: false });
-  const [activeTab, setActiveTab] = useState<'all' | 'my' | 'top'>('all');
-  const [localBets, setLocalBets] = useState<UserBet[]>([]);
+interface SmokeParticle {
+  id: number;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  color: string;
+  alpha: number;
+  life: number;
+  maxLife: number;
+}
 
-  const requestRef = useRef<number>(null);
+export const MoonCrash: React.FC<MoonCrashProps> = ({ 
+  balance, 
+  onWin, 
+  onBet, 
+  onExit, 
+  winRate = 50 
+}) => {
+  // Game state core
+  const [gameState, setGameState] = useState<'idle' | 'countdown' | 'running' | 'cashed' | 'crashed'>('idle');
+  const [multiplier, setMultiplier] = useState<number>(1.00);
+  const [betAmount, setBetAmount] = useState<number>(50);
+  const [history, setHistory] = useState<number[]>([1.45, 2.10, 1.08, 14.20, 1.89, 3.40, 1.02, 5.75, 1.12]);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [countdown, setCountdown] = useState<number>(3);
+  const [isExploding, setIsExploding] = useState<boolean>(false);
+  const [showWinCelebration, setShowWinCelebration] = useState<boolean>(false);
+  const [celebrationAmount, setCelebrationAmount] = useState<number>(0);
+  const [screenShake, setScreenShake] = useState<boolean>(false);
+
+  // Hidden generated target point
+  const crashPointRef = useRef<number>(2.5);
+
+  // Animation and physics refs
+  const frameRef = useRef<number>(null);
   const startTimeRef = useRef<number>(0);
+  const starsRef = useRef<Star[]>([]);
+  const particlesRef = useRef<SmokeParticle[]>([]);
+  const particleIdCounter = useRef<number>(0);
 
-  const generateCrashPoint = () => {
-    const r = Math.random();
-    const houseEdge = (100 - winRate) / 100;
-    if (r < (0.04 + houseEdge * 0.15)) return 1.0;
-    const point = Math.max(1.0, (1 - houseEdge * 0.08) / (1.0 - Math.random()));
-    return Number(point.toFixed(2));
+  // Star initialization for beautiful parallax backdrop
+  useEffect(() => {
+    const list: Star[] = Array.from({ length: 60 }).map((_, idx) => ({
+      id: idx,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: 1 + Math.random() * 2,
+      speed: 0.15 + Math.random() * 0.45,
+      opacity: 0.3 + Math.random() * 0.7
+    }));
+    starsRef.current = list;
+  }, []);
+
+  const playLocalSound = (name: 'click' | 'win' | 'lose' | 'spin' | 'ready' | 'chip') => {
+    if (soundEnabled) {
+      playSound(name);
+    }
   };
 
-  const startRound = useCallback(() => {
-    const cp = generateCrashPoint();
-    setCrashPoint(cp);
-    setGameState('running');
-    setMultiplier(1.00);
-    playSound('spin');
-    startTimeRef.current = performance.now();
-
-    setBet(prev => ({ ...prev, activeInRound: prev.active, hasFinished: false }));
-    setBet2(prev => ({ ...prev, activeInRound: prev.active, hasFinished: false }));
-
-    const names = ['Astro_99', 'LunarBase', 'Apollo_11', 'OrbitMaster', 'GalaxyX', 'StarCoder'];
-    const newBets: UserBet[] = names.map((name, i) => ({
-      id: `lunar_${Date.now()}_${i}`,
-      user: name,
-      amount: Math.floor(Math.random() * 200) + 50,
-      status: 'pending'
-    }));
-    setLocalBets(newBets);
+  // Safe game crash multiplier picker
+  const generateCrashPoint = useCallback(() => {
+    const r = Math.random();
+    // Adjusted house edge mapping based on global project preferences
+    const houseEdge = (100 - winRate) / 100;
+    // 4% direct crash factor to keep gaming tension high
+    if (r < (0.04 + houseEdge * 0.10)) return 1.00;
+    
+    const randomFactor = Math.random();
+    const point = Math.max(1.01, (1.00 - houseEdge * 0.04) / (1.00 - randomFactor));
+    return Number(Math.min(250, point).toFixed(2));
   }, [winRate]);
 
-  const handleAction = (isPanel2: boolean = false) => {
-    const currentBet = isPanel2 ? bet2 : bet;
-    const setBetFn = isPanel2 ? setBet2 : setBet;
-
-    if (currentBet.active) {
-      if (gameState === 'running' && currentBet.activeInRound) {
-        const win = currentBet.amount * multiplier;
-        onWin(win);
-        playSound('win');
-        setBetFn(prev => ({ ...prev, active: false, activeInRound: false, hasFinished: true }));
-      } else if (gameState !== 'running') {
-        setBetFn(prev => ({ ...prev, active: false, activeInRound: false }));
-      } else if (gameState === 'running' && !currentBet.activeInRound) {
-        setBetFn(prev => ({ ...prev, active: false }));
-      }
-    } else {
-      if (gameState === 'running' && currentBet.hasFinished) return;
-      if (balance < currentBet.amount) return;
-      onBet(currentBet.amount);
-      playSound('click');
-      setBetFn(prev => ({ ...prev, active: true }));
-
-      if (gameState === 'idle' || gameState === 'crashed') {
-        setGameState('waiting');
-        setTimeout(startRound, 3000);
-      }
+  // Adjust Quick Bets safety
+  const adjustBet = (type: 'half' | 'double' | 'min' | 'max' | number) => {
+    if (gameState === 'running' || gameState === 'countdown') return;
+    playLocalSound('chip');
+    if (type === 'half') {
+      setBetAmount(prev => Math.max(10, Math.floor(prev / 2)));
+    } else if (type === 'double') {
+      setBetAmount(prev => Math.min(Math.max(10, balance), prev * 2));
+    } else if (type === 'min') {
+      setBetAmount(10);
+    } else if (type === 'max') {
+      setBetAmount(Math.min(1000, balance));
+    } else if (typeof type === 'number') {
+      setBetAmount(Math.min(Math.max(10, balance), type));
     }
   };
 
-  useEffect(() => {
-    if (gameState === 'running') {
-      const update = (time: number) => {
-        const elapsed = (time - startTimeRef.current) / 1000;
-        const nextMultiplier = Math.pow(1.10, elapsed); // Slightly slower buildup for "lunar" feel
-        
-        if (nextMultiplier >= crashPoint) {
-          stopSound('spin');
-          playSound('lose');
-          setGameState('crashed');
-          setHistory(prev => [crashPoint, ...prev].slice(0, 15));
-          
-          setBet(prev => ({ 
-            ...prev, 
-            active: prev.activeInRound ? false : prev.active,
-            activeInRound: false, 
-            hasFinished: false 
-          }));
-          setBet2(prev => ({ 
-            ...prev, 
-            active: prev.activeInRound ? false : prev.active,
-            activeInRound: false, 
-            hasFinished: false 
-          }));
-          
-          setLocalBets(prev => prev.map(b => ({ ...b, status: b.status === 'pending' ? 'lost' : b.status })));
-          setTimeout(() => setGameState('idle'), 3000);
-          return;
-        }
+  // Main Firing loop trigger
+  const triggerLaunch = () => {
+    if (gameState === 'running' || gameState === 'countdown') return;
+    if (balance < betAmount) {
+      playLocalSound('lose');
+      return;
+    }
 
-        setMultiplier(nextMultiplier);
+    // Process Bet deduct securely
+    onBet(betAmount);
+    playLocalSound('ready');
+    setGameState('countdown');
+    setCountdown(3);
+    setMultiplier(1.00);
+    setIsExploding(false);
+    setShowWinCelebration(false);
+    particlesRef.current = [];
+
+    // Trigger 3 second launch ignition countdown
+    let count = 3;
+    const interval = setInterval(() => {
+      count--;
+      if (count > 0) {
+        setCountdown(count);
+        playLocalSound('click');
+      } else {
+        clearInterval(interval);
+        // Fire Booster ignition!
+        commenceFlight();
+      }
+    }, 850);
+  };
+
+  // Launch the core high frequency physics animation ticks
+  const commenceFlight = () => {
+    crashPointRef.current = generateCrashPoint();
+    setGameState('running');
+    startTimeRef.current = performance.now();
+    playLocalSound('spin');
+  };
+
+  // Dynamic Trajectory and Star coordinates update inside RequestAnimationFrame
+  useEffect(() => {
+    if (gameState !== 'running') {
+      if (gameState !== 'countdown' && frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+      }
+      return;
+    }
+
+    const physicsLoop = (time: number) => {
+      const elapsedSeconds = (time - startTimeRef.current) / 1000;
+      
+      // Accelerating hyper-drive physics rate scaling curve
+      const nextMultiplier = Math.pow(1.08, elapsedSeconds) + (elapsedSeconds * 0.12);
+      
+      // Check for explosion / crash intercept event
+      if (nextMultiplier >= crashPointRef.current) {
+        // BOOM!
+        stopSound('spin');
+        playLocalSound('lose');
+        setGameState('crashed');
+        setIsExploding(true);
+        setScreenShake(true);
+        setTimeout(() => setScreenShake(false), 550);
+
+        setHistory(prev => [crashPointRef.current, ...prev].slice(0, 10));
         
-        if (Math.random() < 0.01) {
-          setLocalBets(prev => {
-            const pending = prev.filter(b => b.status === 'pending');
-            if (pending.length === 0) return prev;
-            const target = pending[Math.floor(Math.random() * pending.length)];
-            return prev.map(b => b.id === target.id ? { 
-              ...b, 
-              status: 'cashed', 
-              multiplier: nextMultiplier, 
-              win: b.amount * nextMultiplier 
-            } : b);
+        // Spawn massive explosion shock particles
+        const crashX = 100 + Math.min(600, elapsedSeconds * 65);
+        const crashY = 400 - Math.min(250, Math.pow(elapsedSeconds, 1.25) * 35);
+        
+        for (let i = 0; i < 45; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 2 + Math.random() * 12;
+          particlesRef.current.push({
+            id: particleIdCounter.current++,
+            x: crashX,
+            y: crashY,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            size: 6 + Math.random() * 14,
+            color: Math.random() > 0.4 ? '#EF4444' : Math.random() > 0.5 ? '#F59E0B' : '#FFFFFF',
+            alpha: 1.0,
+            life: 0,
+            maxLife: 30 + Math.random() * 40
           });
         }
+        return;
+      }
 
-        requestRef.current = requestAnimationFrame(update);
-      };
-      requestRef.current = requestAnimationFrame(update);
-      return () => {
-        if (requestRef.current) cancelAnimationFrame(requestRef.current);
-        stopSound('spin');
-      };
+      setMultiplier(nextMultiplier);
+
+      // Rocket flame emission physics coordinates
+      // Trajectory follows: Bottom-left (100, 420) heading diagonally over time to top-right
+      const rocketX = 100 + Math.min(600, elapsedSeconds * 65);
+      const rocketY = 400 - Math.min(250, Math.pow(elapsedSeconds, 1.25) * 35);
+
+      // Emit rocket booster plume exhaust particles
+      if (Math.random() < 0.6) {
+        // Red, Amber and deep smoke blends
+        particlesRef.current.push({
+          id: particleIdCounter.current++,
+          x: rocketX - 12,
+          y: rocketY + 8,
+          vx: -2 - Math.random() * 5,
+          vy: 1.5 + Math.random() * 4,
+          size: 4 + Math.random() * 8,
+          color: Math.random() > 0.5 ? '#F59E0B' : Math.random() > 0.3 ? '#EF4444' : '#64748B',
+          alpha: 0.9,
+          life: 0,
+          maxLife: 20 + Math.random() * 25
+        });
+      }
+
+      // Update smoke particle dynamics (lifespans and fading)
+      particlesRef.current = particlesRef.current
+        .map(p => ({
+          ...p,
+          x: p.x + p.vx,
+          y: p.y + p.vy,
+          vy: p.vy + 0.05, // minor downward gravity drift
+          life: p.life + 1,
+          alpha: Math.max(0, 1.0 - (p.life / p.maxLife))
+        }))
+        .filter(p => p.life < p.maxLife);
+
+      // Run parallax stellar backdrop speeds dynamically based on rocket warp speed!
+      const warpModifier = Math.max(1.0, nextMultiplier * 2.5);
+      starsRef.current = starsRef.current.map(s => {
+        let nextX = s.x - s.speed * warpModifier * 0.4;
+        let nextY = s.y + s.speed * warpModifier * 0.2;
+        
+        // Wrap stars around screen limits
+        if (nextX < 0) nextX = 100;
+        if (nextY > 100) nextY = 0;
+        
+        return { ...s, x: nextX, y: nextY };
+      });
+
+      frameRef.current = requestAnimationFrame(physicsLoop);
+    };
+
+    frameRef.current = requestAnimationFrame(physicsLoop);
+    return () => {
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    };
+  }, [gameState, generateCrashPoint, soundEnabled]);
+
+  // Cashout / Secure orbit winnings handler
+  const handleCashout = () => {
+    if (gameState !== 'running') return;
+    
+    stopSound('spin');
+    const winningPayout = Number((betAmount * multiplier).toFixed(2));
+    onWin(winningPayout);
+    playLocalSound('win');
+
+    setCelebrationAmount(winningPayout);
+    setShowWinCelebration(true);
+    setGameState('cashed');
+
+    // Deliver rocket safely warp particles
+    const elapsedSeconds = (performance.now() - startTimeRef.current) / 1000;
+    const rocketX = 100 + Math.min(600, elapsedSeconds * 65);
+    const rocketY = 400 - Math.min(250, Math.pow(elapsedSeconds, 1.25) * 35);
+
+    // Blast celebratory star sparklers
+    for (let i = 0; i < 30; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 3 + Math.random() * 8;
+      particlesRef.current.push({
+        id: particleIdCounter.current++,
+        x: rocketX,
+        y: rocketY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: 5 + Math.random() * 7,
+        color: '#10B981', // Neon green matrix color wins
+        alpha: 1.0,
+        life: 0,
+        maxLife: 25 + Math.random() * 30
+      });
     }
-  }, [gameState, crashPoint, onWin]);
+  };
 
-  const graphProgress = useMemo(() => {
-    return Math.min((multiplier - 1) / 4, 1.2);
-  }, [multiplier]);
+  // Reset core console back to ready flight mode
+  const handleReset = () => {
+    setGameState('idle');
+    setMultiplier(1.00);
+    setIsExploding(false);
+    setShowWinCelebration(false);
+    particlesRef.current = [];
+  };
 
-  const moonPos = useMemo(() => {
-    const baseX = 50;
-    const baseY = 520;
-    const x = baseX + (graphProgress * 850 * 0.95);
-    const y = baseY - (Math.pow(graphProgress, 1.2) * 400);
-    return { x, y };
-  }, [graphProgress]);
+  // Beautiful calculated flight variables
+  const computedWinnings = useMemo(() => {
+    return (betAmount * multiplier).toFixed(2);
+  }, [betAmount, multiplier]);
+
+  // Rocket position coordinates
+  const elapsedSecondsForPosition = gameState === 'running' ? (performance.now() - startTimeRef.current) / 1000 : 0;
+  const rocketX = useMemo(() => {
+    if (gameState === 'idle' || gameState === 'countdown') return 100;
+    const t = (multiplier - 1) * 15;
+    return 100 + Math.min(600, t * 5);
+  }, [gameState, multiplier]);
+
+  const rocketY = useMemo(() => {
+    if (gameState === 'idle' || gameState === 'countdown') return 410;
+    const t = (multiplier - 1) * 15;
+    return 410 - Math.min(260, Math.pow(t, 1.15) * 3);
+  }, [gameState, multiplier]);
 
   return (
-    <div className="flex flex-col h-full bg-[#050608] text-[#9EA0A3] font-sans overflow-hidden">
-      <header className="flex items-center justify-between px-3 h-14 bg-[#0a0d14] border-b border-[#1a1f2e] flex-shrink-0 relative z-50">
-        <div className="flex items-center gap-2">
-          <Moon className="text-yellow-200" size={24} fill="currentColor" />
-          <span className="text-white font-black italic tracking-tighter text-lg uppercase whitespace-nowrap">Moon Crash</span>
-        </div>
+    <div className={`w-full h-full flex flex-col bg-[#050814] text-slate-100 font-sans select-none overflow-hidden relative ${screenShake ? 'animate-[shake_0.4s_ease-in-out_infinite]' : ''}`}>
+      
+      {/* Dynamic Keyframe style definition for screen shake explosion impact */}
+      <style>{`
+        @keyframes shake {
+          0% { transform: translate(1px, 1px) rotate(0deg); }
+          10% { transform: translate(-1px, -2px) rotate(-1deg); }
+          20% { transform: translate(-3px, 0px) rotate(1deg); }
+          30% { transform: translate(0px, 2px) rotate(0deg); }
+          40% { transform: translate(1px, -1px) rotate(1deg); }
+          50% { transform: translate(-1px, 2px) rotate(-1deg); }
+          60% { transform: translate(-3px, 1px) rotate(0deg); }
+          70% { transform: translate(2px, 1px) rotate(-1deg); }
+          80% { transform: translate(-1px, -1px) rotate(1deg); }
+          90% { transform: translate(2px, 2px) rotate(0deg); }
+          100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+      `}</style>
+
+      {/* SUBTLE SPACE BACKDROP NEBULA OVERLAYS */}
+      <div className="absolute inset-0 bg-transparent opacity-30 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute -top-1/4 -right-1/4 w-[500px] h-[500px] bg-indigo-900/15 rounded-full filter blur-[100px]" />
+        <div className="absolute -bottom-1/4 -left-1/4 w-[600px] h-[600px] bg-[#0E1A33]/20 rounded-full filter blur-[120px]" />
+      </div>
+
+      {/* TOP HEADER CONTROLS HUD */}
+      <header className="flex items-center justify-between px-6 h-14 bg-[#090E1F]/80 border-b border-[#142343] relative z-40 backdrop-blur-md shrink-0">
         
-        <div className="flex items-center gap-2 bg-black/60 rounded-full px-4 py-1.5 border border-[#1a1f2e]">
-          <span className="text-yellow-400 font-black text-xs leading-none">RS {balance.toFixed(0)}</span>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#2563EB] to-[#1E3A8A] border border-blue-500/30 flex items-center justify-center shadow-lg">
+            <Flame className="text-amber-400 stroke-[2.5]" size={16} />
+          </div>
+          <div>
+            <h1 className="text-white font-black tracking-wider text-xs uppercase">MOON ROCKET</h1>
+            <p className="text-[9px] text-blue-400/70 font-bold uppercase tracking-widest leading-none mt-0.5">LAUNCH MODULE</p>
+          </div>
         </div>
 
-        <button 
-          onClick={onExit}
-          className="p-2 text-[#D92121] hover:bg-red-500/10 rounded-full transition-all"
-        >
-          <LogOut size={20} />
-        </button>
+        {/* STATS AND TOGGLES */}
+        <div className="flex items-center gap-4">
+          
+          {/* USER WALLET BALANCE DISPLAY */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#030611] rounded-lg border border-[#16274D] shadow-inner">
+            <Coins className="text-emerald-400" size={13} />
+            <span className="text-[10px] font-black text-[#5C7CB3] tracking-wide">CREDITS:</span>
+            <span className="font-mono text-xs font-extrabold text-[#10B981]">
+              RS {balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+
+          {/* Sound enable button */}
+          <button 
+            type="button"
+            onClick={() => {
+              setSoundEnabled(!soundEnabled);
+              playLocalSound('click');
+            }}
+            className="p-1.5 bg-[#101935] hover:bg-[#1C2C5A] text-[#7E96CC] hover:text-white rounded-lg border border-[#1C2D5A] transition-all active:scale-95"
+            title="Toggle Sound Effects"
+          >
+            {soundEnabled ? <Volume2 size={14} className="text-amber-400" /> : <VolumeX size={14} />}
+          </button>
+
+          {/* CLOSE OUT DISMISS GAME */}
+          <button 
+            onClick={onExit}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#251214] hover:bg-[#3D1419] text-rose-400 hover:text-white rounded-lg border border-rose-950/40 active:scale-95 transition-all text-[11px] font-bold"
+          >
+            <LogOut size={12} className="text-rose-500" />
+            <span>Close</span>
+          </button>
+
+        </div>
+
       </header>
 
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <div className="flex items-center gap-2 px-4 py-2 bg-[#020305] border-b border-[#1a1f2e] h-10 overflow-x-auto scrollbar-hide">
+      {/* QUICK MULTIPLIERS BAR */}
+      <div className="flex items-center gap-2 px-6 py-2 bg-[#040713]/90 border-b border-[#111A31] h-9 shrink-0 relative z-30 overflow-x-auto no-scrollbar justify-between">
+        
+        <div className="flex items-center gap-1.5">
+          <History size={11} className="text-[#5C7CB3]" />
+          <span className="text-[9px] font-extrabold text-[#5C7CB3] uppercase tracking-wider mr-1">Rounds:</span>
+          <div className="flex items-center gap-1 whitespace-nowrap">
             {history.map((val, idx) => (
-              <span key={idx} className={`px-2 py-0.5 rounded-lg text-[10px] font-black border transition-all ${val < 2 ? 'text-cyan-400 border-cyan-400/20 bg-cyan-400/5' : val < 10 ? 'text-indigo-400 border-indigo-400/20 bg-indigo-400/5' : 'text-pink-500 border-pink-500/20 bg-pink-500/5'}`}>
+              <span 
+                key={idx} 
+                className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
+                  val < 1.5 
+                    ? 'text-cyan-400 border-cyan-500/10 bg-cyan-950/10' 
+                    : val < 3.0 
+                      ? 'text-indigo-400 border-indigo-500/10 bg-indigo-950/10' 
+                      : 'text-amber-400 border-amber-500/20 bg-amber-950/15'
+                }`}
+              >
                 {val.toFixed(2)}x
               </span>
             ))}
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col bg-[#050608] relative">
-          {/* Deep Space Canvas Area */}
-          <section className="relative w-full aspect-[16/9] bg-[#020305] overflow-hidden flex-shrink-0">
-            {/* Twinkling Stars */}
-            {[...Array(30)].map((_, i) => (
-              <motion.div 
-                key={i} 
-                initial={{ opacity: 0.1 }}
-                animate={{ opacity: [0.1, 0.8, 0.1] }}
-                transition={{ repeat: Infinity, duration: Math.random() * 3 + 2 }}
-                className="absolute w-0.5 h-0.5 bg-white rounded-full"
-                style={{ top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%` }}
-              />
-            ))}
+        <div className="hidden sm:flex items-center gap-1 text-[9px] font-bold text-[#5C7CB3]">
+          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
+          <span>Provably Fair Engine Active</span>
+        </div>
 
-            <div className="absolute inset-x-0 bottom-0 top-1/2 bg-gradient-to-t from-blue-900/10 to-transparent" />
+      </div>
 
-            {/* Trailing path */}
-            <svg viewBox="0 0 1000 600" className="absolute inset-0 w-full h-full pointer-events-none">
-               <defs>
-                  <filter id="moon-glow">
-                     <feGaussianBlur stdDeviation="5" result="blur" />
-                     <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                  </filter>
-               </defs>
-               {gameState === 'running' && (
-                 <g>
-                    {/* Simplified path line */}
-                    <circle cx={moonPos.x} cy={moonPos.y} r="30" fill="rgba(254, 240, 138, 0.2)" filter="url(#moon-glow)" />
-                    <foreignObject width="60" height="60" x={moonPos.x - 30} y={moonPos.y - 30}>
-                       <Moon className="w-full h-full text-yellow-200 drop-shadow-[0_0_10px_rgba(254,240,138,0.8)]" fill="currentColor" />
-                    </foreignObject>
-                 </g>
-               )}
-            </svg>
+      {/* INTERACTIVE FULL SCREEN COSMIC DECK SIMULATION */}
+      <div className="flex-1 relative z-10 overflow-hidden flex flex-col min-h-0 bg-[#02040D]">
+        
+        {/* PARALLAX STARFIELD CANVASES Background elements */}
+        <div className="absolute inset-0 z-0">
+          {starsRef.current.map(s => (
+            <div 
+              key={s.id}
+              className="absolute bg-white rounded-full transition-all duration-300"
+              style={{
+                left: `${s.x}%`,
+                top: `${s.y}%`,
+                width: `${s.size}px`,
+                height: `${s.size}px`,
+                opacity: s.opacity,
+                boxShadow: gameState === 'running' && multiplier > 3.0 ? '0 0 6px #FFF' : 'none'
+              }}
+            />
+          ))}
 
-            <div className="absolute inset-0 flex items-center justify-center">
-              <AnimatePresence mode="wait">
-                {gameState === 'running' && (
-                  <motion.div key="mult" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center">
-                    <span className="text-8xl font-black text-white/90 font-mono tracking-tighter">{multiplier.toFixed(2)}x</span>
-                    <p className="text-[10px] font-black uppercase text-blue-400 tracking-[0.5em] mt-1">Gaining Altitude</p>
-                  </motion.div>
-                )}
-                {gameState === 'crashed' && (
-                  <motion.div key="crash" initial={{ rotate: 10, scale: 0.8 }} animate={{ rotate: 0, scale: 1 }} className="text-center bg-black/80 backdrop-blur-md p-8 rounded-[2rem] border border-red-900/30">
-                    <Ghost size={48} className="mx-auto text-red-500 mb-2 animate-bounce" />
-                    <p className="text-red-500 text-2xl font-black uppercase tracking-widest mb-1 italic">Lost Connection</p>
-                    <p className="text-white text-6xl font-black font-mono">{multiplier.toFixed(2)}x</p>
-                  </motion.div>
-                )}
-                {gameState === 'waiting' && (
-                  <div className="flex flex-col items-center gap-4">
-                    <motion.div 
-                      animate={{ rotate: 360 }} 
-                      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                    >
-                      <Moon size={60} className="text-white/5" fill="currentColor" />
-                    </motion.div>
-                    <div className="flex gap-1">
-                       {[0, 1, 2].map(i => (
-                         <motion.div 
-                           key={i}
-                           animate={{ scaleY: [1, 2, 1] }}
-                           transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.1 }}
-                           className="w-1 h-3 bg-blue-500 rounded-full"
-                         />
-                       ))}
-                    </div>
-                    <p className="text-[10px] font-black uppercase text-white/20 tracking-[0.4em]">Next Module Charging</p>
+          {/* SMOKE & EXPLOSION FLAME DUST INDIVIDUAL PARTICLE DOTS */}
+          {particlesRef.current.map(p => (
+            <div 
+              key={p.id}
+              className="absolute rounded-full pointer-events-none filter blur-[1px]"
+              style={{
+                left: p.x,
+                top: p.y,
+                width: p.size,
+                height: p.size,
+                backgroundColor: p.color,
+                opacity: p.alpha,
+                transform: 'translate(-50%, -50%)'
+              }}
+            />
+          ))}
+        </div>
+
+        {/* LUNAR ORBIT (THE MOON DESIGN ELEMENT - HIGH GLOW ON TOP-RIGHT) */}
+        <div className="absolute top-8 right-12 w-48 h-48 md:w-64 md:h-64 rounded-full bg-gradient-to-br from-slate-200 via-slate-400 to-[#1E293B] border border-white/20 shadow-[0_0_80px_rgba(255,255,255,0.12)] p-2 pointer-events-none z-10 flex items-center justify-center">
+          
+          {/* Lunar Crater overlays */}
+          <div className="absolute inset-0 w-full h-full rounded-full opacity-15 overflow-hidden">
+            <div className="absolute top-10 left-12 w-10 h-10 rounded-full bg-slate-950/40 border border-black/20" />
+            <div className="absolute top-1/2 left-8 w-14 h-14 rounded-full bg-slate-950/40 border border-black/20" />
+            <div className="absolute top-24 right-14 w-8 h-8 rounded-full bg-slate-950/40 border border-black/20" />
+            <div className="absolute bottom-10 left-1/2 w-6 h-6 rounded-full bg-slate-950/40 border border-black/20" />
+          </div>
+
+          {/* Inner ambient nuclear core */}
+          <div className="w-full h-full rounded-full bg-transparent border-4 border-dashed border-white/5 animate-[spin_50s_linear_infinite]" />
+          
+          <div className="absolute -top-3 left-4 px-2 py-0.5 rounded bg-amber-500/80 text-[8px] font-black tracking-widest text-[#050814] uppercase leading-none border border-amber-400">
+            LUNAR ORBIT
+          </div>
+
+          {/* Glowing trajectory ring */}
+          <div className="absolute -inset-8 border border-white/5 rounded-full animate-pulse pointer-events-none" />
+
+        </div>
+
+        {/* BASE BOOSTER LAUNCH MECHANISM (BOTTOM-LEFT IDLE) */}
+        {(gameState === 'idle' || gameState === 'countdown') && (
+          <div className="absolute left-[70px] bottom-[50px] z-10 flex flex-col items-center pointer-events-none">
+            {/* Scaffolding structure tower */}
+            <div className="w-1.5 h-20 bg-gradient-to-b from-[#25324D] to-transparent border-l border-slate-700/60 relative">
+              <div className="absolute top-2 left-0 w-8 h-1 bg-[#1A253A] border-y border-slate-600" />
+              <div className="absolute top-12 left-0 w-6 h-1 bg-[#1A253A] border-y border-slate-600" />
+            </div>
+            {/* Booster Plate launch pad */}
+            <div className="w-20 h-2 bg-[#1A243D] border border-[#2B3E68] rounded shadow-xl flex items-center justify-center">
+              <div className="w-8 h-0.5 bg-yellow-400/40 animate-pulse" />
+            </div>
+          </div>
+        )}
+
+        {/* DYNAMIC SCENERY ROCKET RENDER & CRASH DETECTOR */}
+        <div className="absolute inset-0 pointer-events-none z-20">
+          {!isExploding && (gameState === 'running' || gameState === 'cashed' || gameState === 'idle' || gameState === 'countdown') && (
+            <div 
+              className="absolute transition-all duration-75 ease-out"
+              style={{
+                left: `${rocketX}px`,
+                top: `${rocketY}px`,
+                transform: 'translate(-50%, -50%)'
+              }}
+            >
+              
+              {/* Actual Rocket styling layout */}
+              <div className={`relative flex flex-col items-center ${gameState === 'running' ? 'animate-[pulse_0.1s_infinite]' : ''}`}>
+                
+                {/* Visual pilot avatar banner */}
+                <span className="absolute -top-8 bg-[#090E1F]/90 border border-[#1C2C4E] text-white font-extrabold text-[8px] py-0.5 px-2 rounded-full whitespace-nowrap uppercase tracking-widest shadow-lg">
+                  COMMAND-01
+                </span>
+
+                {/* Booster Ignition Flame exhaust under rocket body */}
+                {(gameState === 'running' || gameState === 'countdown') && (
+                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center animate-bounce">
+                    <div className="w-3.5 h-10 bg-gradient-to-t from-transparent via-red-500 to-amber-400 rounded-b-xl animate-[pulse_0.08s_infinite] shadow-[0_0_15px_#EF4444]" />
+                    <Sparkles className="text-yellow-400 shrink-0 mt-0.5 animate-pulse" size={10} />
                   </div>
                 )}
-              </AnimatePresence>
+
+                {/* Rocket Capsule Graphics structure */}
+                <div className="w-9 h-14 bg-gradient-to-b from-slate-100 via-slate-300 to-slate-500 rounded-t-full border-x-2 border-t-2 border-slate-400/80 shadow-[2px_2px_10px_black] p-1 flex items-center justify-center relative">
+                  
+                  {/* Glass viewport cockpit panel */}
+                  <div className="w-4 h-4 rounded-full bg-cyan-400/70 border border-slate-600 flex items-center justify-center shadow-inner overflow-hidden">
+                    <div className="w-1.5 h-1.5 bg-white rounded-full opacity-60 absolute top-1 left-1" />
+                    <span className="text-[7.5px] font-black text-[#010614]">🤖</span>
+                  </div>
+
+                  {/* Interstellar Delta fins left and right */}
+                  <div className="absolute -left-2.5 bottom-0 w-2.5 h-6 bg-red-600 rounded-tl-lg rounded-bl-sm border-l border-b border-red-800" />
+                  <div className="absolute -right-2.5 bottom-0 w-2.5 h-6 bg-red-600 rounded-tr-lg rounded-br-sm border-r border-b border-red-800" />
+
+                </div>
+
+              </div>
+
             </div>
-          </section>
-
-          {/* Interactive UI */}
-          <div className="px-6 py-8 flex flex-col gap-8 flex-shrink-0">
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full max-w-4xl mx-auto">
-                <BetPanel data={bet} gameState={gameState} multiplier={multiplier} onAction={() => handleAction(false)} onAmountChange={(v: any) => setBet(p => ({ ...p, amount: v }))} />
-                <BetPanel data={bet2} gameState={gameState} multiplier={multiplier} onAction={() => handleAction(true)} onAmountChange={(v: any) => setBet2(p => ({ ...p, amount: v }))} />
-             </div>
-          </div>
-
-          <section className="bg-[#0a0d14] rounded-t-[3rem] border-t border-[#1a1f2e] p-6 flex flex-col min-h-[500px]">
-              <div className="flex bg-[#050608] p-1.5 rounded-2xl border border-[#1a1f2e] mb-6">
-                 {['Global Feed', 'My Missions'].map((l, i) => (
-                   <button key={l} onClick={() => setActiveTab(i === 0 ? 'all' : 'my')} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === (i === 0 ? 'all' : 'my') ? 'bg-blue-600 text-white' : 'text-[#495057] hover:text-white'}`}>{l}</button>
-                 ))}
-              </div>
-
-              <div className="space-y-4 pb-24">
-                 {localBets.map(b => (
-                   <div key={b.id} className="flex items-center justify-between p-4 bg-[#050608]/50 rounded-2xl border border-[#1a1f2e]">
-                      <div className="flex items-center gap-3">
-                         <div className="w-10 h-10 rounded-full bg-blue-900/20 flex items-center justify-center border border-blue-500/10">
-                            <Star size={14} className="text-blue-400" />
-                         </div>
-                         <div>
-                            <p className="text-xs font-black text-white uppercase">{b.user}</p>
-                            <p className="text-[9px] font-bold text-white/30 uppercase tracking-tighter">Stake: RS {b.amount}</p>
-                         </div>
-                      </div>
-                      {b.status === 'cashed' ? (
-                        <div className="text-right">
-                           <p className="text-green-500 font-black text-sm">+{b.win?.toFixed(0)}</p>
-                           <p className="text-[8px] font-black text-green-500/40 uppercase font-mono">{b.multiplier?.toFixed(2)}x</p>
-                        </div>
-                      ) : b.status === 'lost' ? (
-                        <span className="text-[10px] font-black text-red-500/50 uppercase italic">Collapsed</span>
-                      ) : (
-                        <span className="text-[10px] font-black text-blue-500/50 uppercase animate-pulse">Wait...</span>
-                      )}
-                   </div>
-                 ))}
-              </div>
-          </section>
+          )}
         </div>
+
+        {/* HUD SCREEN CENTER MULTIPLIER/RISK VALUE */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none text-center p-4">
+          <AnimatePresence mode="wait">
+            
+            {gameState === 'running' && (
+              <motion.div 
+                key="running-multiplier"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center"
+              >
+                <div className="relative">
+                  <span className="text-7xl sm:text-8xl font-black text-white font-mono tracking-tighter drop-shadow-[0_4px_15px_rgba(0,0,0,0.95)]">
+                    {multiplier.toFixed(2)}x
+                  </span>
+                  {/* Live status ping indicators */}
+                  <div className="absolute -top-4 -right-2 flex h-3.5 w-3.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500"></span>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex items-center gap-1.5 px-3 py-1 bg-black/75 rounded-full border border-[#16274D]/80">
+                  <span className="text-[10px] font-black text-yellow-500 tracking-widest uppercase animate-pulse">
+                    ASCENDING ORBIT (MULTIPLE)
+                  </span>
+                </div>
+
+                <p className="text-[10px] font-mono text-slate-400 font-bold mt-1 max-w-[280px]">
+                  Estimated Payload Value: <span className="text-emerald-400 font-bold">RS {computedWinnings}</span>
+                </p>
+
+              </motion.div>
+            )}
+
+            {gameState === 'crashed' && (
+              <motion.div 
+                key="crashed-multiplier"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center bg-[#070103]/95 border border-red-950/70 py-6 px-10 rounded-2xl max-w-sm"
+              >
+                <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center border border-red-500/30 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.3)] mb-2.5">
+                  <ShieldAlert size={20} className="stroke-[2.5]" />
+                </div>
+                <h3 className="text-red-500 text-sm font-black uppercase tracking-widest leading-none">COLLISION METEOR</h3>
+                <p className="text-[9px] text-[#5C7CB3] font-bold uppercase tracking-wide leading-none mt-1">THE ROCKET DISINTEGRATED AT</p>
+                <span className="text-5xl font-black font-mono text-white mt-3.5">
+                  {crashPointRef.current.toFixed(2)}x
+                </span>
+                
+                <button 
+                  onClick={handleReset}
+                  className="mt-4 px-4 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 transition-all text-white rounded-lg text-[10px] font-black uppercase tracking-widest pointer-events-auto"
+                >
+                  Clear Command
+                </button>
+              </motion.div>
+            )}
+
+            {/* SECURED WIN RE-ENTRY HUD STATE */}
+            {gameState === 'cashed' && (
+              <motion.div 
+                key="secured-multiplier"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center bg-[#010905]/95 border border-emerald-950/70 py-6 px-10 rounded-2xl max-w-sm"
+              >
+                <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/30 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)] mb-2.5 animate-bounce">
+                  <Sparkles size={20} className="stroke-[2.5]" />
+                </div>
+                <h3 className="text-emerald-400 text-sm font-black uppercase tracking-widest leading-none">PAYLOAD EXTREME SECURED!</h3>
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wide leading-none mt-1">ORBIT ACHIEVED VELOCITY</p>
+                <span className="text-5xl font-black font-mono text-white mt-3.5">
+                  {multiplier.toFixed(2)}x
+                </span>
+
+                <div className="mt-2.5 text-xs font-black text-emerald-400 font-mono">
+                  +RS {celebrationAmount.toLocaleString()} CREDITS!
+                </div>
+                
+                <button 
+                  onClick={handleReset}
+                  className="mt-4 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all text-white rounded-lg text-[10px] font-black uppercase tracking-widest pointer-events-auto"
+                >
+                  Proceed to Next Launch
+                </button>
+              </motion.div>
+            )}
+
+            {gameState === 'countdown' && (
+              <motion.div 
+                key="countdown-stage"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center"
+              >
+                <div className="relative mb-2 flex items-center justify-center">
+                  <div className="absolute w-20 h-20 border-2 border-dashed border-yellow-500/20 rounded-full animate-spin" />
+                  <span className="text-4xl sm:text-5xl text-yellow-400 font-extrabold font-mono">
+                    {countdown}
+                  </span>
+                </div>
+                <h3 className="text-white text-[11px] font-black uppercase tracking-widest">BOOSTER PRESSURE CHARGING</h3>
+                <p className="text-[#5C7CB3] text-[9px] font-bold tracking-wider leading-none mt-1 uppercase">
+                  READY IGNITION COILS LOCKDOWN...
+                </p>
+              </motion.div>
+            )}
+
+            {gameState === 'idle' && (
+              <motion.div 
+                key="idle-stage"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col items-center pointer-events-auto cursor-pointer group"
+                onClick={triggerLaunch}
+              >
+                <div className="w-14 h-14 bg-gradient-to-tr from-[#1E293B] to-[#0F172A] rounded-full border border-slate-600/50 flex items-center justify-center shadow-lg active:scale-95 transition-all group-hover:border-yellow-500 group-hover:shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                  <ArrowUpRight className="text-yellow-400 stroke-[3] transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" size={24} />
+                </div>
+                <h3 className="text-white text-xs font-black tracking-widest mt-3.5 uppercase">INITIATE ROCKET THRUSTER</h3>
+                <p className="text-[9px] text-[#5C7CB3] font-bold tracking-wide uppercase mt-1 leading-none">
+                  Adjust stake details and click "FIRE" below
+                </p>
+              </motion.div>
+            )}
+
+          </AnimatePresence>
+        </div>
+
       </div>
-    </div>
-  );
-};
 
-const BetPanel: React.FC<any> = ({ data, gameState, multiplier, onAction, onAmountChange }) => {
-  const isCashingOut = data.activeInRound && gameState === 'running';
-  const isActive = data.active;
-  const isFinished = data.hasFinished && gameState === 'running';
+      {/* FOOTER SINGLE COMMAND CENTRE FOR QUICK USER ACTION BETTING */}
+      <footer className="bg-[#070B18] border-t border-[#12203F] px-6 py-4 relative z-30 shrink-0 select-none">
+        
+        <div className="max-w-[1000px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+          
+          {/* QUICK CHIPS SELECTION PANEL */}
+          <div className="flex flex-col gap-2 border-r border-[#152445]/50 pr-0 md:pr-4">
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Coins size={12} className="text-blue-400" />
+                <span className="text-[9.5px] font-extrabold text-[#5C7CB3] uppercase tracking-wider">Stake Selection:</span>
+              </div>
+              <span className="font-mono text-[10px] font-bold text-white">
+                Min: RS 10 | Max: RS 1000
+              </span>
+            </div>
 
-  return (
-    <div className="bg-[#0a0d14] p-6 rounded-[2.5rem] border border-[#1a1f2e] space-y-5 shadow-2xl">
-       <div className="flex items-center justify-between bg-[#050608] rounded-2xl p-2 border border-[#1a1f2e]">
-          <button onClick={() => onAmountChange(Math.max(10, data.amount - 10))} disabled={isActive} className="w-10 h-10 bg-[#0a0d14] rounded-xl flex items-center justify-center text-white disabled:opacity-20">-</button>
-          <div className="text-center">
-             <p className="text-[8px] font-black text-white/30 uppercase tracking-widest mb-0.5">Amount</p>
-             <p className="text-xl font-black text-white font-mono">{data.amount}</p>
+            {/* Quick increase/decrease buttons */}
+            <div className="flex items-center gap-2">
+              <div className="flex-1 bg-[#030611] rounded-lg border border-[#16274D] p-1.5 flex items-center justify-between">
+                
+                <button 
+                  disabled={gameState === 'running' || gameState === 'countdown'}
+                  onClick={() => adjustBet(Math.max(10, betAmount - 10))}
+                  className="px-2 py-0.5 bg-[#121E36] hover:bg-[#1C2F52] text-white rounded font-bold text-xs active:scale-95 transition-transform disabled:opacity-40"
+                >
+                  -10
+                </button>
+
+                <input 
+                  type="number"
+                  disabled={gameState === 'running' || gameState === 'countdown'}
+                  value={betAmount}
+                  onChange={(e) => adjustBet(parseInt(e.target.value) || 10)}
+                  className="w-18 bg-transparent text-center font-mono text-xs font-black text-white focus:outline-none"
+                />
+
+                <button 
+                  disabled={gameState === 'running' || gameState === 'countdown'}
+                  onClick={() => adjustBet(Math.min(balance, betAmount + 10))}
+                  className="px-2 py-0.5 bg-[#121E36] hover:bg-[#1C2F52] text-white rounded font-bold text-xs active:scale-95 transition-transform disabled:opacity-40"
+                >
+                  +10
+                </button>
+
+              </div>
+
+              {/* multiplier multiples */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button 
+                  disabled={gameState === 'running' || gameState === 'countdown'}
+                  onClick={() => adjustBet('half')}
+                  className="px-2.5 py-2 bg-[#121E36] hover:bg-[#1C2F52] rounded text-[10px] text-slate-300 font-extrabold active:scale-95 disabled:opacity-40"
+                >
+                  1/2
+                </button>
+                <button 
+                  disabled={gameState === 'running' || gameState === 'countdown'}
+                  onClick={() => adjustBet('double')}
+                  className="px-2.5 py-2 bg-[#121E36] hover:bg-[#1C2F52] rounded text-[10px] text-slate-300 font-extrabold active:scale-95 disabled:opacity-40"
+                >
+                  2x
+                </button>
+                <button 
+                  disabled={gameState === 'running' || gameState === 'countdown'}
+                  onClick={() => adjustBet('max')}
+                  className="px-2.5 py-2 bg-[#2D0B0F] hover:bg-[#431015] border border-rose-950 rounded text-[10px] text-rose-300 font-black active:scale-95 disabled:opacity-40"
+                >
+                  MAX
+                </button>
+              </div>
+
+            </div>
+
+            {/* Quick Multi-choice preset badges */}
+            <div className="flex items-center gap-1.5 mt-0.5 overflow-x-auto no-scrollbar py-0.5">
+              {[10, 20, 50, 100, 200, 500].map(amt => (
+                <button
+                  key={amt}
+                  disabled={gameState === 'running' || gameState === 'countdown'}
+                  onClick={() => adjustBet(amt)}
+                  className={`px-2.5 py-1 rounded text-[9.5px] font-mono font-bold transition-all shrink-0 ${
+                    betAmount === amt 
+                      ? 'bg-blue-600 text-white' 
+                      : 'bg-[#101932] hover:bg-[#17254A] text-[#8699B5] border border-slate-700/30'
+                  }`}
+                >
+                  RS {amt}
+                </button>
+              ))}
+            </div>
+
           </div>
-          <button onClick={() => onAmountChange(data.amount + 10)} disabled={isActive} className="w-10 h-10 bg-[#0a0d14] rounded-xl flex items-center justify-center text-white disabled:opacity-20">+</button>
-       </div>
 
-       <div className="grid grid-cols-4 gap-2">
-          {[10, 50, 100, 500].map(v => (
-            <button key={v} onClick={() => onAmountChange(v)} disabled={isActive} className="py-2.5 rounded-xl border border-[#1a1f2e] text-[10px] font-black text-white/40 hover:bg-white/5 hover:text-white transition-all disabled:opacity-10">{v}</button>
-          ))}
-       </div>
+          {/* MAIN BIG ACTION MULTI TRIGGER BUTTON */}
+          <div className="w-full">
+            {gameState === 'idle' && (
+              <button
+                onClick={triggerLaunch}
+                disabled={balance < betAmount}
+                className="w-full h-14 bg-gradient-to-r from-yellow-500 via-amber-500 to-orange-600 hover:from-yellow-400 hover:to-orange-500 active:scale-[0.98] transition-all rounded-xl border border-yellow-400 font-black text-sm text-[#090E20] uppercase tracking-widest shadow-xl flex items-center justify-center gap-2"
+              >
+                <Zap size={16} fill="#090E20" />
+                <span>LAUNCH ROCKET FIGHT</span>
+              </button>
+            )}
 
-       <button 
-         onClick={onAction}
-         className={`w-full py-5 rounded-[1.5rem] font-black uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all flex flex-col items-center justify-center gap-1 ${
-           isCashingOut 
-            ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-yellow-500/20' 
-            : isActive
-              ? 'bg-red-600 text-white border-b-4 border-red-800'
-              : 'bg-blue-600 text-white border-b-4 border-blue-800'
-         }`}
-       >
-         {isCashingOut ? (
-           <>
-             <span className="text-xs">Claim Reward</span>
-             <span className="text-2xl">{(data.amount * multiplier).toFixed(0)}</span>
-           </>
-         ) : isActive ? (
-           <>
-             <span className="text-sm">{gameState === 'running' ? 'Abort Next' : 'Abort'}</span>
-             <span className="text-[10px] opacity-60 italic">{data.amount} RS</span>
-           </>
-         ) : (
-           <>
-             <span className="text-sm">Initiate</span>
-             <span className="text-[10px] opacity-60 italic">{data.amount} RS</span>
-           </>
-         )}
-       </button>
+            {gameState === 'countdown' && (
+              <button
+                disabled
+                className="w-full h-14 bg-[#142240] rounded-xl border border-[#213766] text-slate-400 font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2"
+              >
+                <div className="w-4.5 h-4.5 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin mr-1" />
+                <span>IGNITION PRE-COUNTDOWN: {countdown}s</span>
+              </button>
+            )}
+
+            {gameState === 'running' && (
+              <button
+                onClick={handleCashout}
+                className="w-full h-14 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 active:scale-[0.98] transition-all rounded-xl border border-emerald-400 font-black text-sm text-[#010905] uppercase tracking-widest shadow-[0_0_25px_rgba(16,185,129,0.3)] flex flex-col items-center justify-center select-none"
+              >
+                <span className="leading-none text-xs tracking-tight font-black opacity-80">EXTRACT SECURE PILOT CORES</span>
+                <span className="leading-none text-sm font-black mt-1 font-mono tracking-widest uppercase">
+                  CASH OUT RS {computedWinnings} CREDITS
+                </span>
+              </button>
+            )}
+
+            {(gameState === 'cashed' || gameState === 'crashed') && (
+              <button
+                onClick={handleReset}
+                className="w-full h-14 bg-[#11192E] hover:bg-[#1D2B4A] active:scale-[0.98] transition-all rounded-xl border border-slate-700/60 font-black text-sm text-slate-200 uppercase tracking-widest flex items-center justify-center gap-1"
+              >
+                <RotateCcw size={15} />
+                <span>RESET STABILITY DECK</span>
+              </button>
+            )}
+          </div>
+
+        </div>
+
+        {/* Quick Help manual info footnote strip */}
+        <div className="max-w-[1000px] mx-auto mt-3.5 pt-3 border-t border-[#111A31] flex items-center gap-2 text-[9px] text-[#5C7CB3] justify-center text-center">
+          <Info size={10} className="text-blue-400" />
+          <span>How to Win: Fire the main thrust engine and cash out inside orbit before a solar flare or random deep space meteor collides the booster.</span>
+        </div>
+
+      </footer>
+
     </div>
   );
 };

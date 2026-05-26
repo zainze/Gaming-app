@@ -1,14 +1,14 @@
 import { motion, AnimatePresence } from "motion/react";
-import { LogOut, Share2, Shield, Globe, Bell, ChevronRight, Copy, Check, ArrowLeft, Zap, Gift, AlertCircle, CheckCircle2 } from "lucide-react";
+import { LogOut, Share2, Shield, Globe, Bell, ChevronRight, Copy, Check, ArrowLeft, Zap, Gift, AlertCircle, CheckCircle2, Volume2, Music, SlidersHorizontal, Gamepad2 } from "lucide-react";
 import { auth, db, handleFirestoreError, OperationType } from "../lib/firebase";
 import { signOut } from "firebase/auth";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, where, onSnapshot, orderBy, updateDoc, doc, getDocs, limit, increment, addDoc, writeBatch, getDoc, setDoc } from "firebase/firestore";
-import { playSound } from "../lib/sounds";
+import { playSound, getSoundSettings, updateSoundSettings, bgmTracks } from "../lib/sounds";
 import PrivacyView from "./PrivacyView";
 
-type ActiveSection = 'main' | 'notifications' | 'privacy' | 'language' | 'favorites';
+type ActiveSection = 'main' | 'notifications' | 'privacy' | 'language' | 'favorites' | 'audio_settings';
 
 export default function ProfileView({ profile }: { profile: any }) {
   const [copied, setCopied] = useState(false);
@@ -219,6 +219,237 @@ export default function ProfileView({ profile }: { profile: any }) {
 
   if (activeSection === 'privacy') return <PrivacyView onBack={() => setActiveSection('main')} />;
 
+  if (activeSection === 'audio_settings') {
+    const audioState = getSoundSettings();
+
+    const handleSFXToggle = () => {
+      playSound("click");
+      updateSoundSettings({ sfxEnabled: !audioState.sfxEnabled });
+    };
+
+    const handleBGMToggle = () => {
+      playSound("click");
+      updateSoundSettings({ bgmEnabled: !audioState.bgmEnabled });
+    };
+
+    const handleVolumeChange = (volList: number) => {
+      updateSoundSettings({ bgmVolume: volList });
+    };
+
+    const handleGameBGMSelection = (gameId: string, trackKey: string) => {
+      playSound("click");
+      const updatedBgms = { ...audioState.gameBgms, [gameId]: trackKey };
+      updateSoundSettings({ gameBgms: updatedBgms });
+    };
+
+    const handleGameSFXTheme = (gameId: string, themeKey: string) => {
+      playSound("click");
+      const updatedThemes = { ...audioState.gameThemes, [gameId]: themeKey };
+      updateSoundSettings({ gameThemes: updatedThemes });
+    };
+
+    // Human friendly list of available games for selection
+    const gamesList = [
+      { id: 'aviator', name: 'Aviator', category: 'Crash / Space' },
+      { id: 'rocket_crash', name: 'Rocket', category: 'Crash / Space' },
+      { id: 'moon_crash', name: 'Moon', category: 'Crash / Space' },
+      { id: 'dojo_cards', name: 'Dojo', category: 'Martial Dojo' },
+      { id: 'dragon_tiger', name: 'Dragon Tiger', category: 'Martial Dojo' },
+      { id: 'teen_patti', name: 'Teen Patti', category: 'Martial Dojo' },
+      { id: 'slipper', name: 'Slipper', category: 'Martial Dojo' },
+      { id: 'fruit_slots', name: 'Slots', category: 'Fruit Slots & Wheels' },
+      { id: 'spin', name: 'Spin', category: 'Fruit Slots & Wheels' },
+      { id: 'wheel_fortune', name: 'Wheel', category: 'Fruit Slots & Wheels' },
+      { id: 'coin', name: 'Coin', category: 'Matrix Cyber' },
+      { id: 'goal_kick', name: 'Goal Kick', category: 'Sports Arena' },
+      { id: 'swipe', name: 'Swipe', category: 'Sports Arena' },
+      { id: 'plinko', name: 'Plinko', category: 'Bouncy Physics' },
+      { id: 'dice', name: 'Dice', category: 'Bouncy Physics' },
+      { id: 'space_dice', name: 'Space Dice', category: 'Bouncy Physics' },
+      { id: 'color_match', name: 'Match', category: 'Bouncy Physics' },
+      { id: 'chests', name: 'Chests', category: 'Default Theme' },
+      { id: 'scratch', name: 'Scratch', category: 'Default Theme' },
+      { id: 'treasure_hunt', name: 'Treasure', category: 'Default Theme' },
+      { id: 'fruit_ninja', name: 'Ninja', category: 'Sports Arena' },
+      { id: 'sushi_strike', name: 'Sushi', category: 'Default Theme' },
+      { id: 'mines', name: 'Mines', category: 'Default Theme' }
+    ];
+
+    const bgmTrackOptions = [
+      { key: 'none', label: 'None/Mute 🔇' },
+      { key: 'synthwave', label: 'Neon Synthwave 🎵' },
+      { key: 'electro', label: 'Cyber Electro ⚡' },
+      { key: 'retro8bit', label: '8-Bit Arcade 👾' },
+      { key: 'zen', label: 'Mystical Zen 🧘' },
+      { key: 'stadium', label: 'Epic Stadium 🏆' },
+      { key: 'chill', label: 'Lounge Chill ☕' }
+    ];
+
+    const sfxThemeOptions = [
+      { key: 'default', label: 'Classic Casino 🔔' },
+      { key: 'crash', label: 'Crash & Space 🚀' },
+      { key: 'dojo', label: 'Martial Dojo ☯️' },
+      { key: 'slots', label: 'Fruit Slots 🍒' },
+      { key: 'cyber', label: 'Matrix Cyber 💻' },
+      { key: 'sports', label: 'Sports Arena ⚽' },
+      { key: 'bounce', label: 'Bouncy Physics ⚪' }
+    ];
+
+    return (
+      <div className="min-h-screen bg-[#F2F4F8] pb-32 text-neutral-800 font-sans select-none antialiased animate-fadeIn">
+        <header className="bg-[#2196F3] text-white px-4 py-3.5 flex items-center justify-between shadow-md relative z-20">
+          <button 
+            onClick={() => {
+              playSound("click");
+              setActiveSection('main');
+            }}
+            className="p-1 hover:bg-white/10 rounded-full transition-colors flex items-center justify-center animate-pulse"
+          >
+            <ArrowLeft size={22} className="text-white" />
+          </button>
+          <h1 className="text-[19px] font-bold tracking-tight text-white pl-3">Audio & Themes</h1>
+          <div className="w-10" />
+        </header>
+
+        <div className="max-w-xl mx-auto px-4 pt-6 space-y-5">
+          {/* Global Toggle Controller Card */}
+          <div className="bg-white border border-[#2196F3]/40 rounded-2xl p-5 shadow-sm space-y-4">
+            <h3 className="text-xs font-black text-neutral-400 uppercase tracking-widest flex items-center gap-1.5 pb-2 border-b border-neutral-100">
+              <SlidersHorizontal size={14} className="text-[#2196F3]" /> Master Audio Settings
+            </h3>
+
+            {/* Sound effects toggle */}
+            <div className="flex items-center justify-between py-1">
+              <div className="flex flex-col">
+                <span className="font-extrabold text-sm text-neutral-700">Sound Effects (SFX)</span>
+                <span className="text-[10px] text-neutral-400 font-semibold">In-game responses, spin ticks and click feedback</span>
+              </div>
+              <button 
+                onClick={handleSFXToggle}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 outline-none ${
+                  audioState.sfxEnabled ? 'bg-[#2196F3]' : 'bg-neutral-200'
+                }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                  audioState.sfxEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
+
+            {/* Background Music Toggle */}
+            <div className="flex items-center justify-between py-1 border-t border-neutral-50 pt-3">
+              <div className="flex flex-col">
+                <span className="font-extrabold text-sm text-neutral-700">Ambient Background Music (BGM)</span>
+                <span className="text-[10px] text-neutral-400 font-semibold">Continuous streaming loops dynamically adapted to games</span>
+              </div>
+              <button 
+                onClick={handleBGMToggle}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 outline-none ${
+                  audioState.bgmEnabled ? 'bg-[#2196F3]' : 'bg-neutral-200'
+                }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                  audioState.bgmEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
+
+            {/* BGM Volume Slider */}
+            {audioState.bgmEnabled && (
+              <div className="space-y-2 pt-3 border-t border-neutral-50">
+                <div className="flex justify-between items-center text-xs font-bold text-neutral-500">
+                  <span className="flex items-center gap-1"><Volume2 size={13} /> Music Volume</span>
+                  <span>{Math.round(audioState.bgmVolume * 100)}%</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="0.4" 
+                  step="0.01" 
+                  value={audioState.bgmVolume} 
+                  onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                  className="w-full h-1.5 bg-neutral-100 rounded-lg appearance-none cursor-pointer accent-[#2196F3]"
+                />
+                <span className="text-[9px] text-neutral-400 font-medium block italic text-right">Low ambient audio is recommended for balanced focus</span>
+              </div>
+            )}
+          </div>
+
+          {/* Individual Games Audio & Style Themes Customizer */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-black text-neutral-400 uppercase tracking-widest pl-1 flex items-center gap-1">
+              <Gamepad2 size={14} className="text-[#2196F3]" /> Per-Game Soundtrack & Theme ({gamesList.length} Games)
+            </h3>
+
+            <div className="space-y-3.5">
+              {gamesList.map((game) => {
+                const activeBgm = audioState.gameBgms[game.id] || 'none';
+                const activeTheme = audioState.gameThemes[game.id] || 'default';
+
+                return (
+                  <div key={game.id} className="bg-white border border-[#2196F3]/10 rounded-2xl p-4.5 shadow-sm hover:border-[#2196F3]/30 transition-all flex flex-col space-y-3">
+                    {/* Game header */}
+                    <div className="flex justify-between items-center pb-2.5 border-b border-neutral-100">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100 text-[#2196F3]">
+                          <Gamepad2 size={15} />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-extrabold text-xs text-neutral-700 tracking-tight">{game.name}</span>
+                          <span className="text-[8.5px] font-bold text-neutral-400 uppercase tracking-wider">{game.category}</span>
+                        </div>
+                      </div>
+                      <span className="text-[8.5px] font-mono bg-neutral-50 text-neutral-500 px-2.5 py-0.5 rounded font-black uppercase border border-neutral-200/50">
+                        {game.id}
+                      </span>
+                    </div>
+
+                    {/* Controls Row */}
+                    <div className="grid grid-cols-2 gap-3.5 pt-0.5">
+                      {/* BGM Select list */}
+                      <div className="space-y-1.5 text-left">
+                        <label className="text-[9px] font-black text-[#2196F3] uppercase tracking-wider flex items-center gap-1">
+                          <Music size={10} /> Music Loop
+                        </label>
+                        <select 
+                          value={activeBgm} 
+                          onChange={(e) => handleGameBGMSelection(game.id, e.target.value)}
+                          className="w-full text-[11px] font-extrabold bg-neutral-50 border border-neutral-200 hover:bg-neutral-100/50 transition-colors rounded-xl p-2.5 outline-none cursor-pointer text-neutral-700"
+                        >
+                          {bgmTrackOptions.map(opt => (
+                            <option key={opt.key} value={opt.key}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* SFX Select list */}
+                      <div className="space-y-1.5 text-left">
+                        <label className="text-[9px] font-black text-amber-500 uppercase tracking-wider flex items-center gap-1">
+                          <Volume2 size={10} /> SFX Signature
+                        </label>
+                        <select 
+                          value={activeTheme} 
+                          onChange={(e) => handleGameSFXTheme(game.id, e.target.value)}
+                          className="w-full text-[11px] font-extrabold bg-neutral-50 border border-neutral-200 hover:bg-neutral-100/50 transition-colors rounded-xl p-2.5 outline-none cursor-pointer text-neutral-700"
+                        >
+                          {sfxThemeOptions.map(opt => (
+                            <option key={opt.key} value={opt.key}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeSection === 'privacy') return <PrivacyView onBack={() => setActiveSection('main')} />;
+
   if (activeSection === 'notifications') {
     return (
       <div className="min-h-screen bg-[#F2F4F8] pb-32 text-neutral-800 font-sans select-none antialiased">
@@ -361,7 +592,7 @@ export default function ProfileView({ profile }: { profile: any }) {
         <h1 className="text-[19px] font-bold tracking-tight text-white pl-3">My Profile</h1>
 
         <div className="bg-white text-neutral-900 font-bold px-3 py-1 rounded-full text-[14px] flex items-center gap-1 shadow-sm border border-black/5">
-          <span className="text-[#2196F3]">₹</span>
+          <span className="text-[#2196F3] text-xs font-black">RS</span>
           <span>{Number(profile?.balance || 0).toLocaleString()}</span>
         </div>
       </header>
@@ -491,6 +722,7 @@ export default function ProfileView({ profile }: { profile: any }) {
         <div className="bg-white border border-[#2196F3]/40 rounded-2xl p-2.5 shadow-sm divide-y divide-neutral-100">
           {[
             { id: 'notifications', icon: Bell, label: "Notifications", color: "text-blue-500", bg: "bg-blue-50 p-2.5 rounded-lg border border-blue-100", badge: notifications.filter(n => !n.read).length, desc: "System alerts and transaction notices" },
+            { id: 'audio_settings', icon: Volume2, label: "Advanced Audio & Style Themes", color: "text-amber-500", bg: "bg-amber-55 bg-amber-50 p-2.5 rounded-lg border border-amber-100", desc: "Toggle background music, sound effects, & custom per-game values" },
             { id: 'privacy', icon: Shield, label: "Security & Encryption", color: "text-emerald-500", bg: "bg-emerald-50 p-2.5 rounded-lg border border-emerald-100", desc: "Terms, guidelines & privacy settings" },
             { id: 'language', icon: Globe, label: "Localization / زبان", color: "text-indigo-500", bg: "bg-indigo-50 p-2.5 rounded-lg border border-indigo-100", desc: "Change language settings of App" },
           ].map((item) => (

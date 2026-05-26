@@ -166,12 +166,16 @@ export const WheelOfFortune: React.FC<WheelOfFortuneProps> = ({
 
         <div className="w-full max-w-sm space-y-6">
           <div className="flex items-center justify-between bg-black/40 p-4 rounded-3xl border border-white/5">
-            <button onClick={() => setBet(Math.max(minBet, bet - 10))} disabled={spinning} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">-</button>
+            <button onClick={() => setBet(Math.max(minBet, bet - 10))} disabled={spinning} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 active:scale-95 duration-100">
+              <Minus size={14} className="text-white" />
+            </button>
             <div className="text-center">
               <span className="text-[8px] font-black uppercase text-white/40 tracking-widest block">Bet Amount</span>
               <span className="text-xl font-black">RS {bet}</span>
             </div>
-            <button onClick={() => setBet(bet + 10)} disabled={spinning} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">+</button>
+            <button onClick={() => setBet(bet + 10)} disabled={spinning} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 active:scale-95 duration-100">
+              <Plus size={14} className="text-white" />
+            </button>
           </div>
 
           <button 

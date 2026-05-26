@@ -115,12 +115,16 @@ export const SpaceDice: React.FC<SpaceDiceProps> = ({
 
             <div className="w-full bg-black/60 p-4 rounded-[2.5rem] border border-white/5 backdrop-blur-xl">
                 <div className="flex items-center justify-between">
-                    <button onClick={() => setBet(Math.max(minBet, bet - 10))} disabled={playing} className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all">-</button>
+                    <button onClick={() => setBet(Math.max(minBet, bet - 10))} disabled={playing} className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all">
+                      <Minus size={18} className="text-white" />
+                    </button>
                     <div className="text-center">
                         <span className="text-[10px] font-black uppercase text-white/30 tracking-widest block">Quantum Stake</span>
                         <span className="text-2xl font-black">RS {bet}</span>
                     </div>
-                    <button onClick={() => setBet(bet + 10)} disabled={playing} className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-all">+</button>
+                    <button onClick={() => setBet(bet + 10)} disabled={playing} className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all">
+                      <Plus size={18} className="text-white" />
+                    </button>
                 </div>
             </div>
 

@@ -1013,30 +1013,30 @@ export default function AdminView() {
                     <button 
                       onClick={async () => {
                         const initialGames = [
-                          { id: 'slipper', name: 'Slipper Monte', category: 'Skill', minBet: 20, winRate: 33, winMultiplier: 3, penaltyAmount: 50, image: "https://images.unsplash.com/photo-1626775238053-4315516ebaec?q=80&w=400&auto=format&fit=crop" },
-                          { id: 'spin', name: 'Spin Wheel', category: 'Classic', minBet: 10, winRate: 30, multiplier: 5, image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
-                          { id: 'coin', name: 'Coin Flip', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://cdn-icons-png.flaticon.com/512/550/550614.png" },
-                          { id: 'swipe', name: 'Swipe Master', category: 'Skill', minBet: 10, winRate: 40, multiplier: 3, image: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" },
-                          { id: 'chests', name: 'Lucky Chests', category: 'Classic', minBet: 10, winRate: 33, multiplier: 3, image: "https://cdn-icons-png.flaticon.com/512/3233/3233483.png" },
-                          { id: 'dice', name: 'Dice Pro', category: 'Classic', minBet: 10, winRate: 45, multiplier: 2, image: "https://cdn-icons-png.flaticon.com/512/3533/3533966.png" },
-                          { id: 'scratch', name: 'Gold Scratch', category: 'Skill', minBet: 10, winRate: 40, multiplier: 4, image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
+                          { id: 'slipper', name: 'Slipper', category: 'Skill', minBet: 20, winRate: 33, winMultiplier: 3, penaltyAmount: 50, image: "https://images.unsplash.com/photo-1626775238053-4315516ebaec?q=80&w=400&auto=format&fit=crop" },
+                          { id: 'spin', name: 'Spin', category: 'Classic', minBet: 10, winRate: 30, multiplier: 5, image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
+                          { id: 'coin', name: 'Coin', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://cdn-icons-png.flaticon.com/512/550/550614.png" },
+                          { id: 'swipe', name: 'Swipe', category: 'Skill', minBet: 10, winRate: 40, multiplier: 3, image: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" },
+                          { id: 'chests', name: 'Chests', category: 'Classic', minBet: 10, winRate: 33, multiplier: 3, image: "https://cdn-icons-png.flaticon.com/512/3233/3233483.png" },
+                          { id: 'dice', name: 'Dice', category: 'Classic', minBet: 10, winRate: 45, multiplier: 2, image: "https://cdn-icons-png.flaticon.com/512/3533/3533966.png" },
+                          { id: 'scratch', name: 'Scratch', category: 'Skill', minBet: 10, winRate: 40, multiplier: 4, image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
                           { id: 'aviator', name: 'Aviator', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778147101/aviator_banner_z0j7v8.png" },
-                          { id: 'rocket_crash', name: 'Rocket Crash', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?q=80&w=400&auto=format&fit=crop" },
-                          { id: 'moon_crash', name: 'Moon Crash', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=400&auto=format&fit=crop" },
-                          { id: 'fruit_slots', name: 'Fruit Slots', category: 'Classic', minBet: 10, winRate: 40, multiplier: 5, image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
-                          { id: 'treasure_hunt', name: 'Treasure Hunt', category: 'Classic', minBet: 10, winRate: 35, multiplier: 3, image: "https://images.unsplash.com/photo-1563212417-640306232938?q=80&w=400&auto=format&fit=crop" },
-                          { id: 'wheel_fortune', name: 'Wheel Fortune', category: 'Classic', minBet: 10, winRate: 45, multiplier: 3, image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
-                          { id: 'color_match', name: 'Color Match', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.5, image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=400&auto=format&fit=crop" },
-                          { id: 'fruit_ninja', name: 'Fruit Ninja', category: 'Classic', minBet: 10, winRate: 40, multiplier: 2, image: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?q=80&w=400&auto=format&fit=crop" },
+                          { id: 'rocket_crash', name: 'Rocket', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?q=80&w=400&auto=format&fit=crop" },
+                          { id: 'moon_crash', name: 'Moon', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=400&auto=format&fit=crop" },
+                          { id: 'fruit_slots', name: 'Slots', category: 'Classic', minBet: 10, winRate: 40, multiplier: 5, image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
+                          { id: 'treasure_hunt', name: 'Treasure', category: 'Classic', minBet: 10, winRate: 35, multiplier: 3, image: "https://images.unsplash.com/photo-1563212417-640306232938?q=80&w=400&auto=format&fit=crop" },
+                          { id: 'wheel_fortune', name: 'Wheel', category: 'Classic', minBet: 10, winRate: 45, multiplier: 3, image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
+                          { id: 'color_match', name: 'Match', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.5, image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=400&auto=format&fit=crop" },
+                          { id: 'fruit_ninja', name: 'Ninja', category: 'Classic', minBet: 10, winRate: 40, multiplier: 2, image: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?q=80&w=400&auto=format&fit=crop" },
                           { id: 'teen_patti', name: 'Teen Patti', category: 'Classic', minBet: 10, winRate: 45, multiplier: 2, image: "https://images.unsplash.com/photo-1541275322896-180a3a780b62?q=80&w=400&auto=format&fit=crop" },
-                          { id: 'plinko', name: 'Plinko Pro', category: 'Skill', minBet: 10, winRate: 45, multiplier: 5, image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=400&auto=format&fit=crop" },
-                          { id: 'mines', name: 'Mines Finder', category: 'Skill', minBet: 10, winRate: 35, multiplier: 10, image: "https://images.unsplash.com/photo-1624474322421-4ea671e23363?q=80&w=400&auto=format&fit=crop" },
-                          { id: 'dojo_cards', name: 'Dojo Hi-Lo', category: 'Cards', minBet: 10, winRate: 48, multiplier: 2, image: "https://images.unsplash.com/photo-1552084117-56a987666449?q=80&w=400&auto=format&fit=crop" },
+                          { id: 'plinko', name: 'Plinko', category: 'Skill', minBet: 10, winRate: 45, multiplier: 5, image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=400&auto=format&fit=crop" },
+                          { id: 'mines', name: 'Mines', category: 'Skill', minBet: 10, winRate: 35, multiplier: 10, image: "https://images.unsplash.com/photo-1624474322421-4ea671e23363?q=80&w=400&auto=format&fit=crop" },
+                          { id: 'dojo_cards', name: 'Dojo', category: 'Cards', minBet: 10, winRate: 48, multiplier: 2, image: "https://images.unsplash.com/photo-1552084117-56a987666449?q=80&w=400&auto=format&fit=crop" },
                           { id: 'space_dice', name: 'Space Dice', category: 'Blockchain', minBet: 10, winRate: 50, multiplier: 1.9, image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=400&auto=format&fit=crop" },
                           { id: 'dragon_tiger', name: 'Dragon Tiger', category: 'Cards', minBet: 10, winRate: 45, multiplier: 2, image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
-                          { id: 'goal_kick', name: 'Penalty Royale', category: 'Skill', minBet: 10, winRate: 45, multiplier: 1.9, image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
-                          { id: 'sushi_strike', name: 'Sushi Strike', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.8, image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
-                          { id: 'snake_league', name: 'Python League', category: 'Skill', minBet: 10, winRate: 45, multiplier: 2.5, targetScore: 15, difficulty: 'low', image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" }
+                          { id: 'goal_kick', name: 'Goal Kick', category: 'Skill', minBet: 10, winRate: 45, multiplier: 1.9, image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
+                          { id: 'sushi_strike', name: 'Sushi', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.8, image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
+                          { id: 'snake_league', name: 'Snake', category: 'Skill', minBet: 10, winRate: 45, multiplier: 2.5, targetScore: 15, difficulty: 'low', image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" }
                         ];
                         for (const g of initialGames) {
                           const docRef = doc(db, "games", g.id);
@@ -1075,30 +1075,30 @@ export default function AdminView() {
                   <button 
                     onClick={async () => {
                       const initialGames = [
-                        { id: 'slipper', name: 'Slipper Monte', category: 'Skill', minBet: 20, winRate: 33, winMultiplier: 3, penaltyAmount: 50, image: "https://images.unsplash.com/photo-1626775238053-4315516ebaec?q=80&w=400&auto=format&fit=crop" },
-                        { id: 'spin', name: 'Spin Wheel', category: 'Classic', minBet: 10, winRate: 30, multiplier: 5, image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
-                        { id: 'coin', name: 'Coin Flip', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://cdn-icons-png.flaticon.com/512/550/550614.png" },
-                        { id: 'swipe', name: 'Swipe Master', category: 'Skill', minBet: 10, winRate: 40, multiplier: 3, image: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" },
-                        { id: 'chests', name: 'Lucky Chests', category: 'Classic', minBet: 10, winRate: 33, multiplier: 3, image: "https://cdn-icons-png.flaticon.com/512/3233/3233483.png" },
-                        { id: 'dice', name: 'Dice Pro', category: 'Classic', minBet: 10, winRate: 45, multiplier: 2, image: "https://cdn-icons-png.flaticon.com/512/3533/3533966.png" },
-                        { id: 'scratch', name: 'Gold Scratch', category: 'Skill', minBet: 10, winRate: 40, multiplier: 4, image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
+                        { id: 'slipper', name: 'Slipper', category: 'Skill', minBet: 20, winRate: 33, winMultiplier: 3, penaltyAmount: 50, image: "https://images.unsplash.com/photo-1626775238053-4315516ebaec?q=80&w=400&auto=format&fit=crop" },
+                        { id: 'spin', name: 'Spin', category: 'Classic', minBet: 10, winRate: 30, multiplier: 5, image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
+                        { id: 'coin', name: 'Coin', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://cdn-icons-png.flaticon.com/512/550/550614.png" },
+                        { id: 'swipe', name: 'Swipe', category: 'Skill', minBet: 10, winRate: 40, multiplier: 3, image: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" },
+                        { id: 'chests', name: 'Chests', category: 'Classic', minBet: 10, winRate: 33, multiplier: 3, image: "https://cdn-icons-png.flaticon.com/512/3233/3233483.png" },
+                        { id: 'dice', name: 'Dice', category: 'Classic', minBet: 10, winRate: 45, multiplier: 2, image: "https://cdn-icons-png.flaticon.com/512/3533/3533966.png" },
+                        { id: 'scratch', name: 'Scratch', category: 'Skill', minBet: 10, winRate: 40, multiplier: 4, image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
                         { id: 'aviator', name: 'Aviator', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778147101/aviator_banner_z0j7v8.png" },
-                        { id: 'rocket_crash', name: 'Rocket Crash', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?q=80&w=400&auto=format&fit=crop" },
-                        { id: 'moon_crash', name: 'Moon Crash', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=400&auto=format&fit=crop" },
-                        { id: 'fruit_slots', name: 'Fruit Slots', category: 'Classic', minBet: 10, winRate: 40, multiplier: 5, image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
-                        { id: 'treasure_hunt', name: 'Treasure Hunt', category: 'Classic', minBet: 10, winRate: 35, multiplier: 3, image: "https://images.unsplash.com/photo-1563212417-640306232938?q=80&w=400&auto=format&fit=crop" },
-                        { id: 'wheel_fortune', name: 'Wheel Fortune', category: 'Classic', minBet: 10, winRate: 45, multiplier: 3, image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
-                        { id: 'color_match', name: 'Color Match', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.5, image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=400&auto=format&fit=crop" },
-                        { id: 'fruit_ninja', name: 'Fruit Ninja', category: 'Classic', minBet: 10, winRate: 40, multiplier: 2, image: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?q=80&w=400&auto=format&fit=crop" },
+                        { id: 'rocket_crash', name: 'Rocket', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?q=80&w=400&auto=format&fit=crop" },
+                        { id: 'moon_crash', name: 'Moon', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=400&auto=format&fit=crop" },
+                        { id: 'fruit_slots', name: 'Slots', category: 'Classic', minBet: 10, winRate: 40, multiplier: 5, image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
+                        { id: 'treasure_hunt', name: 'Treasure', category: 'Classic', minBet: 10, winRate: 35, multiplier: 3, image: "https://images.unsplash.com/photo-1563212417-640306232938?q=80&w=400&auto=format&fit=crop" },
+                        { id: 'wheel_fortune', name: 'Wheel', category: 'Classic', minBet: 10, winRate: 45, multiplier: 3, image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
+                        { id: 'color_match', name: 'Match', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.5, image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=400&auto=format&fit=crop" },
+                        { id: 'fruit_ninja', name: 'Ninja', category: 'Classic', minBet: 10, winRate: 40, multiplier: 2, image: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?q=80&w=400&auto=format&fit=crop" },
                         { id: 'teen_patti', name: 'Teen Patti', category: 'Classic', minBet: 10, winRate: 45, multiplier: 2, image: "https://images.unsplash.com/photo-1541275322896-180a3a780b62?q=80&w=400&auto=format&fit=crop" },
-                        { id: 'plinko', name: 'Plinko Pro', category: 'Skill', minBet: 10, winRate: 45, multiplier: 5, image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=400&auto=format&fit=crop" },
-                        { id: 'mines', name: 'Mines Finder', category: 'Skill', minBet: 10, winRate: 35, multiplier: 10, image: "https://images.unsplash.com/photo-1624474322421-4ea671e23363?q=80&w=400&auto=format&fit=crop" },
-                        { id: 'dojo_cards', name: 'Dojo Hi-Lo', category: 'Cards', minBet: 10, winRate: 48, multiplier: 2, image: "https://images.unsplash.com/photo-1552084117-56a987666449?q=80&w=400&auto=format&fit=crop" },
+                        { id: 'plinko', name: 'Plinko', category: 'Skill', minBet: 10, winRate: 45, multiplier: 5, image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=400&auto=format&fit=crop" },
+                        { id: 'mines', name: 'Mines', category: 'Skill', minBet: 10, winRate: 35, multiplier: 10, image: "https://images.unsplash.com/photo-1624474322421-4ea671e23363?q=80&w=400&auto=format&fit=crop" },
+                        { id: 'dojo_cards', name: 'Dojo', category: 'Cards', minBet: 10, winRate: 48, multiplier: 2, image: "https://images.unsplash.com/photo-1552084117-56a987666449?q=80&w=400&auto=format&fit=crop" },
                         { id: 'space_dice', name: 'Space Dice', category: 'Blockchain', minBet: 10, winRate: 50, multiplier: 1.9, image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=400&auto=format&fit=crop" },
                         { id: 'dragon_tiger', name: 'Dragon Tiger', category: 'Cards', minBet: 10, winRate: 45, multiplier: 2, image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
-                        { id: 'goal_kick', name: 'Penalty Royale', category: 'Skill', minBet: 10, winRate: 45, multiplier: 1.9, image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
-                        { id: 'sushi_strike', name: 'Sushi Strike', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.8, image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
-                        { id: 'snake_league', name: 'Python League', category: 'Skill', minBet: 10, winRate: 45, multiplier: 2.5, targetScore: 15, difficulty: 'low', image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" }
+                        { id: 'goal_kick', name: 'Goal Kick', category: 'Skill', minBet: 10, winRate: 45, multiplier: 1.9, image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
+                        { id: 'sushi_strike', name: 'Sushi', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.8, image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
+                        { id: 'snake_league', name: 'Snake', category: 'Skill', minBet: 10, winRate: 45, multiplier: 2.5, targetScore: 15, difficulty: 'low', image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" }
                       ];
                       for (const g of initialGames) {
                         await setDoc(doc(db, "games", g.id), { ...g, active: true, createdAt: new Date().toISOString() }, { merge: true });
@@ -1562,6 +1562,28 @@ export default function AdminView() {
                          className="bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2 text-xs font-black outline-none focus:border-orange-500 text-neutral-900" 
                        />
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Withdrawal Notice Settings */}
+              <div className="bg-white border border-neutral-100 p-6 rounded-3xl space-y-6 shadow-sm animate-fade-in">
+                <div className="space-y-1">
+                  <h4 className="font-black uppercase italic text-neutral-900">Withdrawal Settings</h4>
+                  <p className="text-[9px] font-black text-neutral-400 tracking-widest uppercase">Customize notifications shown in users' withdrawal terminal</p>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-neutral-100">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-neutral-400 block">Withdrawal Disclaimer / Notice Banner Text</label>
+                    <textarea 
+                      rows={2}
+                      placeholder="e.g. YOUR PAYMENT YOU WILL RECEIVE IN A FEW MINUTES" 
+                      value={(globalConfig as any).withdrawNotice || ''}
+                      onChange={(e) => updateConfig('withdrawNotice', e.target.value)}
+                      className="w-full bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-orange-500 text-neutral-900" 
+                    />
+                    <span className="text-[8px] text-neutral-400 font-bold uppercase italic block mt-1">* Displays bottom of the user's withdrawal screen. Defaults to: "YOUR PAYMENT YOU WILL RECEIVE IN A FEW MINUTES"</span>
                   </div>
                 </div>
               </div>

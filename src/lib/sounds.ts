@@ -3,10 +3,6 @@ import { Howl } from 'howler';
 // Store the currently active game ID so we can dynamically play themed sounds!
 let activeGameId: string | null = null;
 
-export const setSoundActiveGameId = (id: string | null) => {
-  activeGameId = id;
-};
-
 // Define complete sound map with highly detailed categories
 const sounds = {
   // Global/Default standard casino sounds
@@ -26,7 +22,7 @@ const sounds = {
   notify: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'], volume: 0.4 }),
 
   // 1. Crash & Space themed games (Aviator, Rocket Crash, Moon Crash)
-  crash_spin: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/2195/2195-preview.mp3'], volume: 0.25, loop: true, rate: 0.75 }), // Space engines charging
+  crash_spin: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/1779/1779-preview.mp3', 'https://assets.mixkit.co/active_storage/sfx/1722/1722-preview.mp3'], volume: 0.35, loop: true, rate: 0.85 }), // Realistic roaring jet turbine engine rumble
   crash_win: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'], volume: 0.6, rate: 1.5 }), // Fast warp speed chimes
   crash_lose: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/1600/1600-preview.mp3'], volume: 0.75, rate: 1.2 }), // Catastrophic hull explosion!
 
@@ -93,12 +89,180 @@ const gameSoundThemes: Record<string, 'crash' | 'dojo' | 'slots' | 'cyber' | 'sp
   mines: 'default'
 };
 
+// High quality background music instrumental loop tracks
+export const bgmTracks: Record<string, { name: string; url: string }> = {
+  synthwave: {
+    name: "Neon Synthwave",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+  },
+  electro: {
+    name: "Cyber Electro",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
+  },
+  retro8bit: {
+    name: "8-Bit Arcade",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3"
+  },
+  zen: {
+    name: "Mystical Dojo Zen",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3"
+  },
+  stadium: {
+    name: "Epic Sports Stadium",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3"
+  },
+  chill: {
+    name: "Ambient Lounge Chill",
+    url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3"
+  }
+};
+
+export interface SoundSettings {
+  sfxEnabled: boolean;
+  bgmEnabled: boolean;
+  bgmVolume: number;
+  gameThemes: Record<string, string>;
+  gameBgms: Record<string, string>;
+}
+
+export const defaultSettings: SoundSettings = {
+  sfxEnabled: true,
+  bgmEnabled: true,
+  bgmVolume: 0.12,
+  gameThemes: { ...gameSoundThemes },
+  gameBgms: {
+    aviator: 'synthwave',
+    rocket_crash: 'synthwave',
+    moon_crash: 'synthwave',
+    dojo_cards: 'zen',
+    dragon_tiger: 'zen',
+    teen_patti: 'zen',
+    slipper: 'zen',
+    fruit_slots: 'retro8bit',
+    spin: 'retro8bit',
+    wheel_fortune: 'retro8bit',
+    coin: 'electro',
+    goal_kick: 'stadium',
+    swipe: 'stadium',
+    plinko: 'retro8bit',
+    dice: 'retro8bit',
+    space_dice: 'electro',
+    color_match: 'electro',
+    chests: 'chill',
+    scratch: 'electro',
+    treasure_hunt: 'zen',
+    fruit_ninja: 'stadium',
+    sushi_strike: 'zen',
+    mines: 'electro'
+  }
+};
+
+// Retrieve settings with full fallback coverage
+export const getSoundSettings = (): SoundSettings => {
+  try {
+    const raw = localStorage.getItem('playhub_sound_settings');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        sfxEnabled: parsed.sfxEnabled !== undefined ? parsed.sfxEnabled : defaultSettings.sfxEnabled,
+        bgmEnabled: parsed.bgmEnabled !== undefined ? parsed.bgmEnabled : defaultSettings.bgmEnabled,
+        bgmVolume: parsed.bgmVolume !== undefined ? parsed.bgmVolume : defaultSettings.bgmVolume,
+        gameThemes: { ...defaultSettings.gameThemes, ...parsed.gameThemes },
+        gameBgms: { ...defaultSettings.gameBgms, ...parsed.gameBgms }
+      };
+    }
+  } catch (e) {
+    console.error("Failed to parse sound settings:", e);
+  }
+  return { ...defaultSettings };
+};
+
+// Global variables for active tracker instances
+let currentBgmHowl: Howl | null = null;
+let currentBgmTrackKey: string | null = null;
+
+export const applyBgm = () => {
+  const settings = getSoundSettings();
+
+  // If BGM is disabled or no game is active, turn off any playing track
+  if (!settings.bgmEnabled || !activeGameId) {
+    if (currentBgmHowl) {
+      currentBgmHowl.stop();
+      currentBgmHowl.unload();
+      currentBgmHowl = null;
+      currentBgmTrackKey = null;
+    }
+    return;
+  }
+
+  const selectedTrackKey = settings.gameBgms[activeGameId] || 'none';
+  if (selectedTrackKey === 'none') {
+    if (currentBgmHowl) {
+      currentBgmHowl.stop();
+      currentBgmHowl.unload();
+      currentBgmHowl = null;
+      currentBgmTrackKey = null;
+    }
+    return;
+  }
+
+  const track = bgmTracks[selectedTrackKey];
+  if (!track) return;
+
+  // Same track: just sync the volume changes
+  if (currentBgmTrackKey === selectedTrackKey && currentBgmHowl) {
+    currentBgmHowl.volume(settings.bgmVolume);
+    return;
+  }
+
+  // Different track: clean dismantle
+  if (currentBgmHowl) {
+    currentBgmHowl.stop();
+    currentBgmHowl.unload();
+  }
+
+  // Instantiate and stream new track via HTML5
+  currentBgmTrackKey = selectedTrackKey;
+  currentBgmHowl = new Howl({
+    src: [track.url],
+    volume: settings.bgmVolume,
+    loop: true,
+    html5: true // Long format MP3 should be streamed cleanly
+  });
+
+  try {
+    currentBgmHowl.play();
+  } catch (error) {
+    console.warn("BGM autoplay delayed:", error);
+  }
+};
+
+export const updateSoundSettings = (settings: Partial<SoundSettings>) => {
+  const current = getSoundSettings();
+  const updated = {
+    ...current,
+    ...settings,
+    gameThemes: { ...current.gameThemes, ...(settings.gameThemes || {}) },
+    gameBgms: { ...current.gameBgms, ...(settings.gameBgms || {}) }
+  };
+  localStorage.setItem('playhub_sound_settings', JSON.stringify(updated));
+  applyBgm();
+};
+
+export const setSoundActiveGameId = (id: string | null) => {
+  activeGameId = id;
+  applyBgm();
+};
+
 // Interceptor function that routes generic playsounds to active-themed equivalents!
 export const playSound = (soundName: keyof typeof sounds) => {
+  const settings = getSoundSettings();
+  if (!settings.sfxEnabled) return;
+
   let playTarget = soundName;
 
   if (activeGameId) {
-    const theme = gameSoundThemes[activeGameId] || 'default';
+    const theme = settings.gameThemes[activeGameId] || 'default';
     if (theme !== 'default') {
       if (soundName === 'win') {
         playTarget = `${theme}_win` as any;
@@ -129,10 +293,13 @@ export const playSound = (soundName: keyof typeof sounds) => {
 };
 
 export const stopSound = (soundName: keyof typeof sounds) => {
+  const settings = getSoundSettings();
+  if (!settings.sfxEnabled) return;
+
   let stopTarget = soundName;
 
   if (activeGameId) {
-    const theme = gameSoundThemes[activeGameId] || 'default';
+    const theme = settings.gameThemes[activeGameId] || 'default';
     if (theme !== 'default') {
       if (soundName === 'spin') {
         stopTarget = `${theme}_spin` as any;

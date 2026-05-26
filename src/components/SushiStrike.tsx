@@ -119,12 +119,16 @@ export const SushiStrike: React.FC<SushiStrikeProps> = ({
             </div>
 
             <div className="bg-black/60 p-5 rounded-[2.5rem] border border-white/10 backdrop-blur-xl shadow-2xl flex items-center justify-between">
-                <button onClick={() => setBet(Math.max(minBet, bet - 10))} disabled={playing} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center hover:bg-white/10 transition-all">-</button>
+                <button onClick={() => setBet(Math.max(minBet, bet - 10))} disabled={playing} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center hover:bg-white/10 active:scale-90 transition-all">
+                  <Minus size={20} className="text-white" />
+                </button>
                 <div className="text-center">
                     <span className="text-[10px] font-black uppercase text-white/30 tracking-[0.2em] block mb-1">STAKE</span>
                     <span className="text-3xl font-black italic tracking-tight">RS {bet}</span>
                 </div>
-                <button onClick={() => setBet(bet + 10)} disabled={playing} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center hover:bg-white/10 transition-all">+</button>
+                <button onClick={() => setBet(bet + 10)} disabled={playing} className="w-14 h-14 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center hover:bg-white/10 active:scale-90 transition-all">
+                  <Plus size={20} className="text-white" />
+                </button>
             </div>
         </div>
       </div>

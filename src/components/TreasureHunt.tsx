@@ -118,12 +118,16 @@ export const TreasureHunt: React.FC<TreasureHuntProps> = ({
 
         <div className="w-full max-w-sm space-y-6 relative z-10">
             <div className="flex items-center justify-between bg-black/40 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
-                 <button onClick={() => setBet(Math.max(minBet, bet - 10))} disabled={playing} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center active:scale-90">-</button>
+                 <button onClick={() => setBet(Math.max(minBet, bet - 10))} disabled={playing} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center active:scale-90 hover:bg-white/10 transition-colors">
+                   <Minus size={14} className="text-white" />
+                 </button>
                  <div className="text-center">
                     <span className="text-[8px] font-black uppercase text-white/40 tracking-widest block">Entry Fee</span>
                     <span className="text-xl font-black text-white">RS {bet}</span>
                  </div>
-                 <button onClick={() => setBet(bet + 10)} disabled={playing} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center active:scale-90">+</button>
+                 <button onClick={() => setBet(bet + 10)} disabled={playing} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center active:scale-90 hover:bg-white/10 transition-colors">
+                   <Plus size={14} className="text-white" />
+                 </button>
             </div>
             
             <p className="text-center text-[10px] font-black text-white/20 uppercase tracking-widest font-mono">

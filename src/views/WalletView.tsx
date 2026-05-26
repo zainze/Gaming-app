@@ -176,7 +176,7 @@ export default function WalletView({ profile }: { profile: any }) {
       return;
     }
     if (amountNum > userBalance) {
-      setWithdrawError(`Insufficient points. Maximum available is ₹${userBalance}`);
+      setWithdrawError(`Insufficient points. Maximum available is RS ${userBalance}`);
       return;
     }
 
@@ -289,7 +289,7 @@ export default function WalletView({ profile }: { profile: any }) {
         <h1 className="text-[19px] font-bold tracking-tight text-white pl-3">My Wallet</h1>
 
         <div className="bg-white text-neutral-900 font-bold px-3 py-1 rounded-full text-[14px] flex items-center gap-1 shadow-sm border border-black/5">
-          <span className="text-[#2196F3]">₹</span>
+          <span className="text-[#2196F3] text-xs font-black">RS</span>
           <span>{Number(currentBalance).toLocaleString()}</span>
         </div>
       </header>
@@ -527,12 +527,12 @@ export default function WalletView({ profile }: { profile: any }) {
 
                   {/* Points amount indicator input */}
                   <div className="bg-white border border-neutral-200/60 rounded-3xl p-1 px-4 flex items-center shadow-[0_2px_8px_rgba(0,0,0,0.04)] gap-3 bg-[#FCFCFD]">
-                    <div className="w-10 h-10 shrink-0 flex items-center justify-center text-[22px] font-extrabold text-[#2196F3] font-sans">
-                      ₹
+                    <div className="w-10 h-10 shrink-0 flex items-center justify-center text-xs font-black text-[#2196F3] font-sans">
+                      RS
                     </div>
                     <input
                       type="number"
-                      placeholder="Enter Deposit Points / Amount"
+                      placeholder="Enter amounts"
                       value={depositAmount}
                       onChange={(e) => setDepositAmount(e.target.value)}
                       className="w-full py-3.5 bg-transparent text-neutral-800 placeholder-neutral-400 text-sm font-semibold outline-none"
@@ -770,12 +770,12 @@ export default function WalletView({ profile }: { profile: any }) {
 
                   {/* Points amount indicator input */}
                   <div className="bg-white border border-neutral-200/60 rounded-3xl p-1 px-4 flex items-center shadow-[0_2px_8px_rgba(0,0,0,0.04)] gap-3 bg-[#FCFCFD]">
-                    <div className="w-10 h-10 shrink-0 flex items-center justify-center text-[22px] font-extrabold text-[#2196F3] font-sans">
-                      ₹
+                    <div className="w-10 h-10 shrink-0 flex items-center justify-center text-xs font-black text-[#2196F3] font-sans">
+                      RS
                     </div>
                     <input
                       type="number"
-                      placeholder="Enter Points"
+                      placeholder="Enter amounts"
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(e.target.value)}
                       className="w-full py-3.5 bg-transparent text-neutral-800 placeholder-neutral-400 text-sm font-semibold outline-none"
@@ -812,7 +812,7 @@ export default function WalletView({ profile }: { profile: any }) {
               {/* Exact Disclaimer Warning banner from the UI photo */}
               <div className="text-center px-4 pt-2">
                 <p className="text-[11.5px] font-black text-black leading-snug tracking-normal uppercase max-w-sm mx-auto">
-                  AFTER GETTING YOUR PAYMENT REQUEST YOUR PAYMENT RELEASE WITH IN 24H AND OR 2 DAYS NO MORE TAKING LONGER
+                  {systemConfig?.withdrawNotice || "YOUR PAYMENT YOU WILL RECEIVE IN A FEW MINUTES"}
                 </p>
               </div>
             </motion.div>
@@ -869,7 +869,7 @@ export default function WalletView({ profile }: { profile: any }) {
 
                         <div className="text-right space-y-1">
                           <p className={`text-sm font-bold tracking-tight ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
-                            {isPositive ? "+" : "-"}₹{Number(absAmount).toLocaleString()}
+                            {isPositive ? "+" : "-"}RS {Number(absAmount).toLocaleString()}
                           </p>
                           <div>
                             {isPending && (

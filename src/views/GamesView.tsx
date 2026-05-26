@@ -58,11 +58,9 @@ import { DragonTiger } from "../components/DragonTiger";
 import { GoalKick } from "../components/GoalKick";
 import { SushiStrike } from "../components/SushiStrike";
 import { SnakeGame } from "../components/SnakeGame";
-import { GameExplainer } from "../components/GameExplainer";
 
 export default function GamesView({ profile, onNavigate }: { profile: any, onNavigate: (view: string) => void }) {
   const [activeGame, setActiveGame] = useState<string | null>(null);
-  const [explainingGame, setExplainingGame] = useState<any | null>(null);
   const [arcadeGames, setArcadeGames] = useState<any[]>([]);
   const [minBet, setMinBet] = useState(10);
   const [gamesConfig, setGamesConfig] = useState<Record<string, any>>({});
@@ -149,57 +147,63 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
   ];
 
   const defaultGamesMeta: Record<string, any> = {
-    slipper: { title: "Slipper Monte", category: "Cards", image: "https://images.unsplash.com/photo-1626775238053-4315516ebaec?q=80&w=400&auto=format&fit=crop" },
-    spin: { title: "Spin Wheel", category: "Slot", image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
-    coin: { title: "Coin Flip", category: "Blockchain", image: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778146981/game-coin-a-good-investment_lqjtaj.webp" },
-    swipe: { title: "Swipe Master", category: "Hot", image: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" },
-    chests: { title: "Lucky Chests", category: "Slot", image: "https://cdn-icons-png.flaticon.com/512/3233/3233483.png" },
-    dice: { title: "Dice Pro", category: "Blockchain", image: "https://cdn-icons-png.flaticon.com/512/3533/3533966.png" },
-    scratch: { title: "Gold Scratch", category: "Slot", image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop" },
+    slipper: { title: "Slipper", category: "Cards", image: "https://images.unsplash.com/photo-1626775238053-4315516ebaec?q=80&w=400&auto=format&fit=crop" },
+    spin: { title: "Spin", category: "Slot", image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
+    coin: { title: "Coin", category: "Blockchain", image: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778146981/game-coin-a-good-investment_lqjtaj.webp" },
+    swipe: { title: "Swipe", category: "Hot", image: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" },
+    chests: { title: "Chests", category: "Slot", image: "https://cdn-icons-png.flaticon.com/512/3233/3233483.png" },
+    dice: { title: "Dice", category: "Blockchain", image: "https://cdn-icons-png.flaticon.com/512/3533/3533966.png" },
+    scratch: { title: "Scratch", category: "Slot", image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop" },
     aviator: { title: "Aviator", category: "Hot", image: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778147101/aviator_banner_z0j7v8.png" },
-    rocket_crash: { title: "Rocket Crash", category: "Hot", image: "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?q=80&w=400&auto=format&fit=crop" },
-    moon_crash: { title: "Moon Crash", category: "Hot", image: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=400&auto=format&fit=crop" },
-    fruit_slots: { title: "Fruit Slots", category: "Classic", image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
-    treasure_hunt: { title: "Treasure Hunt", category: "Classic", image: "https://images.unsplash.com/photo-1563212417-640306232938?q=80&w=400&auto=format&fit=crop" },
-    wheel_fortune: { title: "Wheel Fortune", category: "Hot", image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
-    color_match: { title: "Color Match", category: "Hot", image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=400&auto=format&fit=crop" },
-    fruit_ninja: { title: "Fruit Ninja", category: "Hot", image: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?q=80&w=400&auto=format&fit=crop" },
+    rocket_crash: { title: "Rocket", category: "Hot", image: "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?q=80&w=400&auto=format&fit=crop" },
+    moon_crash: { title: "Moon", category: "Hot", image: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=400&auto=format&fit=crop" },
+    fruit_slots: { title: "Slots", category: "Classic", image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
+    treasure_hunt: { title: "Treasure", category: "Classic", image: "https://images.unsplash.com/photo-1563212417-640306232938?q=80&w=400&auto=format&fit=crop" },
+    wheel_fortune: { title: "Wheel", category: "Hot", image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
+    color_match: { title: "Match", category: "Hot", image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=400&auto=format&fit=crop" },
+    fruit_ninja: { title: "Ninja", category: "Hot", image: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?q=80&w=400&auto=format&fit=crop" },
     teen_patti: { title: "Teen Patti", category: "Hot", image: "https://images.unsplash.com/photo-1541275322896-180a3a780b62?q=80&w=400&auto=format&fit=crop" },
-    plinko: { title: "Plinko Pro", category: "Slot", image: "https://images.unsplash.com/photo-1553481187-be93c21490a9?q=80&w=400&auto=format&fit=crop" },
-    mines: { title: "Mines Finder", category: "Hot", image: "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=400&auto=format&fit=crop" },
-    dojo_cards: { title: "Dojo Hi-Lo", category: "Cards", image: "https://images.unsplash.com/photo-1552084117-56a987666449?q=80&w=400&auto=format&fit=crop" },
+    plinko: { title: "Plinko", category: "Slot", image: "https://images.unsplash.com/photo-1553481187-be93c21490a9?q=80&w=400&auto=format&fit=crop" },
+    mines: { title: "Mines", category: "Hot", image: "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=400&auto=format&fit=crop" },
+    dojo_cards: { title: "Dojo", category: "Cards", image: "https://images.unsplash.com/photo-1552084117-56a987666449?q=80&w=400&auto=format&fit=crop" },
     space_dice: { title: "Space Dice", category: "Blockchain", image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=400&auto=format&fit=crop" },
     dragon_tiger: { title: "Dragon Tiger", category: "Cards", image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
-    goal_kick: { title: "Penalty Royale", category: "Skill", image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
-    sushi_strike: { title: "Sushi Strike", category: "Classic", image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
-    snake_league: { title: "Python League", category: "Skill", image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" },
-    web_cyber: { title: "Cyber City", category: "Arcade", url: "https://www.crazygames.com/embed/block-rush", image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=400&auto=format&fit=crop", time: 60, reward: 25 },
-    web_drift: { title: "Drift King", category: "Arcade", url: "https://www.crazygames.com/embed/cyber-surfer", image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop", time: 45, reward: 20 },
+    goal_kick: { title: "Goal Kick", category: "Skill", image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
+    sushi_strike: { title: "Sushi", category: "Classic", image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
+    snake_league: { title: "Snake", category: "Skill", image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" },
+    web_cyber: { title: "Cyber", category: "Arcade", url: "https://www.crazygames.com/embed/block-rush", image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=400&auto=format&fit=crop", time: 60, reward: 25 },
+    web_drift: { title: "Drift", category: "Arcade", url: "https://www.crazygames.com/embed/cyber-surfer", image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop", time: 45, reward: 20 },
   };
 
   const displayedGames = [...gamesList, ...arcadeGames].map(g => ({
     ...g,
-    title: g.title || g.name || defaultGamesMeta[g.id]?.title || g.id,
+    title: defaultGamesMeta[g.id]?.title || g.title || g.name || g.id,
     category: g.category || defaultGamesMeta[g.id]?.category || "Slot",
     image: g.image || defaultGamesMeta[g.id]?.image || "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop",
     players: Math.floor(Math.random() * 500) + 100
   }));
 
-  const triggerGameExplanation = (gameOrId: any) => {
+  function launchGame(gameOrId: any) {
     if (!gameOrId) return;
+    let game: any;
     if (typeof gameOrId === "string") {
-      const found = displayedGames.find(g => g.id === gameOrId) || { id: gameOrId, title: defaultGamesMeta[gameOrId]?.title || gameOrId };
-      setExplainingGame(found);
+      game = displayedGames.find(g => g.id === gameOrId) || { id: gameOrId, title: defaultGamesMeta[gameOrId]?.title || gameOrId };
     } else {
-      setExplainingGame(gameOrId);
+      game = gameOrId;
     }
-  };
+    
+    if (game.url) {
+      handleLaunchWebGame(game);
+    } else {
+      setActiveGame(game.id);
+    }
+  }
 
   const quickLinks = [
     { name: "Invitation", icon: UserPlus, color: "from-green-400 to-green-600", action: () => setShowReferral(true) },
     { name: "Newplayer", icon: Gift, color: "from-blue-400 to-blue-600", action: () => setShowNewPlayers(true) },
     { name: "Deposit", icon: Coins, color: "from-yellow-400 to-yellow-600", action: () => onNavigate('wallet') },
-    { name: "Spins", icon: Radio, color: "from-orange-400 to-orange-600", action: () => triggerGameExplanation('spin') },
+    { name: "Spins", icon: Radio, color: "from-orange-400 to-orange-600", action: () => launchGame('spin') },
     { name: "VIP", icon: Gem, color: "from-purple-400 to-purple-600", action: () => setShowVIP(true) },
   ];
 
@@ -376,26 +380,6 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
   return (
     <div className={`relative w-full h-full bg-[#1b2a5c] ${isFullScreen ? 'overflow-hidden' : ''} text-white`}>
       <AnimatePresence mode="wait">
-        {explainingGame && (
-          <GameExplainer 
-            gameId={explainingGame.id}
-            gameTitle={explainingGame.title}
-            minBet={gamesConfig[explainingGame.id]?.minBet || minBet}
-            winRate={gamesConfig[explainingGame.id]?.winRate || 45}
-            multiplier={gamesConfig[explainingGame.id]?.multiplier || 2.5}
-            onClose={() => setExplainingGame(null)}
-            onPlay={() => {
-              const game = explainingGame;
-              setExplainingGame(null);
-              if (game.url) {
-                handleLaunchWebGame(game);
-              } else {
-                setActiveGame(game.id);
-              }
-            }}
-          />
-        )}
-
         {showVIP && (
            <InvestmentView profile={profile} onBack={() => setShowVIP(false)} />
         )}
@@ -770,7 +754,7 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
                     initial={{ opacity: 0, y: 20 }} 
                     animate={{ opacity: 1, y: 0 }} 
                     transition={{ delay: idx * 0.03 }} 
-                    onClick={() => triggerGameExplanation(game)} 
+                    onClick={() => launchGame(game)} 
                     className={`relative group cursor-pointer ${isArcade ? 'col-span-2' : ''}`}
                   >
                     <div className={`${isArcade ? 'aspect-[21/9]' : 'aspect-[3/4.2]'} rounded-[1.5rem] overflow-hidden border border-white/5 bg-[#14254f] shadow-2xl relative transition-transform duration-500 group-hover:scale-[1.02]`}>
