@@ -406,6 +406,28 @@ const BetPanel: React.FC<any> = ({ data, gameState, multiplier, onAction, onAmou
               </button>
             ))}
           </div>
+
+          <div className="flex justify-between gap-1.5">
+            {['+10', '+50', '+100', 'x2'].map(label => {
+              let action;
+              if (label === 'x2') {
+                action = () => onAmountChange(Number((data.amount * 2).toFixed(2)));
+              } else {
+                const value = parseInt(label.replace('+', ''), 10);
+                action = () => onAmountChange(Number((data.amount + value).toFixed(2)));
+              }
+              return (
+                <button
+                  key={label}
+                  disabled={data.active || isFinished}
+                  onClick={action}
+                  className="flex-1 bg-[#1c2c20] hover:bg-[#243d2a] rounded-xl py-2 text-[10px] font-black text-[#32D74B] border border-[#32D74B]/20 transition-all active:scale-95 disabled:opacity-30"
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Bottom: Action Button */}

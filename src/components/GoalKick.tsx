@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   LogOut, 
@@ -7,14 +7,11 @@ import {
   Target, 
   Trophy, 
   Zap, 
-  HelpCircle, 
-  Sparkles, 
-  Compass, 
-  Info, 
-  RotateCcw,
   Flame,
   Volume2,
-  VolumeX
+  VolumeX,
+  Sparkles,
+  Play
 } from "lucide-react";
 import { playSound, stopSound, setSoundActiveGameId } from "../lib/sounds";
 
@@ -28,17 +25,7 @@ interface PenaltyRoyaleProps {
   multiplier?: number;
 }
 
-type ShotZone = 
-  | "top_left" | "top_center" | "top_right"
-  | "mid_left" | "mid_center" | "mid_right"
-  | "bot_left" | "bot_center" | "bot_right";
-
-interface StatRecord {
-  goals: number;
-  shots: number;
-  highestStreak: number;
-  history: ("goal" | "save" | "miss")[];
-}
+type GoalTarget = "left" | "center" | "right";
 
 interface SparkParticle {
   x: number;
@@ -54,102 +41,67 @@ interface SparkParticle {
   spin: number;
 }
 
-// Portable Canvas Helper to prevent browser compatibility issues with CanvasRenderingContext2D.roundRect
-const drawRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
-  if (ctx.roundRect) {
-    ctx.roundRect(x, y, w, h, r);
-    return;
-  }
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-};
-
 export const GoalKick: React.FC<PenaltyRoyaleProps> = ({
   balance,
   onWin,
   onBet,
   onExit,
-  winRate = 45,
+  winRate = 50,
   minBet = 10,
   multiplier = 1.9
 }) => {
-  const [bet, setBet] = useState(minBet);
+  const [bet, setBet] = useState(50);
+  const [selectedGoal, setSelectedGoal] = useState<GoalTarget | null>(null);
   
-  // Interactive Aim and Settings States
-  const [selectedZone, setSelectedZone] = useState<ShotZone | null>(null);
-  const [hoveredZone, setHoveredZone] = useState<ShotZone | null>(null);
-  const [power, setPower] = useState(75); // 1-100 shooting force
-  const [spin, setSpin] = useState(0);    // Curve adjustments (-30 to 30)
-  const [wind, setWind] = useState({ speed: 0, dir: "none" as "left" | "right" | "none" });
-  const [gameState, setGameState] = useState<"idle" | "ready" | "kicking" | "goal" | "saved" | "missed">("idle");
-  const [message, setMessage] = useState("Select a section on the net to lock aim!");
-  const [showGuide, setShowGuide] = useState(false);
+  // Game states:
+  // "idle": Pre-match lobby screen. Click "KICK OFF" / "START MATCH" to begin.
+  // "ready": On-field, ready to shoot. 3 targets on the goal are active.
+  // "kicking": Kicking animation running on physics loop.
+  // "goal": Goal is scored outcome.
+  // "saved": Saved by keeper outcome.
+  const [gameState, setGameState] = useState<"idle" | "ready" | "kicking" | "goal" | "saved">("idle");
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [lastWinAmount, setLastWinAmount] = useState<number | null>(null);
 
-  // Stats locally persisted
-  const [stats, setStats] = useState<StatRecord>(() => {
-    try {
-      const saved = localStorage.getItem("goal_kick_stats_records");
-      return saved ? JSON.parse(saved) : { goals: 0, shots: 0, highestStreak: 0, history: [] };
-    } catch {
-      return { goals: 0, shots: 0, highestStreak: 0, history: [] };
-    }
-  });
-  const [currentStreak, setCurrentStreak] = useState(0);
-
-  // References for render loop values
+  // References for pure-canvas physics animation (0% internet lag & CPU efficient)
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
-
-  // Track live references to bypass stale renderer closure bounds
-  const selectedZoneRef = useRef<ShotZone | null>(null);
-  const hoveredZoneRef = useRef<ShotZone | null>(null);
-  const gameStateRef = useRef<"idle" | "ready" | "kicking" | "goal" | "saved" | "missed">("idle");
   const sparksRef = useRef<SparkParticle[]>([]);
-  const driftLinesRef = useRef<{ x: number; y: number; spd: number }[]>([]);
 
-  // Physical simulation nodes
+  // Sound trigger helpers
+  const playLocalSound = (name: 'click' | 'win' | 'lose' | 'spin' | 'chip' | 'coin' | 'sports_ready') => {
+    if (soundEnabled) playSound(name);
+  };
+
+  // Ball model properties (Updated in loop)
   const ballRef = useRef({
-    x: 0,     // logical horizontal projection (-220 to 220)
-    y: 0,     // logical ball elevation height above pitch (0 to 220)
-    z: 0.1,   // perspective distance factor (0.1 start to 10.0 net boundary depth)
-    vx: 0,
-    vy: 0,
-    vz: 0,
-    spin: 0,
+    x: 0,       // current relative horizontal coordinate
+    y: 0,       // height above turf
+    z: 1.0,     // depth scale (smaller is further back in the net)
     rotation: 0
   });
 
+  // Keeper model properties (Updated in loop)
   const keeperRef = useRef({
     x: 0,
     y: 0,
     targetX: 0,
-    targetY: 0,
-    speedFactor: 0.08
+    targetY: 0
   });
 
-  const netResponseRef = useRef({
-    force: 0,
-    x: 0,
-    y: 0
-  });
+  // Kick animation physics progress tracking (0 to 1)
+  const kickProgressRef = useRef(0);
+  const isSaveRef = useRef(false);
+  const currentTargetRef = useRef<GoalTarget | null>(null);
+  const targetCoordsRef = useRef({ x: 0, y: 0 });
+  const diveCoordsRef = useRef({ x: 0, y: 0 });
 
-  // Sync references
-  useEffect(() => { selectedZoneRef.current = selectedZone; }, [selectedZone]);
-  useEffect(() => { hoveredZoneRef.current = hoveredZone; }, [hoveredZone]);
-  useEffect(() => { gameStateRef.current = gameState; }, [gameState]);
+  // Web net vibration force
+  const netVibrationRef = useRef(0);
 
-  // Sync BGM and theme triggers on mounting
   useEffect(() => {
     setSoundActiveGameId("goal_kick");
     return () => {
@@ -157,35 +109,17 @@ export const GoalKick: React.FC<PenaltyRoyaleProps> = ({
     };
   }, []);
 
-  // Sync stats storage
-  useEffect(() => {
-    localStorage.setItem("goal_kick_stats_records", JSON.stringify(stats));
-  }, [stats]);
+  const bettingCoins = [10, 50, 100, 500, 1000];
 
-  // Wind Generator
-  const generateWind = () => {
-    const directions: ("left" | "right" | "none")[] = ["left", "right", "none"];
-    const randomDir = directions[Math.floor(Math.random() * directions.length)];
-    const speed = randomDir === "none" ? 0 : Math.floor(Math.random() * 6) + 2; // 2-8 m/s wind speed
-    setWind({ speed, dir: randomDir });
-  };
-
-  useEffect(() => {
-    generateWind();
-  }, []);
-
-  // Quick sound handler
-  const playLocalSound = (name: 'click' | 'win' | 'lose' | 'spin' | 'chip' | 'coin' | 'sports_ready') => {
-    if (soundEnabled) playSound(name);
-  };
-
-  // Adjust balance bets
   const adjustBet = (amount: number) => {
-    playLocalSound('click');
-    setBet((prev) => Math.max(minBet, prev + amount));
+    playLocalSound("chip");
+    setBet((prev) => {
+      const next = prev + amount;
+      return Math.max(minBet, Math.min(balance || minBet, next));
+    });
   };
 
-  // Resize canvas handler
+  // Handle high-performance dynamic Canvas resizing with zero layout shifts
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -193,8 +127,10 @@ export const GoalKick: React.FC<PenaltyRoyaleProps> = ({
     const handleResize = () => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      canvas.width = rect.width * window.devicePixelRatio;
-      canvas.height = rect.height * window.devicePixelRatio;
+      
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
     };
@@ -208,127 +144,37 @@ export const GoalKick: React.FC<PenaltyRoyaleProps> = ({
     };
   }, []);
 
-  // Goal celebration fireworks and spark generators
-  const triggerCelebrationSparks = (targetX: number, targetY: number, count: number, isSaved: boolean = false) => {
+  // Instantly spawns fireworks & spark sparkles without network lag dependency
+  const spawnCelebrationSparks = (targetX: number, targetY: number, count: number, isSaved: boolean = false) => {
     const colors = isSaved 
-      ? ["#FF3D00", "#FFC107", "#FFFFFF", "#FF3D00"] 
-      : ["#FFD700", "#FF4500", "#00E5FF", "#39FF14", "#FF1493", "#FFFFFF"];
+      ? ["#EF4444", "#F87171", "#FFFFFF"] 
+      : ["#10B981", "#34D399", "#FBBF24", "#F472B6", "#A78BFA", "#FFFFFF"];
     
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = isSaved ? (1 + Math.random() * 5) : (2 + Math.random() * 8);
+      const speed = isSaved ? (2 + Math.random() * 4) : (4 + Math.random() * 8);
       sparksRef.current.push({
         x: 400 + targetX,
-        y: 330 - targetY,
+        y: 300 - targetY,
         vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - (isSaved ? 0 : 2),
+        vy: Math.sin(angle) * speed - (isSaved ? 0 : 4),
         color: colors[Math.floor(Math.random() * colors.length)],
-        size: isSaved ? (1.5 + Math.random() * 3) : (2.5 + Math.random() * 4),
+        size: 1.5 + Math.random() * 3.5,
         alpha: 1.0,
-        gravity: isSaved ? 0.12 : 0.16,
-        decay: isSaved ? (0.025 + Math.random() * 0.02) : (0.012 + Math.random() * 0.015),
+        gravity: 0.18,
+        decay: 0.025,
         rotation: Math.random() * Math.PI,
         spin: -0.12 + Math.random() * 0.24
       });
     }
   };
 
-  // Click handler directly mapping canvas coords to logical (800x500) Goal target spots
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (gameState !== "idle" && gameState !== "ready") return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const clickX = ((e.clientX - rect.left) / rect.width) * 800;
-    const clickY = ((e.clientY - rect.top) / rect.height) * 500;
-
-    const goalLeft = 180;
-    const goalRight = 620;
-    const goalTop = 110;
-    const goalBottom = 330;
-
-    if (clickX >= goalLeft && clickX <= goalRight && clickY >= goalTop && clickY <= goalBottom) {
-      const zoneW = (goalRight - goalLeft) / 3;
-      const zoneH = (goalBottom - goalTop) / 3;
-
-      const col = Math.floor((clickX - goalLeft) / zoneW);
-      const row = Math.floor((clickY - goalTop) / zoneH);
-
-      const cols = ["left", "center", "right"];
-      const rows = ["top", "mid", "bot"];
-
-      const colStr = cols[Math.min(2, Math.max(0, col))];
-      const rowStr = rows[Math.min(2, Math.max(0, row))];
-
-      const zoneId = (rowStr === "mid" && colStr === "center" ? "mid_center" : `${rowStr}_${colStr}`) as ShotZone;
-
-      setSelectedZone(zoneId);
-      setGameState("ready");
-      setMessage(`Locking aim on: ${zoneId.replace("_", " ").toUpperCase()} ● Ready to strike!`);
-      playLocalSound("click");
-    }
-  };
-
-  // Move handler to capture exact grid highlights on mouse move (Desktop)
-  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (gameState !== "idle" && gameState !== "ready") {
-      setHoveredZone(null);
-      return;
-    }
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const hoverX = ((e.clientX - rect.left) / rect.width) * 800;
-    const hoverY = ((e.clientY - rect.top) / rect.height) * 500;
-
-    const goalLeft = 180;
-    const goalRight = 620;
-    const goalTop = 110;
-    const goalBottom = 330;
-
-    if (hoverX >= goalLeft && hoverX <= goalRight && hoverY >= goalTop && hoverY <= goalBottom) {
-      const zoneW = (goalRight - goalLeft) / 3;
-      const zoneH = (goalBottom - goalTop) / 3;
-
-      const col = Math.floor((hoverX - goalLeft) / zoneW);
-      const row = Math.floor((hoverY - goalTop) / zoneH);
-
-      const cols = ["left", "center", "right"];
-      const rows = ["top", "mid", "bot"];
-
-      const colStr = cols[Math.min(2, Math.max(0, col))];
-      const rowStr = rows[Math.min(2, Math.max(0, row))];
-
-      const zoneId = (rowStr === "mid" && colStr === "center" ? "mid_center" : `${rowStr}_${colStr}`) as ShotZone;
-      setHoveredZone(zoneId);
-    } else {
-      setHoveredZone(null);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setHoveredZone(null);
-  };
-
-  // Main high-performance canvas loop
+  // Ultra high fidelity RequestAnimationFrame Draw & Physics Loop (Internet/CPU-lag proof)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
-    // Wind drift cloud line initializations
-    if (driftLinesRef.current.length === 0) {
-      for (let i = 0; i < 20; i++) {
-        driftLinesRef.current.push({
-          x: Math.random() * 800,
-          y: Math.random() * 280,
-          spd: 1 + Math.random() * 1.5
-        });
-      }
-    }
 
     const goalLeft = 180;
     const goalRight = 620;
@@ -336,20 +182,6 @@ export const GoalKick: React.FC<PenaltyRoyaleProps> = ({
     const goalBottom = 330;
     const goalW = goalRight - goalLeft;
     const goalH = goalBottom - goalTop;
-    const zoneW = goalW / 3;
-    const zoneH = goalH / 3;
-
-    const zonesMeta: Record<ShotZone, { x: number; y: number }> = {
-      top_left: { x: goalLeft + zoneW * 0.5, y: goalTop + zoneH * 0.5 },
-      top_center: { x: goalLeft + zoneW * 1.5, y: goalTop + zoneH * 0.5 },
-      top_right: { x: goalLeft + zoneW * 2.5, y: goalTop + zoneH * 0.5 },
-      mid_left: { x: goalLeft + zoneW * 0.5, y: goalTop + zoneH * 1.5 },
-      mid_center: { x: goalLeft + zoneW * 1.5, y: goalTop + zoneH * 1.5 },
-      mid_right: { x: goalLeft + zoneW * 2.5, y: goalTop + zoneH * 1.5 },
-      bot_left: { x: goalLeft + zoneW * 0.5, y: goalTop + zoneH * 2.5 },
-      bot_center: { x: goalLeft + zoneW * 1.5, y: goalTop + zoneH * 2.5 },
-      bot_right: { x: goalLeft + zoneW * 2.5, y: goalTop + zoneH * 2.5 }
-    };
 
     const draw = () => {
       const W = canvas.width;
@@ -357,82 +189,76 @@ export const GoalKick: React.FC<PenaltyRoyaleProps> = ({
       ctx.clearRect(0, 0, W, H);
 
       ctx.save();
-      // Render inside logical perspective bounds (800 x 500) and stretch responsively
+      // Auto scaling factor supporting any phone/tablet screen sizes
       ctx.scale(W / 800, H / 500);
 
-      // Stadium Night Sky
-      const skyGrad = ctx.createLinearGradient(0, 0, 0, 320);
-      skyGrad.addColorStop(0, "#010805");
-      skyGrad.addColorStop(0.5, "#03140d");
-      skyGrad.addColorStop(1, "#052215");
+      // 1. Draw Beautiful Vector Stadium Sky
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, 340);
+      skyGrad.addColorStop(0, "#010804");
+      skyGrad.addColorStop(0.4, "#021c0e");
+      skyGrad.addColorStop(1, "#042c14");
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, 800, 340);
 
-      // Stadium Lawn Turf Ground
-      const turfGrad = ctx.createLinearGradient(0, 340, 0, 500);
-      turfGrad.addColorStop(0, "#06291a");
-      turfGrad.addColorStop(1, "#0a3d27");
-      ctx.fillStyle = turfGrad;
+      // Stadium glow spotlight pillars
+      ctx.fillStyle = "rgba(16, 185, 129, 0.05)";
+      ctx.fillRect(0, 0, 800, 340);
+
+      // 2. Clear Vector Turf lawn
+      const pitchGrad = ctx.createLinearGradient(0, 340, 0, 500);
+      pitchGrad.addColorStop(0, "#052d14");
+      pitchGrad.addColorStop(1, "#0b4e23");
+      ctx.fillStyle = pitchGrad;
       ctx.fillRect(0, 340, 800, 160);
 
-      // Grass Mowing stripes
-      ctx.fillStyle = "#052215";
+      // Elegant deep turf stripes
+      ctx.fillStyle = "#03220f";
       for (let i = 0; i < 4; i++) {
         if (i % 2 === 0) {
           ctx.fillRect(0, 340 + i * 40, 800, 20);
         }
       }
 
-      // Elegant Animated Stadium spot searchlights
-      const timeVal = Date.now();
-      const leftSweep = 0.22 * Math.sin(timeVal / 2200);
-      const rightSweep = 0.22 * Math.sin(timeVal / 2600 + 1.2);
-
-      // Left spot cone
-      const coneLeftGrad = ctx.createRadialGradient(20, 20, 0, 200 + leftSweep * 100, 340, 450);
-      coneLeftGrad.addColorStop(0, "rgba(57, 255, 20, 0.08)");
-      coneLeftGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
-      ctx.fillStyle = coneLeftGrad;
+      // Real-time animated spotlight sweepers
+      const t = Date.now();
+      const sweep = 0.22 * Math.sin(t / 1800);
+      ctx.fillStyle = "rgba(52, 211, 153, 0.07)";
       ctx.beginPath();
-      ctx.moveTo(20, 20);
-      ctx.lineTo(350 + leftSweep * 120, 340);
-      ctx.lineTo(50 + leftSweep * 120, 340);
+      ctx.moveTo(40, 10);
+      ctx.lineTo(260 + sweep * 120, 340);
+      ctx.lineTo(140 + sweep * 120, 340);
+      ctx.closePath();
       ctx.fill();
 
-      // Right spot cone
-      const coneRightGrad = ctx.createRadialGradient(780, 20, 0, 600 + rightSweep * 100, 340, 450);
-      coneRightGrad.addColorStop(0, "rgba(0, 229, 255, 0.08)");
-      coneRightGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
-      ctx.fillStyle = coneRightGrad;
       ctx.beginPath();
-      ctx.moveTo(780, 20);
-      ctx.lineTo(750 + rightSweep * 120, 340);
-      ctx.lineTo(450 + rightSweep * 120, 340);
+      ctx.moveTo(760, 10);
+      ctx.lineTo(660 - sweep * 120, 340);
+      ctx.lineTo(540 - sweep * 120, 340);
+      ctx.closePath();
       ctx.fill();
 
-      // Drifting Wind Drift Silver Clouds across Stadium
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.025)";
-      ctx.lineWidth = 1;
-      driftLinesRef.current.forEach(line => {
-        ctx.beginPath();
-        ctx.moveTo(line.x, line.y);
-        ctx.lineTo(line.x + (wind.dir === "none" ? 8 : (wind.dir === "right" ? 18 : -18)), line.y);
-        ctx.stroke();
+      // 3. Penalty kick spot circle
+      ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+      ctx.beginPath();
+      ctx.arc(400, 440, 6, 0, Math.PI * 2);
+      ctx.fill();
 
-        const driftSpeedMultiplier = wind.dir === "none" ? 0.2 : (wind.dir === "right" ? wind.speed * 0.45 : -wind.speed * 0.45);
-        line.x += line.spd + driftSpeedMultiplier;
-        if (line.x > 840) line.x = -40;
-        if (line.x < -40) line.x = 840;
-      });
+      // Stadium boundaries & field boundary lines
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, 340);
+      ctx.lineTo(800, 340);
+      ctx.stroke();
 
-      // Fetch dynamic active references
-      const actZone = selectedZoneRef.current;
-      const actHover = hoveredZoneRef.current;
-      const actState = gameStateRef.current;
+      // D-Box arc line
+      ctx.beginPath();
+      ctx.arc(400, 340, 130, 0, Math.PI, false);
+      ctx.stroke();
 
-      // Draw Goal Frame Outer Shadow Lines
-      ctx.strokeStyle = "rgba(0, 0, 0, 0.45)";
-      ctx.lineWidth = 16;
+      // 4. Goal Frame shadows
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+      ctx.lineWidth = 14;
       ctx.lineCap = "round";
       ctx.beginPath();
       ctx.moveTo(goalLeft, goalBottom);
@@ -441,32 +267,30 @@ export const GoalKick: React.FC<PenaltyRoyaleProps> = ({
       ctx.lineTo(goalRight, goalBottom);
       ctx.stroke();
 
-      // Nets Mesh drawing with scores elastic reactions
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+      // 5. Build dynamic Mesh Net lines with tension ripples
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.16)";
       ctx.lineWidth = 1;
-      const columnsCount = 24;
-      const rowsCount = 12;
-      const netCellW = goalW / columnsCount;
-      const netCellH = goalH / rowsCount;
-      const pullForce = netResponseRef.current.force;
 
-      // Vertical strings drawing
-      for (let c = 0; c <= columnsCount; c++) {
+      const cols = 22;
+      const rws = 11;
+      const cellW = goalW / cols;
+      const cellH = goalH / rws;
+
+      // Vertical mesh strings
+      for (let c = 0; c <= cols; c++) {
         ctx.beginPath();
-        for (let r = 0; r <= rowsCount; r++) {
-          let nx = goalLeft + c * netCellW;
-          let ny = goalTop + r * netCellH;
+        for (let r = 0; r <= rws; r++) {
+          let nx = goalLeft + c * cellW;
+          let ny = goalTop + r * cellH;
 
-          // Elastic deformation pull
-          if (pullForce > 0.05) {
-            const dx = nx - netResponseRef.current.x;
-            const dy = ny - netResponseRef.current.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 140) {
-              const stretch = (140 - dist) / 140 * pullForce * 28;
-              const angle = Math.atan2(dy, dx);
-              nx += Math.cos(angle) * stretch;
-              ny += Math.sin(angle) * stretch;
+          if (netVibrationRef.current > 0.01) {
+            const bx = 400 + ballRef.current.x;
+            const by = 300 - targetCoordsRef.current.y;
+            const dist = Math.sqrt(Math.pow(nx - bx, 2) + Math.pow(ny - by, 2));
+            if (dist < 110) {
+              const ripple = (110 - dist) / 110 * netVibrationRef.current * 16;
+              nx += (nx > bx ? 1 : -1) * ripple * 0.4;
+              ny += ripple;
             }
           }
 
@@ -476,23 +300,20 @@ export const GoalKick: React.FC<PenaltyRoyaleProps> = ({
         ctx.stroke();
       }
 
-      // Horizontal strings drawing
-      for (let r = 0; r <= rowsCount; r++) {
+      // Horizontal mesh strings
+      for (let r = 0; r <= rws; r++) {
         ctx.beginPath();
-        for (let c = 0; c <= columnsCount; c++) {
-          let nx = goalLeft + c * netCellW;
-          let ny = goalTop + r * netCellH;
+        for (let c = 0; c <= cols; c++) {
+          let nx = goalLeft + c * cellW;
+          let ny = goalTop + r * cellH;
 
-          // Elastic net deforms
-          if (pullForce > 0.05) {
-            const dx = nx - netResponseRef.current.x;
-            const dy = ny - netResponseRef.current.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < 140) {
-              const stretch = (140 - dist) / 140 * pullForce * 28;
-              const angle = Math.atan2(dy, dx);
-              nx += Math.cos(angle) * stretch;
-              ny += Math.sin(angle) * stretch;
+          if (netVibrationRef.current > 0.01) {
+            const bx = 400 + ballRef.current.x;
+            const by = 300 - targetCoordsRef.current.y;
+            const dist = Math.sqrt(Math.pow(nx - bx, 2) + Math.pow(ny - by, 2));
+            if (dist < 110) {
+              const ripple = (110 - dist) / 110 * netVibrationRef.current * 16;
+              ny += ripple;
             }
           }
 
@@ -502,9 +323,14 @@ export const GoalKick: React.FC<PenaltyRoyaleProps> = ({
         ctx.stroke();
       }
 
-      // Main Steel White Gate Frame
+      // Ripple decay
+      if (netVibrationRef.current > 0) {
+        netVibrationRef.current *= 0.94;
+      }
+
+      // 6. White Goal Posts structural borders
       ctx.strokeStyle = "#FFFFFF";
-      ctx.lineWidth = 11;
+      ctx.lineWidth = 9;
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
       ctx.beginPath();
@@ -514,238 +340,79 @@ export const GoalKick: React.FC<PenaltyRoyaleProps> = ({
       ctx.lineTo(goalRight, goalBottom);
       ctx.stroke();
 
-      // Corner gold angle protectors
-      ctx.strokeStyle = "#D4AF37";
+      // Corner reinforcement bars
+      ctx.strokeStyle = "rgba(234, 179, 8, 0.4)";
       ctx.lineWidth = 3;
-      ctx.strokeRect(goalLeft, goalTop, 16, 16);
-      ctx.strokeRect(goalRight - 16, goalTop, 16, 16);
+      ctx.strokeRect(goalLeft, goalTop, 11, 11);
+      ctx.strokeRect(goalRight - 11, goalTop, 11, 11);
 
-      // Draw Dashed Goal Target boundary sheets when in ready mode
-      if (actState === "idle" || actState === "ready") {
+      // 7. Goalkeeper rendering
+      if (gameState !== "idle") {
+        const gk = keeperRef.current;
         ctx.save();
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.07)";
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([5, 5]);
+        ctx.translate(400 + gk.x, 300 - gk.y);
 
-        // vertical lines
+        // Ground shadow
+        ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
         ctx.beginPath();
-        ctx.moveTo(goalLeft + zoneW, goalTop);
-        ctx.lineTo(goalLeft + zoneW, goalBottom);
-        ctx.moveTo(goalLeft + zoneW * 2, goalTop);
-        ctx.lineTo(goalLeft + zoneW * 2, goalBottom);
-
-        // horizontal lines
-        ctx.moveTo(goalLeft, goalTop + zoneH);
-        ctx.lineTo(goalRight, goalTop + zoneH);
-        ctx.moveTo(goalLeft, goalTop + zoneH * 2);
-        ctx.lineTo(goalRight, goalTop + zoneH * 2);
-        ctx.stroke();
-        ctx.restore();
-
-        // Hovered cell background contour glow
-        if (actHover && actHover !== actZone) {
-          const hoverCoord = zonesMeta[actHover];
-          ctx.save();
-          ctx.fillStyle = "rgba(0, 229, 255, 0.08)";
-          ctx.beginPath();
-          ctx.roundRect(hoverCoord.x - zoneW * 0.5 + 4, hoverCoord.y - zoneH * 0.5 + 4, zoneW - 8, zoneH - 8, 12);
-          ctx.fill();
-          ctx.restore();
-        }
-      }
-
-      // Aim Line path vector (From ball spot up to targeted spot)
-      if (actState === "ready" && actZone) {
-        const dest = zonesMeta[actZone];
-        ctx.save();
-        ctx.strokeStyle = "rgba(101, 233, 2, 0.2)";
-        ctx.lineWidth = 2.5;
-        ctx.setLineDash([4, 4]);
-        ctx.beginPath();
-        ctx.moveTo(400, 440); // Kick penalty spot
-        // Slight curved bezier indicating magnus spin
-        ctx.quadraticCurveTo(400 + spin * 3.5, 300, dest.x, dest.y);
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      // Draw Selected neon-glowing Target Target indicators
-      Object.entries(zonesMeta).forEach(([zId, coord]) => {
-        const isSelected = actZone === zId;
-        const isHovered = actHover === zId;
-
-        if (isSelected && (actState === "idle" || actState === "ready")) {
-          ctx.save();
-          ctx.translate(coord.x, coord.y);
-
-          // Pulse sizing
-          const pulse = 3 * Math.sin(Date.now() / 180);
-          
-          ctx.shadowBlur = 18;
-          ctx.shadowColor = "#39FF14";
-          
-          // Glowing green select circle
-          ctx.strokeStyle = "#39FF14";
-          ctx.lineWidth = 3.5;
-          ctx.beginPath();
-          ctx.arc(0, 0, 24 + pulse, 0, Math.PI * 2);
-          ctx.stroke();
-
-          // Soft central target filling
-          ctx.fillStyle = "rgba(57, 255, 20, 0.2)";
-          ctx.beginPath();
-          ctx.arc(0, 0, 15, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Reticle cross lines
-          ctx.strokeStyle = "#FFFFFF";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(-30, 0); ctx.lineTo(30, 0);
-          ctx.moveTo(0, -30); ctx.lineTo(0, 30);
-          ctx.stroke();
-
-          ctx.restore();
-        } else if (isHovered && (actState === "idle" || actState === "ready")) {
-          // Micro reticle indicators on hover
-          ctx.save();
-          ctx.translate(coord.x, coord.y);
-          ctx.strokeStyle = "rgba(0, 229, 255, 0.6)";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.arc(0, 0, 16, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.restore();
-        }
-      });
-
-      // Announcer AIM prompt badge overlay directly inside Canvas
-      if (!actZone && (actState === "idle" || actState === "ready")) {
-        ctx.save();
-        // Pulsing glow alpha
-        const badgePulse = 1 + 0.05 * Math.sin(Date.now() / 250);
-        ctx.translate(400, 375);
-        ctx.scale(badgePulse, badgePulse);
-        
-        ctx.shadowBlur = 14;
-        ctx.shadowColor = "#FFC107";
-        ctx.fillStyle = "rgba(212, 175, 55, 0.15)";
-        ctx.strokeStyle = "#FFC107";
-        ctx.lineWidth = 2;
-        
-        ctx.beginPath();
-        drawRoundRect(ctx, -120, -15, 240, 30, 15);
+        const shadowRatio = Math.max(0.2, 1.0 - gk.y / 150);
+        ctx.ellipse(0, 30 + gk.y, 38 * shadowRatio, 8 * shadowRatio, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.stroke();
 
-        ctx.shadowBlur = 0;
-        ctx.textAlign = "center";
+        // Diving pivot direction
+        const rotationAngle = gk.x * 0.0035;
+        ctx.rotate(rotationAngle);
+
+        // Goalkeeper Core torso
+        ctx.fillStyle = "#A855F7"; // neon purple jersey
+        const drawGKJersey = (x: number, y: number, w: number, h: number, r: number) => {
+          ctx.beginPath();
+          ctx.moveTo(x + r, y);
+          ctx.lineTo(x + w - r, y);
+          ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+          ctx.lineTo(x + w, y + h - r);
+          ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+          ctx.lineTo(x + r, y + h);
+          ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+          ctx.lineTo(x, y + r);
+          ctx.quadraticCurveTo(x, y, x + r, y);
+          ctx.closePath();
+          ctx.fill();
+        };
+        drawGKJersey(-21, -44, 42, 44, 9);
+
+        // Jersey logo sponsor
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-11, -37, 22, 7);
+
+        // Goalkeeper Number
         ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 9.5px sans-serif";
-        ctx.fillText("🎯 TAP ANY GOAL SECTION TO AIM", 0, 4);
+        ctx.font = "bold 14px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("1", 0, -17);
+
+        // Goalkeeper Head
+        ctx.fillStyle = "#F3E8FF";
+        ctx.beginPath();
+        ctx.arc(0, -57, 11, 0, Math.PI * 2);
+        ctx.fill();
+
+        // High Vis green gloves
+        ctx.fillStyle = "#22C55E";
+        const armStretchX = gk.x > 10 ? 32 : (gk.x < -10 ? 10 : 27);
+        const armStretchY = gk.y > 10 ? -48 : -34;
+        drawGKJersey(-armStretchX, armStretchY, 13, 15, 3);
+        drawGKJersey(armStretchX - 13, armStretchY, 13, 15, 3);
+
+        // Black match shorts
+        ctx.fillStyle = "#1e1b4b";
+        ctx.fillRect(-21, 0, 42, 8);
+
         ctx.restore();
       }
 
-      // Goalkeeper physics and premium smooth rendering
-      const gk = keeperRef.current;
-      ctx.save();
-      // Keep keeper relative to middle goal point
-      ctx.translate(400 + gk.x, 310 - gk.y);
-
-      // Dynamic Goalkeeper Shadow shrinking as he jumps
-      ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
-      ctx.beginPath();
-      const shadowFactor = Math.max(0.2, 1.0 - gk.y / 150);
-      ctx.ellipse(0, 20 + gk.y, 45 * shadowFactor, 10 * shadowFactor, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Body dive rotation angle to simulate amazing realism
-      const diveRotation = gk.x * 0.003;
-      ctx.rotate(diveRotation);
-
-      // Jersey body torso
-      ctx.fillStyle = "#F50057"; // Radiant high contrast Fuchsia Goalie shirt
-      ctx.beginPath();
-      drawRoundRect(ctx, -24, -46, 48, 46, 12);
-      ctx.fill();
-
-      // Sponsor outline detail
-      ctx.strokeStyle = "rgba(255,255,255,0.25)";
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(-16, -38, 32, 10);
-
-      // Jersey Number
-      ctx.fillStyle = "#FFFFFF";
-      ctx.font = "bold 18px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText("99", 0, -18);
-
-      // Pitch Helmet / Head
-      ctx.fillStyle = "#00E5FF"; // Cyan goalie cap
-      ctx.beginPath();
-      ctx.arc(0, -60, 14, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Head mask shield lines
-      ctx.strokeStyle = "#000000";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-8, -58); ctx.lineTo(8, -58);
-      ctx.moveTo(-6, -53); ctx.lineTo(6, -53);
-      ctx.stroke();
-
-      // Goalkeeper Left Arm and Glove 🧤 (Pink custom gloves)
-      ctx.fillStyle = "#120521"; // Athletic sleeves
-      ctx.fillRect(-35, -34, 12, 10);
-      ctx.fillStyle = "#E4F3ED"; // Skin/accent
-      ctx.fillStyle = "#FFC107"; // Glowing gold giant gloves
-      
-      const stretchLeftX = gk.x > 12 ? 42 : (gk.x < -12 ? 14 : 36);
-      const stretchLeftY = gk.y > 15 ? -58 : -32;
-      ctx.beginPath();
-      drawRoundRect(ctx, -stretchLeftX, stretchLeftY, 16, 22, 5);
-      ctx.fill();
-
-      // Goalkeeper Right Arm and Glove 
-      ctx.fillStyle = "#120521";
-      ctx.fillRect(23, -34, 12, 10);
-      
-      const stretchRightX = gk.x < -12 ? 42 : (gk.x > 12 ? 14 : 36);
-      ctx.beginPath();
-      drawRoundRect(ctx, stretchRightX - 16, stretchLeftY, 16, 22, 5);
-      ctx.fill();
-
-      // Shorts
-      ctx.fillStyle = "#120521";
-      ctx.fillRect(-24, 0, 48, 8);
-
-      ctx.restore();
-
-      // Net response dampening effect
-      if (netResponseRef.current.force > 0.01) {
-        netResponseRef.current.force *= 0.94;
-      }
-
-      // Live flying Grass/Dust chunks
-      if (actState === "kicking" && ballRef.current.z < 1.0) {
-        if (Math.random() < 0.6) {
-          sparksRef.current.push({
-            x: 400 + ballRef.current.x * (ballRef.current.z / 10),
-            y: 440 - ballRef.current.y,
-            vx: (Math.random() - 0.5) * 5,
-            vy: -Math.random() * 7 - 3,
-            color: Math.random() < 0.4 ? "#4CAF50" : "#2E7D32",
-            size: 2 + Math.random() * 3,
-            alpha: 1.0,
-            gravity: 0.4,
-            decay: 0.04,
-            rotation: Math.random() * Math.PI,
-            spin: -0.05 + Math.random() * 0.1
-          });
-        }
-      }
-
-      // Render star/dust fireworks explosion particles
+      // 8. Particle systems drawing
       sparksRef.current.forEach((s, idx) => {
         s.vy += s.gravity;
         s.x += s.vx;
@@ -757,18 +424,14 @@ export const GoalKick: React.FC<PenaltyRoyaleProps> = ({
         ctx.globalAlpha = Math.max(0, s.alpha);
         ctx.translate(s.x, s.y);
         ctx.rotate(s.rotation);
-        
         ctx.fillStyle = s.color;
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = s.color;
 
-        // Render diamond bursts or glowing stars
         ctx.beginPath();
-        if (s.size > 3) {
+        if (s.size > 2) {
           ctx.moveTo(0, -s.size);
-          ctx.lineTo(s.size * 0.7, 0);
+          ctx.lineTo(s.size, 0);
           ctx.lineTo(0, s.size);
-          ctx.lineTo(-s.size * 0.7, 0);
+          ctx.lineTo(-s.size, 0);
           ctx.closePath();
         } else {
           ctx.arc(0, 0, s.size, 0, Math.PI * 2);
@@ -776,73 +439,145 @@ export const GoalKick: React.FC<PenaltyRoyaleProps> = ({
         ctx.fill();
         ctx.restore();
 
-        if (s.alpha <= 0.02) {
+        if (s.alpha <= 0.01) {
           sparksRef.current.splice(idx, 1);
         }
       });
 
-      // Draw Football ball with 3D projection scale
-      const b = ballRef.current;
-      const spotX = 400; // Pitch penalty spot
+      // 9. HIGH PERFORMANCE SHOOTING BALL PHYSICS TICK TRACING
+      // Completely avoids slow setInterval lags or high battery usage!
+      if (gameState === "kicking") {
+        kickProgressRef.current += 0.042; // Fast, super fluid ~24 frames animation (0.4s)
+        const p = Math.min(1.0, kickProgressRef.current);
+
+        const spotX = 400;
+        const spotY = 440;
+
+        // Animate coordinates using easeOutCubic curve
+        const easeOutRatio = 1 - Math.pow(1 - p, 3);
+        ballRef.current.x = targetCoordsRef.current.x * easeOutRatio;
+        ballRef.current.y = targetCoordsRef.current.y * easeOutRatio;
+        // 3D perspective scales sizes
+        ballRef.current.z = 1.0 - (0.75 * easeOutRatio); // shrinks smaller
+        ballRef.current.rotation += 0.28;
+
+        // Keepers dive start slightly after kickoff
+        if (p > 0.1) {
+          const gkRatio = (p - 0.1) / 0.9;
+          keeperRef.current.x = diveCoordsRef.current.x * gkRatio;
+          keeperRef.current.y = diveCoordsRef.current.y * gkRatio * 0.9;
+        }
+
+        if (p >= 1.0) {
+          // Resolve score or saved outcome instantly
+          const distance = Math.sqrt(
+            Math.pow(ballRef.current.x - keeperRef.current.x, 2) + 
+            Math.pow(ballRef.current.y - keeperRef.current.y, 2)
+          );
+
+          const gloveInterceptBlockRange = 60;
+
+          if (isSaveRef.current || distance < gloveInterceptBlockRange) {
+            // SAVED Outcome
+            setGameState("saved");
+            playLocalSound("lose");
+
+            // Ball deflection effect
+            ballRef.current.x = keeperRef.current.x + (ballRef.current.x > keeperRef.current.x ? 18 : -18);
+            ballRef.current.y = keeperRef.current.y - 12;
+            ballRef.current.z = 0.45;
+
+            spawnCelebrationSparks(ballRef.current.x, ballRef.current.y, 16, true);
+            setStreak(0);
+
+            // Instant auto-recovery cooldown
+            setTimeout(() => {
+              setGameState("ready");
+              resetFieldPosition();
+            }, 1600);
+          } else {
+            // GOAL Outcome
+            setGameState("goal");
+            playLocalSound("win");
+
+            netVibrationRef.current = 1.0;
+            const payout = bet * multiplier;
+
+            spawnCelebrationSparks(ballRef.current.x, ballRef.current.y, 40, false);
+            onWin(payout);
+            setLastWinAmount(payout);
+
+            const nextStreak = streak + 1;
+            setStreak(nextStreak);
+            setBestStreak(prev => Math.max(prev, nextStreak));
+
+            // Instant auto-recovery cooldown
+            setTimeout(() => {
+              setGameState("ready");
+              resetFieldPosition();
+            }, 1600);
+          }
+        }
+      }
+
+      // 10. Render standard soccer ball in actual layout position
+      const spotX = 400;
       const spotY = 440;
-
-      // Ball perspective projection calculations
-      const perspectiveScaleRef = 1.0 - (b.z / 12); // scale ratio shrinks towards net
-      const ballRad = 26 * perspectiveScaleRef;
-      const shY = spotY + (130 * (b.z / 10)); // shadow follows bottom trajectory plane
-
-      // Draw Ball Shadow
-      ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
-      ctx.beginPath();
-      ctx.ellipse(spotX + b.x, shY, ballRad, ballRad * 0.42, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Render actual Soccer Ball
-      ctx.save();
-      ctx.translate(spotX + b.x, spotY - b.y - (b.z * 16));
-      ctx.rotate(b.rotation);
-
-      // Outer circle
-      ctx.beginPath();
-      ctx.arc(0, 0, ballRad, 0, Math.PI * 2);
-
-      const isGoalBeep = actState === "goal" && Math.floor(Date.now() / 150) % 2 === 0;
-      ctx.fillStyle = isGoalBeep ? "#FFEB3B" : "#FFFFFF"; // Gold flashing on scoring mesh!
-      ctx.fill();
+      const ball = ballRef.current;
       
-      ctx.strokeStyle = "#1b2a22";
-      ctx.lineWidth = ballRad * 0.12;
+      const ballRadius = 23 * ball.z;
+      const shadowY = spotY + (100 * (1.0 - ball.z));
+
+      // Ball turf shadow
+      ctx.fillStyle = "rgba(0, 0, 0, 0.42)";
+      ctx.beginPath();
+      ctx.ellipse(spotX + ball.x, shadowY, ballRadius, ballRadius * 0.42, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Render pentagon-pattern graphics
+      ctx.save();
+      ctx.translate(spotX + ball.x, spotY - ball.y - (145 * (1.0 - ball.z)));
+      ctx.rotate(ball.rotation);
+
+      // Sphere Base
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.arc(0, 0, ballRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Outline
+      ctx.strokeStyle = "#041e0d";
+      ctx.lineWidth = Math.max(1.2, ballRadius * 0.09);
       ctx.stroke();
 
-      // Dual shade mark pentagrams
-      ctx.strokeStyle = "#37474F";
-      ctx.lineWidth = ballRad * 0.1;
+      // Standard soccer pentagon patterns drawn dynamically
+      ctx.strokeStyle = "#18181b";
+      ctx.lineWidth = Math.max(1, ballRadius * 0.08);
       ctx.beginPath();
       for (let i = 0; i < 5; i++) {
         const theta = (i * Math.PI * 2) / 5;
-        const ix = Math.cos(theta) * (ballRad * 0.65);
-        const iy = Math.sin(theta) * (ballRad * 0.65);
-        ctx.lineTo(ix, iy);
+        const px = Math.cos(theta) * (ballRadius * 0.58);
+        const py = Math.sin(theta) * (ballRadius * 0.58);
+        ctx.lineTo(px, py);
       }
       ctx.closePath();
       ctx.stroke();
 
       for (let i = 0; i < 5; i++) {
         const theta = (i * Math.PI * 2) / 5;
-        const outerX = Math.cos(theta) * ballRad;
-        const outerY = Math.sin(theta) * ballRad;
-        const innerX = Math.cos(theta) * (ballRad * 0.65);
-        const innerY = Math.sin(theta) * (ballRad * 0.65);
+        const ox = Math.cos(theta) * ballRadius;
+        const oy = Math.sin(theta) * ballRadius;
+        const ix = Math.cos(theta) * (ballRadius * 0.58);
+        const iy = Math.sin(theta) * (ballRadius * 0.58);
         ctx.beginPath();
-        ctx.moveTo(innerX, innerY);
-        ctx.lineTo(outerX, outerY);
+        ctx.moveTo(ix, iy);
+        ctx.lineTo(ox, oy);
         ctx.stroke();
       }
 
       ctx.restore();
 
-      ctx.restore(); // end scaling translation
-
+      ctx.restore();
       animationRef.current = requestAnimationFrame(draw);
     };
 
@@ -851,619 +586,432 @@ export const GoalKick: React.FC<PenaltyRoyaleProps> = ({
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [gameState, selectedZone, stats, wind]);
+  }, [gameState, bet, streak, winRate, multiplier]);
 
-  // Execute Shooting Physics with Wind & Curve Impacts
-  const executeShot = () => {
-    if (!selectedZone || gameState !== "ready") return;
+  // Performs ball layout reset
+  const resetFieldPosition = () => {
+    setSelectedGoal(null);
+    keeperRef.current = { x: 0, y: 0, targetX: 0, targetY: 0 };
+    ballRef.current = { x: 0, y: 0, z: 1.0, rotation: 0 };
+    kickProgressRef.current = 0;
+  };
+
+  // Shoots toward the chosen target sector
+  const shootBall = (target: GoalTarget) => {
+    if (gameState !== "ready" || balance < bet) {
+      if (balance < bet) {
+        setGameState("idle");
+      }
+      return;
+    }
 
     onBet(bet);
     setGameState("kicking");
-    setMessage("Shot in flight! Deciding match outcome...");
+    setSelectedGoal(target);
+    setLastWinAmount(null);
+
     playLocalSound("sports_ready");
 
-    // Clear previous sparkling debris
-    sparksRef.current = [];
+    kickProgressRef.current = 0;
+    currentTargetRef.current = target;
 
-    // Reset ball positions
-    ballRef.current = {
-      x: 0,
-      y: 10,
-      z: 0.1,
-      vx: 0,
-      vy: 0,
-      vz: 0,
-      spin: spin * 0.08, // magnus lift curve coefficient
-      rotation: 0
-    };
-
-    // Calculate logical final target landing coordinates
-    const goalLeft = -180;
-    const goalRight = 180;
+    // Define target shot coordinates
     let targetX = 0;
-    let targetY = 0;
+    const targetY = 135 + Math.random() * 55; // elevation height
 
-    if (selectedZone.includes("left")) targetX = goalLeft + (Math.random() * 40 - 20);
-    else if (selectedZone.includes("right")) targetX = goalRight + (Math.random() * 40 - 20);
-    else targetX = (Math.random() * 60 - 30); // center wobble
-
-    if (selectedZone.includes("top")) targetY = 175 + Math.random() * 25;
-    else if (selectedZone.includes("bot")) targetY = 25 + Math.random() * 25;
-    else targetY = 100 + (Math.random() * 50 - 25);
-
-    // Apply wind drifting horizontal forces
-    if (wind.dir === "left") targetX -= wind.speed * 8.5;
-    if (wind.dir === "right") targetX += wind.speed * 8.5;
-
-    // Shooting speed adjustments relative to physical fire power (baseline 75 ideal)
-    const stepsAmt = 35; // velocity frames
-
-    ballRef.current.vz = 9.9 / stepsAmt;
-    ballRef.current.vx = targetX / stepsAmt;
-    ballRef.current.vy = targetY / stepsAmt;
-
-    // AI Goalkeeper intelligence check
-    const keeperWillSave = Math.random() * 100 > winRate;
-    let kTargetX = 0;
-    let kTargetY = 0;
-
-    if (keeperWillSave) {
-      // Divert keeper hand DIRECTLY to block target zone
-      kTargetX = targetX;
-      kTargetY = targetY;
+    if (target === "left") {
+      targetX = -135 - Math.random() * 45;
+    } else if (target === "right") {
+      targetX = 135 + Math.random() * 45;
     } else {
-      // Goalkeeper dives to a wrong randomized sector
-      const dummyZones: ShotZone[] = [
-        "top_left", "top_right", "top_center",
-        "mid_left", "mid_right", "bot_left",
-        "bot_right", "bot_center"
-      ];
-      const selectedWrong = dummyZones.filter(z => z !== selectedZone)[Math.floor(Math.random() * (dummyZones.length - 1))];
-
-      if (selectedWrong.includes("left")) kTargetX = -150 - Math.random() * 30;
-      else if (selectedWrong.includes("right")) kTargetX = 150 + Math.random() * 30;
-      else kTargetX = (Math.random() * 40 - 20);
-
-      if (selectedWrong.includes("top")) kTargetY = 160 + Math.random() * 20;
-      else if (selectedWrong.includes("bot")) kTargetY = 25 + Math.random() * 20;
-      else kTargetY = 90 + Math.random() * 20;
+      targetX = (Math.random() - 0.5) * 45; // center
     }
 
-    // Set goalkeeper startup diving coordinates
-    keeperRef.current = {
-      x: 0,
-      y: 0,
-      targetX: kTargetX,
-      targetY: kTargetY,
-      speedFactor: 0.085
-    };
+    targetCoordsRef.current = { x: targetX, y: targetY };
 
-    let pFrame = 0;
-    const physInterval = setInterval(() => {
-      const b = ballRef.current;
-      const gk = keeperRef.current;
-      pFrame++;
+    // Mathematics of goalie dive blocking probability based on user's winRate config
+    const isSave = Math.random() * 100 > winRate;
+    isSaveRef.current = isSave;
 
-      // Update Soccer Ball horizontal flight trajectory curve
-      b.z += b.vz;
-      // Magnus physical curved arc
-      b.x += b.vx + (b.spin * (b.z / 9.9));
-      b.y += b.vy;
-      b.rotation += 0.28;
+    let diveX = 0;
+    let diveY = 0;
 
-      // Goalkeeper diving interpolation
-      if (pFrame >= 4) {
-        const ease = (pFrame - 4) / (stepsAmt - 4);
-        gk.x = gk.targetX * ease;
-        gk.y = gk.targetY * ease * 0.82;
+    if (isSave) {
+      diveX = targetX;
+      diveY = targetY;
+    } else {
+      // Divert keeper to wrong corners
+      const targets: GoalTarget[] = ["left", "center", "right"];
+      const incorrectSectors = targets.filter(t => t !== target);
+      const chosenIncorrect = incorrectSectors[Math.floor(Math.random() * incorrectSectors.length)];
+
+      if (chosenIncorrect === "left") {
+        diveX = -135 - Math.random() * 30;
+        diveY = 110 + Math.random() * 40;
+      } else if (chosenIncorrect === "right") {
+        diveX = 135 + Math.random() * 30;
+        diveY = 110 + Math.random() * 40;
+      } else {
+        diveX = (Math.random() - 0.5) * 35;
+        diveY = 30 + Math.random() * 30;
       }
+    }
 
-      // Landing depth check on the active goal net grid line (z=10.0)
-      if (pFrame >= stepsAmt) {
-        clearInterval(physInterval);
-
-        const borderLeft = -225;
-        const borderRight = 225;
-        const borderTop = 225; // height limits
-
-        const inHoriz = b.x >= borderLeft && b.x <= borderRight;
-        const inVert = b.y >= 0 && b.y <= borderTop;
-        const isCleanGoal = inHoriz && inVert;
-
-        // OUT/MISS result
-        if (!isCleanGoal) {
-          setGameState("missed");
-          playLocalSound("lose");
-          setMessage("MISS! Strike went completely wide or flew over the crossbar!");
-          setCurrentStreak(0);
-          setStats((prev) => ({
-            ...prev,
-            shots: prev.shots + 1,
-            history: ["miss", ...prev.history].slice(0, 10)
-          }));
-          return;
-        }
-
-        // SAVE outcome check (distance from glove hands to collision spot)
-        const blockDist = Math.sqrt(Math.pow(b.x - gk.x, 2) + Math.pow(b.y - gk.y, 2));
-        const gkSaved = blockDist < 70;
-
-        if (gkSaved) {
-          setGameState("saved");
-          playLocalSound("lose");
-          setMessage("SAVED! The goalkeeper blocked the goal nicely!");
-          
-          // Bounce ball off gloves
-          b.vx = (b.x < gk.x ? -6 : 6);
-          b.vy = 2.5;
-          b.spin = 0;
-
-          // Block splash sparks
-          triggerCelebrationSparks(b.x, b.y, 25, true);
-
-          setCurrentStreak(0);
-          setStats((prev) => ({
-            ...prev,
-            shots: prev.shots + 1,
-            history: ["save", ...prev.history].slice(0, 10)
-          }));
-        } else {
-          // GRAND GOAL SCORED!
-          setGameState("goal");
-          playLocalSound("win");
-          setMessage("GOAL!!! Tremendous strike tucked smoothly into the nets!");
-
-          // Ripple Goal Net elastic meshes
-          netResponseRef.current = {
-            force: 1.0,
-            x: 400 + b.x,
-            y: 330 - b.y
-          };
-
-          // Spark colorful match festive particles on score zone!
-          triggerCelebrationSparks(b.x, b.y, 65, false);
-
-          const nextStreak = currentStreak + 1;
-          setCurrentStreak(nextStreak);
-          setStats((prev) => {
-            const highStreakRecord = Math.max(prev.highestStreak, nextStreak);
-            return {
-              goals: prev.goals + 1,
-              shots: prev.shots + 1,
-              highestStreak: highStreakRecord,
-              history: ["goal", ...prev.history].slice(0, 10)
-            };
-          });
-
-          // Payout rewards
-          onWin(bet * multiplier);
-        }
-      }
-    }, 18);
+    diveCoordsRef.current = { x: diveX, y: diveY };
   };
 
-  // Reset next penalty shootout attempt 
-  const handleResetAttempt = () => {
-    playLocalSound("click");
-    setSelectedZone(null);
-    setHoveredZone(null);
-    setGameState("idle");
-    setMessage("Select another spot on the goal grid to lock aim!");
-    generateWind();
-
-    // Reset ball trajectory structures
-    ballRef.current = {
-      x: 0,
-      y: 0,
-      z: 0.1,
-      vx: 0,
-      vy: 0,
-      vz: 0,
-      spin: 0,
-      rotation: 0
-    };
-
-    // Return keeper to center
-    keeperRef.current = {
-      x: 0,
-      y: 0,
-      targetX: 0,
-      targetY: 0,
-      speedFactor: 0.08
-    };
-
-    netResponseRef.current = {
-      force: 0,
-      x: 0,
-      y: 0
-    };
+  const handleStartGame = () => {
+    playLocalSound("sports_ready");
+    setGameState("ready");
+    resetFieldPosition();
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#030d07] text-[#ecfdf4] font-sans overflow-hidden select-none relative">
+    <div className="flex flex-col h-full bg-[#010804] text-[#ecfdf5] font-sans overflow-hidden select-none relative">
       
-      {/* Stadium Crowd Atmospheric Backdrop */}
-      <div className="absolute inset-0 z-0 opacity-15 bg-[url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1200&auto=format&fit=crop')] bg-cover bg-center blend-multiply" />
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#010704]/95 via-transparent to-[#04120a]/95 pointer-events-none" />
+      {/* 100% Vector Stadium field backdrop elements (Loaded instantly, 0ms latency) */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#010b05] via-[#021d0f] to-[#043317] pointer-events-none" />
 
-      {/* COMPACT MAIN HEADER (56px) */}
-      <header className="flex items-center justify-between px-3 h-14 bg-[#051109] border-b border-emerald-500/10 relative z-20 shrink-0 shadow-lg">
+      {/* CORE TOP HEADER NAV SECTION */}
+      <header className="flex items-center justify-between px-4 h-14 bg-[#02130a]/90 border-b border-emerald-500/15 relative z-20 shrink-0 backdrop-blur-md">
         
-        {/* Back Lobby navigation */}
         <button 
           onClick={onExit}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0e2115] hover:bg-[#1a3d27] text-gray-300 hover:text-white rounded-lg border border-emerald-500/20 active:scale-95 transition-all text-[11px] font-black uppercase tracking-wider shadow"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0e2717] hover:bg-[#184428] text-gray-300 hover:text-white rounded-xl border border-emerald-500/20 active:scale-95 transition-all text-[11px] font-black uppercase tracking-wider shadow"
         >
-          <LogOut size={11} className="stroke-[3]" />
+          <LogOut size={12} className="stroke-[3]" />
           <span>Exit</span>
         </button>
 
-        {/* Title Badge with active signal pulsating */}
         <div className="flex flex-col items-center">
           <div className="flex items-center gap-1.5">
-            <span className="text-emerald-400 font-extrabold italic tracking-wider text-sm uppercase flex items-center gap-1">
+            <span className="text-emerald-400 font-extrabold tracking-wider text-xs uppercase leading-none">
               PRO GOAL KICK
             </span>
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-ping" />
           </div>
-          <span className="text-[7px] font-black tracking-[0.3em] text-emerald-600 uppercase">Stadium Shootout</span>
+          <p className="text-[7.5px] font-bold tracking-[0.25em] text-emerald-500/50 uppercase leading-none mt-1">SUPER FAST SHOT</p>
         </div>
 
-        {/* Balance Display formatting */}
-        <div className="flex items-center gap-1 bg-black/40 rounded-full px-3 py-1 border border-emerald-500/15 shadow-inner">
+        {/* Dynamic Balance Chip */}
+        <div className="flex items-center gap-1.5 bg-black/40 rounded-full px-3 py-1.5 border border-emerald-500/20 shadow-inner">
           <Zap size={11} className="text-emerald-400 fill-emerald-400" />
-          <span className="text-emerald-400 font-black text-xs leading-none">
+          <span className="text-emerald-400 font-mono font-black text-xs leading-none">
             RS {balance.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
           </span>
         </div>
 
       </header>
 
-      {/* COMPACT FLOATING STATS STRIP VIEW (40px) */}
-      <div className="shrink-0 h-10 px-3 bg-[#07190e]/95 border-b border-emerald-500/5 flex items-center justify-between text-[11px] text-emerald-400 font-bold tracking-tight relative z-20">
+      {/* STATED STATUS HUD BAR */}
+      <div className="shrink-0 h-10 px-4 bg-[#031c0e]/95 border-b border-emerald-500/10 flex items-center justify-between text-[11px] text-emerald-400 font-bold tracking-tight relative z-20">
         
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 text-[10px]">
-            <Trophy size={11} className="text-[#D4AF37]" strokeWidth={2.5} />
-            <span className="text-neutral-400 font-medium">Scored:</span>
-            <span className="text-white font-extrabold">{stats.goals}</span>
+          <div className="flex items-center gap-1">
+            <Trophy size={11} className="text-yellow-400 stroke-[2.5]" />
+            <span className="text-emerald-300/70 text-[10px]">Winnings:</span>
+            <span className="text-yellow-400 font-extrabold font-mono">{multiplier}x Profit</span>
           </div>
 
-          <div className="flex items-center gap-1 text-[10px]">
-            <span className="text-neutral-400 font-medium">Wins:</span>
-            <span className="text-white font-extrabold">{stats.shots > 0 ? `${((stats.goals / stats.shots) * 100).toFixed(0)}%` : "0%"}</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          {currentStreak > 0 && (
-            <div className="flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded text-[9px] text-amber-400 font-black animate-pulse border border-amber-500/25">
-              <Flame size={10} className="fill-amber-500 stroke-[2.5]" />
-              <span>{currentStreak} STREAK</span>
+          {streak > 0 && (
+            <div className="flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-lg text-[9.5px] text-amber-500 font-black border border-amber-500/20 animate-pulse">
+              <Flame size={11} className="fill-amber-500 stroke-[2.5]" />
+              <span>{streak} STREAK</span>
             </div>
           )}
+        </div>
 
-          {/* Sound configuration trigger toggle */}
+        <div className="flex items-center gap-3">
+          <span className="text-[9px] font-bold text-emerald-500/40 uppercase tracking-wider hidden sm:inline">
+            Best Streak: {bestStreak} goals
+          </span>
+
           <button 
+            type="button"
             onClick={() => {
-              if (soundEnabled) {
-                setSoundEnabled(false);
-              } else {
-                setSoundEnabled(true);
-                playSound("click");
-              }
+              setSoundEnabled(!soundEnabled);
+              playLocalSound("click");
             }}
-            className="p-1 rounded bg-[#0b2414] hover:bg-[#11381f] text-neutral-400 hover:text-white border border-emerald-500/10 transition-all active:scale-95 shadow"
+            className="p-1.5 rounded-lg bg-[#0c2716] hover:bg-[#123c22] text-emerald-400 border border-emerald-500/15 transition-all active:scale-95 shadow"
+            title="Toggle Audio"
           >
             {soundEnabled ? <Volume2 size={11} className="text-emerald-400" /> : <VolumeX size={11} />}
-          </button>
-
-          {/* Guide panel selector */}
-          <button 
-            onClick={() => {
-              playLocalSound("click");
-              setShowGuide(true);
-            }}
-            className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-[#38BDF8] bg-sky-500/10 px-2 py-1 rounded-md border border-sky-500/15"
-          >
-            <Info size={10} />
-            <span>Rules</span>
           </button>
         </div>
 
       </div>
 
-      {/* HELP INSTRUCTIONS RULES OVERLAY MODEL */}
-      <AnimatePresence>
-        {showGuide && (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/90 backdrop-blur-md z-40 flex items-center justify-center p-4"
-          >
-            <motion.div 
-              initial={{ scale: 0.95, y: 15 }} 
-              animate={{ scale: 1, y: 0 }} 
-              exit={{ scale: 0.95, y: 15 }}
-              className="bg-[#041209] border border-emerald-500/20 max-w-sm w-full rounded-[2rem] p-5 shadow-2xl relative overflow-hidden"
-            >
-              <h3 className="text-base font-black italic tracking-wide text-emerald-400 flex items-center gap-1.5 uppercase border-b border-emerald-500/10 pb-3">
-                <Sparkles size={16} className="text-emerald-400" /> Penalty Shootout Guide
-              </h3>
-              
-              <div className="space-y-3.5 text-xs text-neutral-300 leading-relaxed font-medium pt-4">
-                <div className="flex gap-2.5 items-start">
-                  <span className="text-base text-emerald-400">🥅</span>
-                  <p><strong>Direct Aiming</strong>: Tap directly anywhere on the 3D Goal mesh grid in the middle pitch to select your shoot direction.</p>
-                </div>
-
-                <div className="flex gap-2.5 items-start">
-                  <span className="text-base text-emerald-400">🌪️</span>
-                  <p><strong>Stadium Wind</strong>: Wind lines sweep across the sky dynamically. Right or left winds bend the soccer ball's trajectory, so compensate accordingly!</p>
-                </div>
-
-                <div className="flex gap-2.5 items-start">
-                  <span className="text-base text-emerald-400">⚙️</span>
-                  <p><strong>Spin Curves</strong>: Drag the <strong>Spin slider</strong> at the bottom console to curve the soccer ball in mid-air and slip past the diving goalkeeper's fingers!</p>
-                </div>
-
-                <div className="flex gap-2.5 items-start">
-                  <span className="text-base text-emerald-400">⚡</span>
-                  <p><strong>Select Power</strong>: Control shot power accurately. Safe, medium power is accurate; critical or maximum power speeds up the shot but runs the risk of hitting the post or flying wide!</p>
-                </div>
-              </div>
-
-              <button 
-                onClick={() => {
-                  playLocalSound("click");
-                  setShowGuide(false);
-                }}
-                className="w-full mt-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-extrabold text-xs uppercase tracking-widest rounded-xl shadow-lg active:scale-95 transition-all text-center"
-              >
-                Close Guidelines
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* CORE GRAPHICS ARENA CANVAS PANEL - FLEX-1 AUTO ADJUSTS HEIGHT */}
+      {/* CORE ARENA CANVAS COMPONENT */}
       <div 
         ref={containerRef}
-        className="flex-1 min-h-[190px] relative bg-[#020d06] border-b border-[#0f2e1b] overflow-hidden"
+        className="flex-1 min-h-[200px] relative bg-[#010804] border-b border-[#041c0d] overflow-hidden"
       >
-        {/* Dynamic paint operation canvas */}
-        <canvas 
-          ref={canvasRef} 
-          onClick={handleCanvasClick}
-          onMouseMove={handleCanvasMouseMove}
-          onMouseLeave={handleMouseLeave}
-          className={`block w-full h-full cursor-${hoveredZone ? 'pointer' : 'default'} transition-all`}
-        />
+        <canvas ref={canvasRef} className="block w-full h-full" />
 
-        {/* Dynamic Stadium wind Telemetry Banner Overlay */}
-        <div className="absolute top-3 left-3 bg-black/60 rounded-xl px-2.5 py-1.5 border border-emerald-500/10 text-left flex items-center gap-1.5 shadow-md">
-          <Compass size={11} className={`text-sky-400 ${wind.dir !== "none" ? "animate-spin-slow" : ""}`} />
-          <div className="leading-tight flex flex-col">
-            <span className="text-[7px] font-bold text-neutral-400 uppercase tracking-widest">STADIUM WIND</span>
-            <span className="text-[9px] font-mono font-black text-sky-300">
-              {wind.dir === "none" ? "CALM 0 M/S" : `${wind.dir.toUpperCase()} ${wind.speed} M/S`}
+        {/* 1. LOBBY IDLE WELCOME PANEL (High fidelity vector drawn, 0ms latency) */}
+        {gameState === "idle" && (
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.25 }}
+              className="max-w-xs bg-gradient-to-b from-[#092c15] to-[#03150a] border border-emerald-500/30 p-6 rounded-3xl shadow-[0_15px_30px_rgba(0,0,0,0.5)] relative overflow-hidden"
+            >
+              {/* Corner tech accents */}
+              <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-emerald-500/40" />
+              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-emerald-500/40" />
+
+              <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-3 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+                <Sparkles size={20} className="animate-spin" style={{ animationDuration: '6s' }} />
+              </div>
+
+              <h2 className="text-base font-black tracking-wider text-white uppercase italic">
+                STADIUM MATCH OFF
+              </h2>
+              <p className="text-[10px] text-emerald-400/60 font-bold uppercase tracking-widest leading-none mt-1">Ready for Kicking?</p>
+
+              <div className="my-4 py-2 border-y border-emerald-500/10 bg-black/30 rounded-xl">
+                <span className="text-[10px] font-semibold text-gray-300 block mb-0.5">CURRENT COIN BET</span>
+                <span className="text-base font-mono font-black text-yellow-400">RS {bet}</span>
+              </div>
+
+              <button
+                onClick={handleStartGame}
+                className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-black text-xs uppercase tracking-widest rounded-xl border border-emerald-400 shadow-lg active:scale-95 transition-all flex items-center justify-center gap-1.5"
+              >
+                <Play size={13} fill="currentColor" />
+                <span>START KICK MATCH</span>
+              </button>
+            </motion.div>
+          </div>
+        )}
+
+        {/* 2. THREE DYNAMIC TARGET ZONES (Active only in "ready" state) */}
+        {gameState === "ready" && (
+          <div className="absolute inset-0 top-[22%] h-[44%] left-[21.5%] w-[57%] grid grid-cols-3 gap-3.5 z-30 pointer-events-auto">
+            
+            {/* LEFT AREA TARGET */}
+            <button
+              onClick={() => shootBall("left")}
+              disabled={balance < bet}
+              className="group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-500/20 hover:border-[#10B981] bg-black/25 hover:bg-emerald-500/15 active:scale-95 transition-all text-center select-none"
+            >
+              <span className="absolute inset-0 bg-gradient-to-t from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+              <div className="w-8 h-8 rounded-full bg-black/70 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform shadow-lg group-hover:border-[#10B981]">
+                <Target size={14} className="group-hover:animate-pulse" />
+              </div>
+              <span className="text-[10px] font-black text-emerald-300 tracking-wider uppercase mt-2 group-hover:text-white leading-none">
+                LEFT
+              </span>
+              <span className="text-[7px] font-bold text-emerald-500/50 leading-none mt-0.5">TOP CORNER</span>
+            </button>
+
+            {/* CENTER AREA TARGET */}
+            <button
+              onClick={() => shootBall("center")}
+              disabled={balance < bet}
+              className="group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-555/20 hover:border-yellow-410 bg-black/25 hover:bg-yellow-500/15 active:scale-95 transition-all text-center select-none"
+            >
+              <span className="absolute inset-0 bg-gradient-to-t from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+              <div className="w-8 h-8 rounded-full bg-black/70 border border-emerald-500/30 flex items-center justify-center text-yellow-400 group-hover:scale-110 transition-transform shadow-lg group-hover:border-yellow-410">
+                <Target size={14} className="group-hover:animate-pulse" />
+              </div>
+              <span className="text-[10px] font-black text-yellow-500 tracking-wider uppercase mt-2 group-hover:text-white leading-none">
+                CENTER
+              </span>
+              <span className="text-[7px] font-bold text-yellow-500/50 leading-none mt-0.5">GOAL KICK</span>
+            </button>
+
+            {/* RIGHT AREA TARGET */}
+            <button
+              onClick={() => shootBall("right")}
+              disabled={balance < bet}
+              className="group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-emerald-500/20 hover:border-[#10B981] bg-black/25 hover:bg-emerald-500/15 active:scale-95 transition-all text-center select-none"
+            >
+              <span className="absolute inset-0 bg-gradient-to-t from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" />
+              <div className="w-8 h-8 rounded-full bg-black/70 border border-emerald-500/30 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform shadow-lg group-hover:border-[#10B981]">
+                <Target size={14} className="group-hover:animate-pulse" />
+              </div>
+              <span className="text-[10px] font-black text-emerald-300 tracking-wider uppercase mt-2 group-hover:text-white leading-none">
+                RIGHT
+              </span>
+              <span className="text-[7px] font-bold text-emerald-500/50 leading-none mt-0.5">TOP CORNER</span>
+            </button>
+
+          </div>
+        )}
+
+        {/* TAP TO SHOT PROMPT FOR THE READY STATE */}
+        {gameState === "ready" && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/85 border border-emerald-500/15 rounded-full px-4 py-1 flex items-center gap-1.5 shadow-lg max-w-sm text-center">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span className="text-[9px] font-black tracking-widest text-[#FFFFFF] uppercase">
+              🎯 TAP A TARGET RING ABOVE TO SHOOT!
             </span>
           </div>
-        </div>
+        )}
 
-        {/* Dynamic central scoreboard feedback text announcer */}
-        <div className="absolute top-3 right-3 bg-black/60 rounded-xl px-2.5 py-1.5 border border-emerald-500/10 text-right flex flex-col justify-center min-w-[120px] shadow-md">
-          <span className="text-[7.5px] font-bold text-emerald-400 tracking-wider">ANNOUNCER METER</span>
-          <span className="text-[8.5px] font-bold text-gray-200 uppercase truncate mt-0.5 leading-none max-w-[150px]">
-            {gameState === "idle" ? "WAITING FOR AIM" : gameState === "ready" ? "READY TO Strike" : gameState === "kicking" ? "Kicking BALL!" : gameState === "goal" ? "GOAL SCORED!" : gameState === "saved" ? "SHOT SAVED" : "SHOT MISSED"}
-          </span>
-        </div>
-
-        {/* BIG NEON BANNER RESULT OVERLAYS ON CANVAS */}
+        {/* GOAL/SAVED CELEBRATION SHIELDS */}
         <AnimatePresence>
           {gameState === "goal" && (
             <motion.div 
-              initial={{ scale: 0.75, opacity: 0, y: 15 }}
-              animate={{ scale: [1, 1.1, 1], opacity: 1, y: 0 }}
+              initial={{ scale: 0.72, opacity: 0, y: 15 }}
+              animate={{ scale: [1, 1.15, 1], opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="absolute left-1/2 top-[35%] -translate-x-1/2 bg-[#EAB308]/95 text-black font-sans shadow-2xl px-6 py-2.5 rounded-2xl text-center z-18 border border-[#FFEB3B] flex flex-col items-center select-none"
+              className="absolute left-1/2 top-[30%] -translate-x-1/2 bg-gradient-to-r from-orange-600 to-red-600 text-black shadow-2xl px-6 py-3.5 rounded-2xl z-40 border border-amber-400 flex flex-col items-center select-none text-center min-w-[200px]"
             >
-              <div className="flex items-center gap-1">
-                <Trophy size={14} className="animate-bounce" />
-                <span className="font-sans font-black tracking-widest uppercase italic text-xs">
+              <div className="flex items-center gap-1.5">
+                <Trophy size={16} className="text-yellow-300 animate-bounce" />
+                <span className="font-sans font-black tracking-widest uppercase italic text-xs text-white leading-none">
                   GOAL SCORED!
                 </span>
               </div>
-              <span className="font-mono font-black text-sm mt-0.5">
-                +RS {(bet * multiplier).toFixed(0)}
-              </span>
+              {lastWinAmount && (
+                <span className="font-mono font-black text-lg text-yellow-300 mt-1 leading-none animate-pulse">
+                  +RS {lastWinAmount.toLocaleString()}
+                </span>
+              )}
             </motion.div>
           )}
 
           {gameState === "saved" && (
             <motion.div 
-              initial={{ scale: 0.8, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
+              initial={{ scale: 0.76, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute left-1/2 top-[35%] -translate-x-1/2 bg-rose-650/95 text-white bg-red-650 font-sans shadow-2xl px-5 py-2.5 rounded-2xl text-center z-18 border border-red-450 flex flex-col items-center select-none"
+              className="absolute left-1/2 top-[30%] -translate-x-1/2 bg-[#1e1b4b]/95 text-[#f43f5e] shadow-2xl px-5 py-3 rounded-2xl z-40 border border-purple-800 flex flex-col items-center select-none text-center min-w-[180px]"
             >
-              <span className="font-sans font-black tracking-widest uppercase italic text-xs">
+              <span className="font-sans font-black tracking-widest uppercase italic text-xs leading-none">
                 KEEPER SAVED!
               </span>
-              <span className="text-[10px] text-red-200 mt-0.5 font-bold">Awesome diving block</span>
+              <span className="text-[9px] text-gray-300 mt-1 font-bold block leading-none">TIGHT LUCK! DIVE BLOCKED.</span>
             </motion.div>
           )}
 
-          {gameState === "missed" && (
+          {gameState === "kicking" && (
             <motion.div 
-              initial={{ scale: 0.8, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="absolute left-1/2 top-[35%] -translate-x-1/2 bg-gray-800/95 text-gray-200 font-sans shadow-2xl px-5 py-2.5 rounded-2xl text-center z-18 border border-gray-650 flex flex-col items-center select-none"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute inset-0 bg-transparent flex items-center justify-center z-20 pointer-events-none"
             >
-              <span className="font-sans font-black tracking-widest uppercase italic text-xs text-red-400">
-                SHOT WIDE OUT!
-              </span>
-              <span className="text-[10px] text-gray-400 mt-0.5 font-bold">Flew out of boundary nets</span>
+              <div className="bg-black/60 px-4 py-1.5 rounded-full border border-emerald-500/20 text-emerald-400 font-black text-[10px] uppercase tracking-widest animate-pulse">
+                ⚽ BALL IN FLIGHT...
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Dynamic Next Shoot trigger button when result finishes */}
-        {gameState !== "idle" && gameState !== "ready" && gameState !== "kicking" && (
-          <motion.div 
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-32px)] max-w-xs z-30"
-          >
-            <button
-              onClick={handleResetAttempt}
-              className="w-full py-3 bg-[#132d1d] hover:bg-[#1b3d27] border-2 border-emerald-500/30 text-white font-extrabold text-xs uppercase tracking-widest rounded-xl hover:scale-102 active:scale-95 transition-all text-center flex items-center justify-center gap-1.5 shadow-xl shadow-black/80 font-black"
-            >
-              <RotateCcw size={12} className="stroke-[3]" />
-              <span>Tap for Next Shoot</span>
-            </button>
-          </motion.div>
-        )}
-
       </div>
 
-      {/* COMPACT STADIUM FOOTER CONTROLS CONSOLE (156px) */}
-      <footer className="shrink-0 bg-[#0e1811] border-t border-emerald-500/10 p-3.5 space-y-3 relative z-15 shadow-2xl">
+      {/* FOOTER COMMAND CONTROL BAR */}
+      <footer className="shrink-0 bg-[#021006] border-t border-emerald-500/15 p-4 space-y-3.5 relative z-10 shadow-2xl">
         
-        {/* Sliders in a compact 2-Column row */}
-        <div className="grid grid-cols-2 gap-3 bg-black/45 p-2 rounded-xl border border-[#173322]">
+        {/* CHIP/COIN SELECTION ZONE */}
+        <div className="flex flex-col gap-2">
           
-          {/* Spin curve setting */}
-          <div className="space-y-1 text-[9px] font-black uppercase tracking-wider text-neutral-400 font-sans">
-            <div className="flex justify-between">
-              <span>BALL SPIN</span>
-              <span className="text-indigo-400">{spin === 0 ? "MID" : spin < 0 ? `LEFT L${Math.abs(spin)}` : `RIGHT R${spin}`}</span>
-            </div>
-            <input 
-              type="range"
-              min="-25"
-              max="-0" // Lock Spin options or allow direct full control: wait, let's keep standard left and right curves!
-              // Wait, to allow full range of curve, min is -25 and max is 25:
-              {...{min: -25, max: 25}}
-              value={spin}
-              disabled={gameState !== "idle" && gameState !== "ready"}
-              onChange={(e) => {
-                setSpin(Number(e.target.value));
-              }}
-              className="w-full accent-indigo-500 bg-neutral-800 rounded h-1 cursor-pointer focus:outline-none"
-            />
-          </div>
-
-          {/* Shot firepower setting */}
-          <div className="space-y-1 text-[9px] font-black uppercase tracking-wider text-neutral-400 font-sans">
-            <div className="flex justify-between">
-              <span>FIRE FORCE</span>
-              <span className={power > 85 ? "text-red-400 animate-pulse" : "text-emerald-400"}>{power}%</span>
-            </div>
-            <input 
-              type="range"
-              min="45"
-              max="100"
-              value={power}
-              disabled={gameState !== "idle" && gameState !== "ready"}
-              onChange={(e) => {
-                setPower(Number(e.target.value));
-              }}
-              className="w-full accent-emerald-500 bg-neutral-800 rounded h-1 cursor-pointer focus:outline-none"
-            />
-          </div>
-
-        </div>
-
-        {/* Quick chip increment pills */}
-        <div className="flex justify-between items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-          {[10, 50, 100, 500, 1000].map((val) => (
-            <button
-              key={val}
-              disabled={gameState === "kicking"}
-              onClick={() => {
-                playLocalSound("click");
-                setBet(prev => Math.min(balance, prev + val));
-              }}
-              className="flex-1 min-w-[50px] py-1 bg-[#12241a] hover:bg-[#1a3827]/80 text-[#a3ebd5] border border-emerald-500/10 rounded-lg text-[10.5px] font-black font-mono leading-none transition-all hover:scale-102 active:scale-95 select-none"
-            >
-              +{val}
-            </button>
-          ))}
-        </div>
-
-        {/* Stake wager inputs and execute controls */}
-        <div className="grid grid-cols-12 gap-2">
-          
-          <div className="col-span-4 grid grid-cols-2 gap-1.5">
-            <button
-              disabled={gameState === "kicking"}
-              onClick={() => {
-                playLocalSound("click");
-                setBet(prev => Math.min(balance, prev * 2));
-              }}
-              className="py-2 bg-[#122419] hover:bg-[#1a3525] border border-emerald-500/15 text-emerald-450 leading-none text-[10px] font-black uppercase rounded-lg active:scale-95 transition-all w-full text-center text-[#a1f3c5]"
-            >
-              2X
-            </button>
-            <button
-              disabled={gameState === "kicking"}
-              onClick={() => {
-                playLocalSound("click");
-                setBet(minBet);
-              }}
-              className="py-2 bg-[#122419] hover:bg-[#1a3525] border border-emerald-500/15 text-neutral-400 leading-none text-[10px] font-black uppercase rounded-lg active:scale-95 transition-all w-full text-center"
-            >
-              MIN
-            </button>
-          </div>
-
-          <button 
-            onClick={executeShot}
-            disabled={gameState !== "ready" || balance < bet}
-            className={`col-span-8 h-9 border-b-2 rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5 select-none font-serif italic uppercase active:scale-[0.98] ${
-              gameState !== "ready" 
-                ? 'bg-zinc-805 bg-[#17261d] border-emerald-950/20 text-[#a3ebd5]/30 cursor-not-allowed'
-                : balance < bet
-                ? 'bg-red-950/20 text-red-500 border-red-500/20 cursor-not-allowed'
-                : 'bg-gradient-to-r from-emerald-500 via-[#39FF14] to-emerald-600 hover:from-emerald-400 hover:to-lime-400 text-black font-black border-[#25c40e] animate-shimmer cursor-pointer'
-            }`}
-          >
-            <Target size={13} className={gameState === "ready" ? "animate-spin-slow text-black" : "text-[#a3ebd5]/30"} />
-            <span className="text-[11px] leading-tight font-sans font-black tracking-wider">
-              {gameState === "kicking" ? "STRIKING..." : `SHOOT PENALTY: RS ${bet}`}
+          <div className="flex items-center justify-between text-[#86e2b6]/60 text-[9.5px] font-black uppercase tracking-wider">
+            <span className="flex items-center gap-1.5 font-bold">
+              <Zap size={11} className="text-emerald-400" />
+              SELECT COIN VALUE (BET STAKE)
             </span>
+            <span className="font-mono text-emerald-400/40">
+              STAKE: RS {bet}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            
+            {/* MINUS ADJUST STAKE BUTTON */}
+            <button
+              onClick={() => adjustBet(-10)}
+              disabled={gameState === "kicking"}
+              className="w-10 h-10 shrink-0 bg-[#082210] hover:bg-[#123e1f] border border-emerald-500/20 rounded-full flex items-center justify-center text-emerald-400 hover:text-white transition-all active:scale-95 disabled:opacity-30"
+              title="Decrease Stake"
+            >
+              <Minus size={13} className="stroke-[3]" />
+            </button>
+
+            {/* COIN CODES SELECTION */}
+            <div className="flex-1 grid grid-cols-5 gap-1.5 py-0.5">
+              {bettingCoins.map((coinVal) => {
+                const isSelected = bet === coinVal;
+                
+                let coinColor = "from-amber-700 via-amber-600 to-amber-800 border-amber-500/30";
+                if (coinVal === 50) coinColor = "from-slate-500 via-slate-300 to-slate-600 border-slate-300/30";
+                if (coinVal === 100) coinColor = "from-yellow-600 via-yellow-400 to-amber-600 border-yellow-400/30";
+                if (coinVal === 500) coinColor = "from-indigo-700 via-blue-500 to-indigo-900 border-blue-400/30";
+                if (coinVal === 1000) coinColor = "from-emerald-700 via-emerald-500 to-teal-800 border-emerald-400/30";
+
+                return (
+                  <button
+                    key={coinVal}
+                    disabled={gameState === "kicking"}
+                    onClick={() => {
+                      playLocalSound("click");
+                      setBet(coinVal);
+                    }}
+                    className={`relative aspect-square py-1 px-0.5 bg-gradient-to-br ${coinColor} border-2 rounded-full cursor-pointer flex flex-col items-center justify-center transition-all select-none hover:scale-105 active:scale-95 disabled:opacity-30 shadow-md ${
+                      isSelected 
+                        ? 'ring-4 ring-offset-2 ring-emerald-500 ring-offset-[#021006] scale-110 z-10' 
+                        : 'opacity-80'
+                    }`}
+                  >
+                    <span className="text-[7.5px] text-white/50 uppercase font-bold leading-none scale-90">COIN</span>
+                    <span className="text-xs font-mono font-extrabold text-[#ffffff] tracking-tighter mt-0.5 leading-none">
+                      {coinVal}
+                    </span>
+                    {isSelected && (
+                      <span className="absolute -top-1 -right-0.5 bg-emerald-500 text-black rounded-full p-0.5 border border-black shadow">
+                        <Sparkles size={6} className="fill-black" />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* PLUS ADJUST STAKE BUTTON */}
+            <button
+              onClick={() => adjustBet(10)}
+              disabled={gameState === "kicking"}
+              className="w-10 h-10 shrink-0 bg-[#082210] hover:bg-[#123e1f] border border-emerald-500/20 rounded-full flex items-center justify-center text-emerald-400 hover:text-white transition-all active:scale-95 disabled:opacity-30"
+              title="Increase Stake"
+            >
+              <Plus size={13} className="stroke-[3]" />
+            </button>
+
+          </div>
+
+        </div>
+
+        {/* DOUBLE & MIN QUICK PRESET ROW */}
+        <div className="grid grid-cols-2 gap-2">
+          
+          <button
+            disabled={gameState === "kicking"}
+            onClick={() => {
+              playLocalSound("click");
+              setBet(prev => Math.min(balance || minBet, prev * 2));
+            }}
+            className="py-2.5 bg-[#082210] hover:bg-[#113a1d] border border-emerald-500/10 text-emerald-400 hover:text-white text-[10px] font-black uppercase rounded-xl active:scale-95 transition-all text-center tracking-wider"
+          >
+            DOUBLE BET (2X)
+          </button>
+
+          <button
+            disabled={gameState === "kicking"}
+            onClick={() => {
+              playLocalSound("click");
+              setBet(minBet);
+            }}
+            className="py-2.5 bg-[#082210] hover:bg-[#113a1d] border border-emerald-500/10 text-emerald-300 hover:text-white text-[10px] font-black uppercase rounded-xl active:scale-95 transition-all text-center tracking-wider"
+          >
+            MIN BET ({minBet})
           </button>
 
         </div>
 
       </footer>
-
-      {/* COMPACT STREAK HISTORIES DOTS ROW BOTTOM-BAR (28px) */}
-      <div className="shrink-0 h-7 bg-[#050b07] border-t border-emerald-500/5 px-3 flex items-center justify-between text-[8px] font-black uppercase text-neutral-500 tracking-wider">
-        <span>Streak Peak: <span className="text-[#39FF14] font-mono">{stats.highestStreak} MAX</span></span>
-        
-        {/* Past shot history dots inline */}
-        <div className="flex items-center gap-1 max-w-[155px] overflow-hidden">
-          {stats.history.slice(0, 6).map((record, index) => (
-            <span 
-              key={index} 
-              className={`text-[7px] font-extrabold px-1 py-0.5 rounded leading-none shrink-0 border ${
-                record === "goal" 
-                  ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/25" 
-                  : record === "save" 
-                  ? "bg-rose-500/15 text-rose-450 border-rose-500/25" 
-                  : "bg-zinc-800/20 text-neutral-400 border-neutral-700/20"
-              }`}
-            >
-              {record === "goal" ? "GOAL" : record === "save" ? "SAVE" : "WID"}
-            </span>
-          ))}
-        </div>
-      </div>
 
     </div>
   );

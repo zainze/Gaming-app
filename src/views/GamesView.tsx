@@ -34,24 +34,20 @@ import { setSoundActiveGameId } from "../lib/sounds";
 
 // Game Components
 import CoinFlip from "../components/CoinFlip";
-import SpinWheel from "../components/SpinWheel";
 import SwipeMaster from "../components/SwipeMaster";
 import { LuckyChests } from "../components/LuckyChests";
 import { DiceRoll } from "../components/DiceRoll";
 import ThreeCardSlipper from "../components/ThreeCardSlipper";
 import { Aviator } from "../components/Aviator";
 import { RocketCrash } from "../components/RocketCrash";
-import { MoonCrash } from "../components/MoonCrash";
 import { FruitSlots } from "../components/FruitSlots";
 import { TreasureHunt } from "../components/TreasureHunt";
-import { WheelOfFortune } from "../components/WheelOfFortune";
 import { ColorMatch } from "../components/ColorMatch";
 import { FruitNinja } from "../components/FruitNinja";
 import { TeenPatti } from "../components/TeenPatti";
 import { BannerSlider } from "../components/BannerSlider";
 import { PlinkoPro } from "../components/PlinkoPro";
 import { MinesFinder } from "../components/MinesFinder";
-import { GoldScratch } from "../components/GoldScratch";
 import { DojoCards } from "../components/DojoCards";
 import { SpaceDice } from "../components/SpaceDice";
 import { DragonTiger } from "../components/DragonTiger";
@@ -148,18 +144,14 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
 
   const defaultGamesMeta: Record<string, any> = {
     slipper: { title: "Slipper", category: "Cards", image: "https://images.unsplash.com/photo-1626775238053-4315516ebaec?q=80&w=400&auto=format&fit=crop" },
-    spin: { title: "Spin", category: "Slot", image: "https://cdn-icons-png.flaticon.com/512/1210/1210515.png" },
     coin: { title: "Coin", category: "Blockchain", image: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778146981/game-coin-a-good-investment_lqjtaj.webp" },
     swipe: { title: "Swipe", category: "Hot", image: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" },
     chests: { title: "Chests", category: "Slot", image: "https://cdn-icons-png.flaticon.com/512/3233/3233483.png" },
     dice: { title: "Dice", category: "Blockchain", image: "https://cdn-icons-png.flaticon.com/512/3533/3533966.png" },
-    scratch: { title: "Scratch", category: "Slot", image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop" },
     aviator: { title: "Aviator", category: "Hot", image: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778147101/aviator_banner_z0j7v8.png" },
     rocket_crash: { title: "Rocket", category: "Hot", image: "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?q=80&w=400&auto=format&fit=crop" },
-    moon_crash: { title: "Moon", category: "Hot", image: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=400&auto=format&fit=crop" },
     fruit_slots: { title: "Slots", category: "Classic", image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
     treasure_hunt: { title: "Treasure", category: "Classic", image: "https://images.unsplash.com/photo-1563212417-640306232938?q=80&w=400&auto=format&fit=crop" },
-    wheel_fortune: { title: "Wheel", category: "Hot", image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
     color_match: { title: "Match", category: "Hot", image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=400&auto=format&fit=crop" },
     fruit_ninja: { title: "Ninja", category: "Hot", image: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?q=80&w=400&auto=format&fit=crop" },
     teen_patti: { title: "Teen Patti", category: "Hot", image: "https://images.unsplash.com/photo-1541275322896-180a3a780b62?q=80&w=400&auto=format&fit=crop" },
@@ -203,14 +195,13 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
     { name: "Invitation", icon: UserPlus, color: "from-green-400 to-green-600", action: () => setShowReferral(true) },
     { name: "Newplayer", icon: Gift, color: "from-blue-400 to-blue-600", action: () => setShowNewPlayers(true) },
     { name: "Deposit", icon: Coins, color: "from-yellow-400 to-yellow-600", action: () => onNavigate('wallet') },
-    { name: "Spins", icon: Radio, color: "from-orange-400 to-orange-600", action: () => launchGame('spin') },
     { name: "VIP", icon: Gem, color: "from-purple-400 to-purple-600", action: () => setShowVIP(true) },
   ];
 
   const filteredGames = displayedGames.filter(g => 
     activeCategory === "All" || 
     g.category === activeCategory || 
-    (activeCategory === "Hot" && (g.id === "aviator" || g.id === "mines" || g.id === "swipe" || g.id === "slipper" || g.id === "rocket_crash" || g.id === "moon_crash" || g.id === "fruit_slots" || g.id === "treasure_hunt" || g.id === "wheel_fortune" || g.id === "color_match" || g.id === "fruit_ninja" || g.id === "teen_patti" || g.id === "dojo_cards" || g.id === "space_dice" || g.id === "dragon_tiger" || g.id === "goal_kick" || g.id === "sushi_strike" || g.id === "snake_league"))
+    (activeCategory === "Hot" && (g.id === "aviator" || g.id === "mines" || g.id === "swipe" || g.id === "slipper" || g.id === "rocket_crash" || g.id === "fruit_slots" || g.id === "treasure_hunt" || g.id === "color_match" || g.id === "fruit_ninja" || g.id === "teen_patti" || g.id === "dojo_cards" || g.id === "space_dice" || g.id === "dragon_tiger" || g.id === "goal_kick" || g.id === "sushi_strike" || g.id === "snake_league"))
   );
 
   const handleWin = async (amount: number) => {
@@ -375,7 +366,7 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
     }
   };
 
-  const isFullScreen = activeGame === 'aviator' || activeGame === 'mines' || activeGame === 'plinko' || activeGame === 'scratch' || activeGame === 'coin';
+  const isFullScreen = activeGame === 'aviator' || activeGame === 'mines' || activeGame === 'plinko' || activeGame === 'coin';
 
   return (
     <div className={`relative w-full h-full bg-[#1b2a5c] ${isFullScreen ? 'overflow-hidden' : ''} text-white`}>
@@ -393,13 +384,21 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
         )}
 
         {activeGame === 'slipper' && (
-          <motion.div key="slipper" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="fixed inset-0 z-[100] bg-[#050B14] p-4 flex flex-col">
-            <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-neutral-400 font-bold uppercase text-xs mb-4 hover:text-white transition-colors group">
-              <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Lobby
-            </button>
-            <div className="flex-1 overflow-y-auto">
-              <ThreeCardSlipper onWin={handleWin} onBet={handleBet} onLoss={handleLoss} onPenalty={handlePenalty} onStreakBonus={handleStreakBonus} balance={profile?.balance || 0} streak={profile?.winStreak || 0} losses={profile?.lossCount || 0} minBet={gamesConfig['slipper']?.minBet || minBet} winMultiplier={gamesConfig['slipper']?.winMultiplier || 3} penaltyAmount={gamesConfig['slipper']?.penaltyAmount || 100} />
-            </div>
+          <motion.div key="slipper" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#070b12]">
+            <ThreeCardSlipper 
+              onWin={handleWin} 
+              onBet={handleBet} 
+              onLoss={handleLoss} 
+              onPenalty={handlePenalty} 
+              onStreakBonus={handleStreakBonus} 
+              balance={profile?.balance || 0} 
+              streak={profile?.winStreak || 0} 
+              losses={profile?.lossCount || 0} 
+              minBet={gamesConfig['slipper']?.minBet || minBet} 
+              winMultiplier={gamesConfig['slipper']?.winMultiplier || 3} 
+              penaltyAmount={gamesConfig['slipper']?.penaltyAmount || 100} 
+              onExit={() => setActiveGame(null)} 
+            />
           </motion.div>
         )}
 
@@ -410,25 +409,16 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
           </motion.div>
         )}
 
-        {activeGame === 'spin' && (
-          <motion.div key="spin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#0B0E11] p-4 flex flex-col">
-            <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-neutral-400 font-bold uppercase text-xs mb-4 hover:text-white transition-colors group">
-              <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Lobby
-            </button>
-            <div className="flex-1 overflow-y-auto">
-               <SpinWheel onWin={handleWin} onBet={handleBet} balance={profile?.balance || 0} minBet={gamesConfig['spin']?.minBet || minBet} winRate={gamesConfig['spin']?.winRate || 30} multiplier={gamesConfig['spin']?.multiplier || 5} />
-            </div>
-          </motion.div>
-        )}
-
         {activeGame === 'swipe' && (
-          <motion.div key="swipe" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#0B0E11] p-4 flex flex-col">
-            <button onClick={() => setActiveGame(null)} className="flex items-center gap-2 text-neutral-400 font-bold uppercase text-xs mb-4 hover:text-white transition-colors group">
-              <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Lobby
-            </button>
-            <div className="flex-1 overflow-y-auto">
-               <SwipeMaster betAmount={gamesConfig['swipe']?.minBet || minBet} userBalance={profile?.balance || 0} onWin={handleWin} onBet={handleBet} winRate={gamesConfig['swipe']?.winRate || 40} />
-            </div>
+          <motion.div key="swipe" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#070b12]">
+            <SwipeMaster 
+              betAmount={gamesConfig['swipe']?.minBet || minBet} 
+              userBalance={profile?.balance || 0} 
+              onWin={handleWin} 
+              onBet={handleBet} 
+              winRate={gamesConfig['swipe']?.winRate || 40} 
+              onExit={() => setActiveGame(null)} 
+            />
           </motion.div>
         )}
 
@@ -445,12 +435,6 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
           </motion.div>
         )}
 
-        {activeGame === 'scratch' && (
-          <motion.div key="scratch" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#050B14]">
-            <GoldScratch onWin={handleWin} onBet={handleBet} balance={profile?.balance || 0} onExit={() => setActiveGame(null)} minBet={gamesConfig['scratch']?.minBet || minBet} winRate={gamesConfig['scratch']?.winRate || 40} multiplier={gamesConfig['scratch']?.multiplier || 4} />
-          </motion.div>
-        )}
-
         {activeGame === 'aviator' && (
           <motion.div key="aviator" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#101112]">
             <Aviator onWin={handleWin} onBet={handleBet} balance={profile?.balance || 0} onExit={() => setActiveGame(null)} winRate={gamesConfig['aviator']?.winRate || 50} />
@@ -460,12 +444,6 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
         {activeGame === 'rocket_crash' && (
           <motion.div key="rocket_crash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#0a0b0d]">
             <RocketCrash onWin={handleWin} onBet={handleBet} balance={profile?.balance || 0} onExit={() => setActiveGame(null)} winRate={gamesConfig['rocket_crash']?.winRate || 50} />
-          </motion.div>
-        )}
-
-        {activeGame === 'moon_crash' && (
-          <motion.div key="moon_crash" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#050608]">
-            <MoonCrash onWin={handleWin} onBet={handleBet} balance={profile?.balance || 0} onExit={() => setActiveGame(null)} winRate={gamesConfig['moon_crash']?.winRate || 50} />
           </motion.div>
         )}
 
@@ -493,19 +471,6 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
               winRate={gamesConfig['treasure_hunt']?.winRate || 35}
               minBet={gamesConfig['treasure_hunt']?.minBet || 10}
               multiplier={gamesConfig['treasure_hunt']?.multiplier || 3}
-            />
-          </motion.div>
-        )}
-
-        {activeGame === 'wheel_fortune' && (
-          <motion.div key="wheel_fortune" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#050B14]">
-            <WheelOfFortune 
-              onWin={handleWin} 
-              onBet={handleBet} 
-              balance={profile?.balance || 0} 
-              onExit={() => setActiveGame(null)} 
-              winRate={gamesConfig['wheel_fortune']?.winRate || 45}
-              minBet={gamesConfig['wheel_fortune']?.minBet || 10}
             />
           </motion.div>
         )}

@@ -208,7 +208,6 @@ export default function HomeView({ profile, onNavigate }: { profile: any, onNavi
     { name: "Invitation", icon: UserPlus, color: "from-green-400 to-green-600", action: () => setShowReferral(true) },
     { name: "Newplayer", icon: Gift, color: "from-blue-400 to-blue-600", action: () => setShowNewPlayers(true) },
     { name: "Deposit", icon: Coins, color: "from-yellow-400 to-yellow-600", action: () => onNavigate('wallet') },
-    { name: "Spins", icon: Radio, color: "from-orange-400 to-orange-600", action: () => onNavigate('games') },
     { name: "VIP", icon: Gem, color: "from-purple-400 to-purple-600", action: () => setShowVIP(true) },
   ];
 

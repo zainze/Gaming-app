@@ -15,7 +15,6 @@ const sounds = {
   plink: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/1084/1084-preview.mp3'], volume: 0.3, rate: 1.5 }),
   mine_gem: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'], volume: 0.4, rate: 1.2 }),
   mine_boom: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/1600/1600-preview.mp3'], volume: 0.6 }), // Real explosive blast
-  scratch: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/2311/2311-preview.mp3'], volume: 0.4, loop: true }),
   success: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'], volume: 0.5 }),
   error: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'], volume: 0.4, rate: 0.5 }),
   levelUp: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'], volume: 0.6 }),
@@ -59,7 +58,6 @@ const sounds = {
 const gameSoundThemes: Record<string, 'crash' | 'dojo' | 'slots' | 'cyber' | 'sports' | 'bounce' | 'default'> = {
   aviator: 'crash',
   rocket_crash: 'crash',
-  moon_crash: 'crash',
 
   dojo_cards: 'dojo',
   dragon_tiger: 'dojo',
@@ -82,7 +80,6 @@ const gameSoundThemes: Record<string, 'crash' | 'dojo' | 'slots' | 'cyber' | 'sp
 
   // Fall back to clean defaults for other games
   chests: 'default',
-  scratch: 'default',
   treasure_hunt: 'default',
   fruit_ninja: 'default',
   sushi_strike: 'default',
@@ -133,7 +130,6 @@ export const defaultSettings: SoundSettings = {
   gameBgms: {
     aviator: 'synthwave',
     rocket_crash: 'synthwave',
-    moon_crash: 'synthwave',
     dojo_cards: 'zen',
     dragon_tiger: 'zen',
     teen_patti: 'zen',
@@ -149,7 +145,6 @@ export const defaultSettings: SoundSettings = {
     space_dice: 'electro',
     color_match: 'electro',
     chests: 'chill',
-    scratch: 'electro',
     treasure_hunt: 'zen',
     fruit_ninja: 'stadium',
     sushi_strike: 'zen',
@@ -280,7 +275,7 @@ export const playSound = (soundName: keyof typeof sounds) => {
   const targetHowl = sounds[playTarget] || sounds[soundName];
   if (targetHowl) {
     // Only toggle/restart loop sounds once
-    if (playTarget === 'spin' || playTarget === 'scratch' || playTarget === 'crash_spin' || playTarget === 'slots_spin' || playTarget === 'cyber_spin') {
+    if (playTarget === 'spin' || playTarget === 'crash_spin' || playTarget === 'slots_spin' || playTarget === 'cyber_spin') {
       if (!targetHowl.playing()) {
         targetHowl.play();
       }

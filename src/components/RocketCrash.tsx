@@ -20,7 +20,7 @@ interface UserBet {
   status: 'pending' | 'cashed' | 'lost';
 }
 
-const ROCKET_ICON_URL = "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1777971975/air-force_do6cuq.png"; // Placeholder or use Lucide
+const ROCKET_ICON_URL = "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1779819058/619175_kms5yq.png";
 
 export const RocketCrash: React.FC<RocketCrashProps> = ({ balance, onWin, onBet, onExit, winRate = 50 }) => {
   const [gameState, setGameState] = useState<'idle' | 'waiting' | 'running' | 'crashed'>('idle');
@@ -178,12 +178,24 @@ export const RocketCrash: React.FC<RocketCrashProps> = ({ balance, onWin, onBet,
     return { x, y };
   }, [graphProgress]);
 
+  const flightAngle = useMemo(() => {
+    // Tangent components for the curve: y = 550 - t^1.5 * 500, x = 50 + t * 765
+    // dy/dt = -750 * sqrt(t), dx/dt = 765
+    const dy = -750 * Math.sqrt(Math.max(0.01, graphProgress));
+    const dx = 765;
+    const angleRad = Math.atan2(dy, dx);
+    const angleDeg = angleRad * (180 / Math.PI);
+    // Since the rocket PNG points straight UP (which is -90 degrees offset relative to horizontal right),
+    // rotating it by 90 + angleDeg aligns the tip precisely on its trajectory path pointing right/diagonal.
+    return 90 + angleDeg;
+  }, [graphProgress]);
+
   return (
     <div className="flex flex-col h-full bg-[#0a0b0d] text-[#e1e1e1] font-sans">
       <header className="flex items-center justify-between px-3 h-14 bg-[#14161a] border-b border-[#25282e] flex-shrink-0 relative z-50">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-600/20">
-            <Rocket size={18} fill="currentColor" />
+          <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-orange-600/10 border border-orange-500/20 shadow-lg shadow-orange-600/10">
+            <img src={ROCKET_ICON_URL} alt="Rocket" className="w-6 h-6 object-contain" referrerPolicy="no-referrer" />
           </div>
           <span className="text-white font-black italic tracking-tighter text-lg uppercase whitespace-nowrap">Rocket Crash</span>
         </div>
@@ -249,20 +261,32 @@ export const RocketCrash: React.FC<RocketCrashProps> = ({ balance, onWin, onBet,
                   <motion.path d={pathD} fill="none" stroke="#ea580c" strokeWidth="8" strokeLinecap="round" />
                   <motion.path d={`${pathD} L ${rocketPos.x} 550 L 50 550 Z`} fill="url(#rocket-grad)" />
                   
-                  {/* Rocket Visual */}
-                  <motion.g x={rocketPos.x} y={rocketPos.y} animate={{ rotate: -45 - (graphProgress * 20) }}>
-                     <foreignObject width="100" height="100" x={rocketPos.x - 50} y={rocketPos.y - 50}>
-                        <div className="w-full h-full flex items-center justify-center text-orange-500 drop-shadow-[0_0_15px_rgba(234,88,12,0.8)]">
-                           <Rocket size={60} fill="currentColor" strokeWidth={1} style={{ transform: 'rotate(-45deg)' }} />
-                           {/* Flame effect */}
-                           <motion.div 
-                             animate={{ scale: [1, 1.2, 1] }} 
-                             transition={{ repeat: Infinity, duration: 0.1 }}
-                             className="absolute bottom-4 left-4 w-6 h-10 bg-orange-600 blur-sm rounded-full origin-top"
+                  {/* Rocket Visual - Perfectly stable, matching its natural 45deg flight orientation with intense thrust vibration */}
+                  <g>
+                     <foreignObject width="140" height="140" x={rocketPos.x - 70} y={rocketPos.y - 70}>
+                        <motion.div 
+                          className="w-full h-full flex items-center justify-center relative"
+                          animate={{ 
+                            y: [-1.5, 1.5, -1.5],
+                            x: [-0.5, 0.5, -0.5],
+                            rotate: [-1, 1, -1]
+                          }}
+                          transition={{ 
+                            repeat: Infinity, 
+                            duration: 0.1,
+                            ease: "linear"
+                          }}
+                        >
+                           {/* Custom Rocket PNG */}
+                           <img 
+                             src={ROCKET_ICON_URL} 
+                             alt="Rocket Flyer" 
+                             className="w-28 h-28 object-contain select-none pointer-events-none drop-shadow-[0_0_25px_rgba(234,88,12,0.95)]"
+                             referrerPolicy="no-referrer"
                            />
-                        </div>
+                        </motion.div>
                      </foreignObject>
-                  </motion.g>
+                  </g>
                 </motion.g>
               )}
             </svg>
@@ -286,7 +310,12 @@ export const RocketCrash: React.FC<RocketCrashProps> = ({ balance, onWin, onBet,
                   <div className="flex flex-col items-center gap-4">
                     <div className="relative">
                        <div className="w-16 h-16 border-4 border-t-orange-600 border-white/10 rounded-full animate-spin" />
-                       <Rocket className="absolute inset-0 m-auto text-orange-600" size={24} />
+                       <img 
+                         src={ROCKET_ICON_URL} 
+                         alt="Rocket Ignition" 
+                         className="absolute inset-0 m-auto w-8 h-8 object-contain animate-pulse" 
+                         referrerPolicy="no-referrer"
+                       />
                     </div>
                     <div className="text-orange-500 text-xs font-black uppercase tracking-[0.3em] animate-pulse">Ignition in progress...</div>
                   </div>
