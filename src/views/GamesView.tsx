@@ -58,6 +58,7 @@ import SpinWheel from "../components/SpinWheel";
 
 export default function GamesView({ profile, onNavigate }: { profile: any, onNavigate: (view: string) => void }) {
   const [activeGame, setActiveGame] = useState<string | null>(null);
+  const [activeArcadeGame, setActiveArcadeGame] = useState<any>(null);
   const [arcadeGames, setArcadeGames] = useState<any[]>([]);
   const [minBet, setMinBet] = useState(10);
   const [gamesConfig, setGamesConfig] = useState<Record<string, any>>({});
@@ -299,7 +300,7 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
     
     // Check if session already active for this game
     if (profile.arcadeSession?.status === 'active' && profile.arcadeSession?.gameId === game.id) {
-       window.open(game.url, '_blank');
+       setActiveArcadeGame(game);
        return;
     }
 
@@ -332,7 +333,7 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
           status: 'active'
         }
       });
-      window.open(game.url, '_blank');
+      setActiveArcadeGame(game);
     } catch (err) {
       console.error(err);
     }
@@ -625,6 +626,53 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
                winRate={gamesConfig['spin_wheel']?.winRate || 45}
                multiplier={gamesConfig['spin_wheel']?.multiplier || 2}
              />
+          </motion.div>
+        )}
+
+        {activeArcadeGame && (
+          <motion.div 
+            key="arcade_game_modal" 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            className="fixed inset-0 z-[110] bg-[#030712] flex flex-col"
+          >
+            <div className="flex items-center justify-between px-4 h-16 bg-[#0a0f1d] border-b border-white/5 shrink-0">
+              <div className="flex items-center gap-2">
+                <Gamepad2 className="text-orange-500 animate-pulse" size={20} />
+                <span className="font-extrabold uppercase text-sm tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+                  PLAY: {activeArcadeGame.title}
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-2 sm:gap-4 font-sans text-xs">
+                {profile?.arcadeSession?.status === 'active' && profile?.arcadeSession?.gameId === activeArcadeGame.id && (
+                  <button 
+                    onClick={() => handleClaimArcadeReward()}
+                    className="bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-xl text-[10px] font-black uppercase shadow-lg border border-green-500/30 active:scale-95 transition"
+                  >
+                    CLAIM REWARD
+                  </button>
+                )}
+                
+                <button
+                  onClick={() => setActiveArcadeGame(null)}
+                  className="px-4 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-rose-400 hover:text-rose-300 rounded-xl border border-red-500/20 active:scale-95 transition font-black text-[10px] uppercase tracking-wider"
+                >
+                  Close Game
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex-1 w-full bg-black relative">
+              <iframe
+                src={activeArcadeGame.url}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; camera; microphone; geolocation"
+                allowFullScreen
+                sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-pointer-lock"
+              />
+            </div>
           </motion.div>
         )}
 
