@@ -45,7 +45,7 @@ const sounds = {
   sports_win: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/1659/1659-preview.mp3'], volume: 0.65 }), // Stadium brass fanfares
   sports_lose: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/270/270-preview.mp3'], volume: 0.5, rate: 0.7 }), // Foul drone whistle
 
-  // 6. Plinko & Bouncy Physics (Plinko Pro, Dice Roll, Space Dice, Color Match)
+  // 6. Plinko & Bouncy Physics (Plinko Pro, Color Match)
   bounce_plink: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/1084/1084-preview.mp3'], volume: 0.35, rate: 1.7 }), // high tone bouncy pop
   bounce_win: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/1119/1119-preview.mp3'], volume: 0.6, rate: 1.1 }), // coin fountain fall rain
   bounce_lose: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'], volume: 0.4, rate: 0.6 }), // soft flat impact thud
@@ -69,13 +69,12 @@ const gameSoundThemes: Record<string, 'crash' | 'dojo' | 'slots' | 'cyber' | 'sp
   wheel_fortune: 'slots',
 
   coin: 'cyber',
+  cyber_dice: 'cyber',
 
   goal_kick: 'sports',
   swipe: 'sports',
 
   plinko: 'bounce',
-  dice: 'bounce',
-  space_dice: 'bounce',
   color_match: 'bounce',
 
   // Fall back to clean defaults for other games
@@ -141,14 +140,13 @@ export const defaultSettings: SoundSettings = {
     goal_kick: 'stadium',
     swipe: 'stadium',
     plinko: 'retro8bit',
-    dice: 'retro8bit',
-    space_dice: 'electro',
     color_match: 'electro',
     chests: 'chill',
     treasure_hunt: 'zen',
     fruit_ninja: 'stadium',
     sushi_strike: 'zen',
-    mines: 'electro'
+    mines: 'electro',
+    cyber_dice: 'electro'
   }
 };
 

@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "./lib/firebase";
-import { doc, getDoc, onSnapshot, writeBatch, updateDoc, increment, deleteField, addDoc, collection, getDocFromServer } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, writeBatch, updateDoc, increment, deleteField, addDoc, collection, getDocFromServer, getDocs, setDoc } from "firebase/firestore";
 import { handleFirestoreError, OperationType } from "./lib/firebase";
 import { motion, AnimatePresence } from "motion/react";
 import { 
@@ -80,14 +80,67 @@ export default function App() {
   }, [profile?.arcadeSession, user]);
 
   useEffect(() => {
-    const testConnection = async () => {
+    const testConnectionAndSyncGames = async () => {
       try {
         await getDocFromServer(doc(db, 'system', 'connection_test'));
       } catch (error) {
         console.debug("Firebase connection check:", error);
       }
+
+      try {
+        // Query current games to check what's registered
+        const snap = await getDocs(collection(db, "games"));
+        const existingIds = snap.docs.map(d => d.id);
+        
+        const initialGames = [
+          { id: 'slipper', name: 'Slipper', category: 'Skill', minBet: 20, winRate: 33, winMultiplier: 3, penaltyAmount: 50, image: "https://images.unsplash.com/photo-1626775238053-4315516ebaec?q=80&w=400&auto=format&fit=crop" },
+          { id: 'coin', name: 'Coin', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://cdn-icons-png.flaticon.com/512/550/550614.png" },
+          { id: 'swipe', name: 'Swipe', category: 'Skill', minBet: 10, winRate: 40, multiplier: 3, image: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" },
+          { id: 'chests', name: 'Chests', category: 'Classic', minBet: 10, winRate: 33, multiplier: 3, image: "https://cdn-icons-png.flaticon.com/512/3233/3233483.png" },
+          { id: 'aviator', name: 'Aviator', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778147101/aviator_banner_z0j7v8.png" },
+          { id: 'rocket_crash', name: 'Rocket', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?q=80&w=400&auto=format&fit=crop" },
+          { id: 'fruit_slots', name: 'Slots', category: 'Classic', minBet: 10, winRate: 40, multiplier: 5, image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
+          { id: 'treasure_hunt', name: 'Treasure', category: 'Classic', minBet: 10, winRate: 35, multiplier: 3, image: "https://images.unsplash.com/photo-1563212417-640306232938?q=80&w=400&auto=format&fit=crop" },
+          { id: 'color_match', name: 'Match', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.5, image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=400&auto=format&fit=crop" },
+          { id: 'fruit_ninja', name: 'Ninja', category: 'Classic', minBet: 10, winRate: 40, multiplier: 2, image: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?q=80&w=400&auto=format&fit=crop" },
+          { id: 'teen_patti', name: 'Teen Patti', category: 'Classic', minBet: 10, winRate: 45, multiplier: 2, image: "https://images.unsplash.com/photo-1541275322896-180a3a780b62?q=80&w=400&auto=format&fit=crop" },
+          { id: 'plinko', name: 'Plinko', category: 'Skill', minBet: 10, winRate: 45, multiplier: 5, image: "https://images.unsplash.com/photo-1553481187-be93c21490a9?q=80&w=400&auto=format&fit=crop" },
+          { id: 'mines', name: 'Mines', category: 'Skill', minBet: 10, winRate: 35, multiplier: 10, image: "https://images.unsplash.com/photo-1624474322421-4ea671e23363?q=80&w=400&auto=format&fit=crop" },
+          { id: 'dojo_cards', name: 'Dojo', category: 'Cards', minBet: 10, winRate: 48, multiplier: 2, image: "https://images.unsplash.com/photo-1552084117-56a987666449?q=80&w=400&auto=format&fit=crop" },
+          { id: 'dragon_tiger', name: 'Dragon Tiger', category: 'Cards', minBet: 10, winRate: 45, multiplier: 2, image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
+          { id: 'goal_kick', name: 'Goal Kick', category: 'Skill', minBet: 10, winRate: 45, multiplier: 1.9, image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
+          { id: 'sushi_strike', name: 'Sushi', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.8, image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
+          { id: 'snake_league', name: 'Snake', category: 'Skill', minBet: 10, winRate: 45, multiplier: 2.5, targetScore: 15, difficulty: 'low', image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" },
+          { id: 'spin_wheel', name: 'Spin Wheel', category: 'Slot', minBet: 10, winRate: 45, multiplier: 2, sliceMultipliers: "0,1.5,0.2,3.0,0,2.0,0.5,10.0", sliceLabels: "LOSE,1.5x,0.2x,3x,LOSE,2x,0.5x,JACKPOT", image: "https://images.unsplash.com/photo-1606167668584-78701c57f13d?q=80&w=400&auto=format&fit=crop" },
+          { id: 'cyber_dice', name: 'Cyber Dice', category: 'Blockchain', minBet: 10, winRate: 48, multiplier: 2, image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=400&auto=format&fit=crop" }
+        ];
+
+        for (const g of initialGames) {
+          if (!existingIds.includes(g.id)) {
+            await setDoc(doc(db, "games", g.id), { ...g, active: true, createdAt: new Date().toISOString() }, { merge: true });
+          }
+        }
+      } catch (err) {
+        console.debug("Auto games registration sync skipped or offline:", err);
+      }
+
+      try {
+        const bannersSnap = await getDocs(collection(db, "banners"));
+        if (bannersSnap.empty) {
+          const demoBanners = [
+            { id: 'b1', title: 'Cyber Weekend: Double Winnings', image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=800&auto=format&fit=crop', active: true },
+            { id: 'b2', title: 'New Aviator Engine Live', image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop', active: true },
+            { id: 'b3', title: 'Elite Slipper Tournament', image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=800&auto=format&fit=crop', active: true }
+          ];
+          for (const b of demoBanners) {
+            await setDoc(doc(db, "banners", b.id), { ...b, createdAt: new Date().toISOString() });
+          }
+        }
+      } catch (err) {
+        console.debug("Auto banners registration skipped or offline:", err);
+      }
     };
-    testConnection();
+    testConnectionAndSyncGames();
   }, []);
 
   // URL Referral Tracking Code

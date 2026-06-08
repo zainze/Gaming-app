@@ -8,9 +8,7 @@ import {
   Radio, 
   ChevronLeft, 
   Flame, 
-  Dice5, 
   LayoutGrid, 
-  Dices, 
   Trophy as TrophyIcon, 
   Star, 
   ThumbsUp,
@@ -36,7 +34,6 @@ import { setSoundActiveGameId } from "../lib/sounds";
 import CoinFlip from "../components/CoinFlip";
 import SwipeMaster from "../components/SwipeMaster";
 import { LuckyChests } from "../components/LuckyChests";
-import { DiceRoll } from "../components/DiceRoll";
 import ThreeCardSlipper from "../components/ThreeCardSlipper";
 import { Aviator } from "../components/Aviator";
 import { RocketCrash } from "../components/RocketCrash";
@@ -49,12 +46,12 @@ import { BannerSlider } from "../components/BannerSlider";
 import { PlinkoPro } from "../components/PlinkoPro";
 import { MinesFinder } from "../components/MinesFinder";
 import { DojoCards } from "../components/DojoCards";
-import { SpaceDice } from "../components/SpaceDice";
 import { DragonTiger } from "../components/DragonTiger";
 import { GoalKick } from "../components/GoalKick";
 import { SushiStrike } from "../components/SushiStrike";
 import { SnakeGame } from "../components/SnakeGame";
 import SpinWheel from "../components/SpinWheel";
+import { CyberDice } from "../components/CyberDice";
 
 export default function GamesView({ profile, onNavigate }: { profile: any, onNavigate: (view: string) => void }) {
   const [activeGame, setActiveGame] = useState<string | null>(null);
@@ -138,8 +135,8 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
     { name: "All", icon: LayoutGrid, color: "text-white" },
     { name: "Hot", icon: Flame, color: "text-orange-500" },
     { name: "Slot", icon: LayoutGrid, color: "text-yellow-500" },
-    { name: "Blockchain", icon: Dice5, color: "text-blue-500" },
-    { name: "Cards", icon: Dices, color: "text-purple-500" },
+    { name: "Blockchain", icon: Gem, color: "text-blue-500" },
+    { name: "Cards", icon: Sparkles, color: "text-purple-500" },
     { name: "Sports", icon: TrophyIcon, color: "text-green-500" },
     { name: "Arcade", icon: Gamepad2, color: "text-red-500" },
   ];
@@ -149,7 +146,6 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
     coin: { title: "Coin", category: "Blockchain", image: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778146981/game-coin-a-good-investment_lqjtaj.webp" },
     swipe: { title: "Swipe", category: "Hot", image: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" },
     chests: { title: "Chests", category: "Slot", image: "https://cdn-icons-png.flaticon.com/512/3233/3233483.png" },
-    dice: { title: "Dice", category: "Blockchain", image: "https://cdn-icons-png.flaticon.com/512/3533/3533966.png" },
     aviator: { title: "Aviator", category: "Hot", image: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778147101/aviator_banner_z0j7v8.png" },
     rocket_crash: { title: "Rocket", category: "Hot", image: "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?q=80&w=400&auto=format&fit=crop" },
     fruit_slots: { title: "Slots", category: "Classic", image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
@@ -160,12 +156,12 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
     plinko: { title: "Plinko", category: "Slot", image: "https://images.unsplash.com/photo-1553481187-be93c21490a9?q=80&w=400&auto=format&fit=crop" },
     mines: { title: "Mines", category: "Hot", image: "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=400&auto=format&fit=crop" },
     dojo_cards: { title: "Dojo", category: "Cards", image: "https://images.unsplash.com/photo-1552084117-56a987666449?q=80&w=400&auto=format&fit=crop" },
-    space_dice: { title: "Space Dice", category: "Blockchain", image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=400&auto=format&fit=crop" },
     dragon_tiger: { title: "Dragon Tiger", category: "Cards", image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
     goal_kick: { title: "Goal Kick", category: "Skill", image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
     sushi_strike: { title: "Sushi", category: "Classic", image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
     snake_league: { title: "Snake", category: "Skill", image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" },
     spin_wheel: { title: "Spin Wheel", category: "Slot", image: "https://images.unsplash.com/photo-1606167668584-78701c57f13d?q=80&w=400&auto=format&fit=crop" },
+    cyber_dice: { title: "3D Cyber Dice", category: "Blockchain", image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=400&auto=format&fit=crop" },
     web_cyber: { title: "Cyber", category: "Arcade", url: "https://www.crazygames.com/embed/block-rush", image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=400&auto=format&fit=crop", time: 60, reward: 25 },
     web_drift: { title: "Drift", category: "Arcade", url: "https://www.crazygames.com/embed/cyber-surfer", image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop", time: 45, reward: 20 },
   };
@@ -204,7 +200,7 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
   const filteredGames = displayedGames.filter(g => 
     activeCategory === "All" || 
     g.category === activeCategory || 
-    (activeCategory === "Hot" && (g.id === "aviator" || g.id === "mines" || g.id === "swipe" || g.id === "slipper" || g.id === "rocket_crash" || g.id === "fruit_slots" || g.id === "treasure_hunt" || g.id === "color_match" || g.id === "fruit_ninja" || g.id === "teen_patti" || g.id === "dojo_cards" || g.id === "space_dice" || g.id === "dragon_tiger" || g.id === "goal_kick" || g.id === "sushi_strike" || g.id === "snake_league" || g.id === "spin_wheel"))
+    (activeCategory === "Hot" && (g.id === "aviator" || g.id === "mines" || g.id === "swipe" || g.id === "slipper" || g.id === "rocket_crash" || g.id === "fruit_slots" || g.id === "treasure_hunt" || g.id === "color_match" || g.id === "fruit_ninja" || g.id === "teen_patti" || g.id === "dojo_cards" || g.id === "dragon_tiger" || g.id === "goal_kick" || g.id === "sushi_strike" || g.id === "snake_league" || g.id === "spin_wheel" || g.id === "cyber_dice"))
   );
 
   const handleWin = async (amount: number) => {
@@ -421,16 +417,10 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
           </motion.div>
         )}
 
-        {/* ... LuckyChests, DiceRoll, GoldScratch, Aviator, PlinkoPro, MinesFinder all use fixed inset-0 already ... */}
+        {/* ... LuckyChests, GoldScratch, Aviator, PlinkoPro, MinesFinder all use fixed inset-0 already ... */}
         {activeGame === 'chests' && (
           <motion.div key="chests" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#0B0E11]">
             <LuckyChests onWin={handleWin} onLoss={(bet) => handleBet(bet)} minBet={gamesConfig['chests']?.minBet || minBet} balance={profile?.balance || 0} winRate={gamesConfig['chests']?.winRate || 33} multiplier={gamesConfig['chests']?.multiplier || 3} onExit={() => setActiveGame(null)} />
-          </motion.div>
-        )}
-
-        {activeGame === 'dice' && (
-          <motion.div key="dice" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#0B0E11]">
-            <DiceRoll onWin={handleWin} onBet={handleBet} balance={profile?.balance || 0} minBet={gamesConfig['dice']?.minBet || minBet} winRate={gamesConfig['dice']?.winRate || 45} multiplier={gamesConfig['dice']?.multiplier || 2} onExit={() => setActiveGame(null)} />
           </motion.div>
         )}
 
@@ -542,20 +532,6 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
           </motion.div>
         )}
 
-        {activeGame === 'space_dice' && (
-          <motion.div key="space_dice" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#050914]">
-             <SpaceDice 
-               onWin={handleWin} 
-               onBet={handleBet} 
-               balance={profile?.balance || 0} 
-               onExit={() => setActiveGame(null)} 
-               winRate={gamesConfig['space_dice']?.winRate || 50}
-               minBet={gamesConfig['space_dice']?.minBet || 10}
-               multiplier={gamesConfig['space_dice']?.multiplier || 1.9}
-             />
-          </motion.div>
-        )}
-
         {activeGame === 'dragon_tiger' && (
           <motion.div key="dragon_tiger" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#1a0505]">
              <DragonTiger 
@@ -625,6 +601,20 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
                minBet={gamesConfig['spin_wheel']?.minBet || 10}
                winRate={gamesConfig['spin_wheel']?.winRate || 45}
                multiplier={gamesConfig['spin_wheel']?.multiplier || 2}
+             />
+          </motion.div>
+        )}
+
+        {activeGame === 'cyber_dice' && (
+          <motion.div key="cyber_dice" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#030614]">
+             <CyberDice 
+               onWin={handleWin} 
+               onBet={handleBet} 
+               balance={profile?.balance || 0} 
+               onExit={() => setActiveGame(null)} 
+               minBet={gamesConfig['cyber_dice']?.minBet || 10}
+               winRate={gamesConfig['cyber_dice']?.winRate || 48}
+               multiplier={gamesConfig['cyber_dice']?.multiplier || 2}
              />
           </motion.div>
         )}
