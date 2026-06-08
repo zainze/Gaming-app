@@ -1,15 +1,12 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { initializeFirestore, doc, getDocFromServer } from "firebase/firestore";
+import { getFirestore, doc, getDocFromServer } from "firebase/firestore";
 import firebaseConfig from "../../firebase-applet-config.json";
 
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore with long-polling and no streams to handle sandboxed environment connectivity issues
-export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-  useFetchStreams: false,
-} as any, (firebaseConfig as any).firestoreDatabaseId);
+// Initialize Firestore with the standard web configuration using the specified database ID
+export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId);
 
 export const auth = getAuth(app);
 

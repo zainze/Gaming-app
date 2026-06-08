@@ -26,6 +26,7 @@ import ProfileView from "./views/ProfileView";
 import AdminView from "./views/AdminView";
 import AuthView from "./views/AuthView";
 import SplashScreen from "./components/SplashScreen";
+import ReferralView from "./views/ReferralView";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -87,8 +88,20 @@ export default function App() {
       }
     };
     testConnection();
+  }, []);
 
-    let unsubscribeProfile: (() => void) | null = null;
+  // URL Referral Tracking Code
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref) {
+      localStorage.setItem("pending_referrer_id", ref);
+      console.log("Saved pending referrer ID:", ref);
+    }
+  }, []);
+
+  useEffect(() => {
+    let unsubscribeProfile: any = null;
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
@@ -127,9 +140,10 @@ export default function App() {
 
                 const configSnap = await getDoc(doc(db, "system", "config"));
                 const joiningBonus = configSnap.exists() ? (Number(configSnap.data().joiningBonus) || 0) : 100;
+                const referralReward = configSnap.exists() ? (Number(configSnap.data().referralReward) || 50) : 50;
 
                 const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-                const newProfile = {
+                const newProfile: any = {
                   uid: firebaseUser.uid,
                   email: firebaseUser.email,
                   displayName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || "New User",
@@ -143,6 +157,45 @@ export default function App() {
                   lastCycleReset: new Date().toISOString(),
                   createdAt: new Date().toISOString()
                 };
+
+                // Apply automatic referral connection if click signature is saved
+                const pendingRef = localStorage.getItem("pending_referrer_id");
+                if (pendingRef && pendingRef !== firebaseUser.uid) {
+                  newProfile.referredBy = pendingRef;
+
+                  // Crediting Referrer
+                  batch.update(doc(db, "users", pendingRef), { balance: increment(referralReward) });
+
+                  // Creating referral ledger entry
+                  batch.set(doc(db, "referrals", `${firebaseUser.uid}_${pendingRef}`), {
+                    referrerId: pendingRef,
+                    referredId: firebaseUser.uid,
+                    rewardAmount: referralReward,
+                    createdAt: new Date().toISOString()
+                  });
+
+                  // Creating referral transaction log
+                  batch.set(doc(collection(db, "transactions")), {
+                    userId: pendingRef,
+                    amount: referralReward,
+                    type: 'referral',
+                    status: 'completed',
+                    createdAt: new Date().toISOString()
+                  });
+
+                  // Notifying Referrer
+                  batch.set(doc(collection(db, "notifications")), {
+                    userId: pendingRef,
+                    title: "Referral Reward! 🎉",
+                    body: `Congratulations! ${firebaseUser.displayName || "A new player"} registered via your link. RS ${referralReward} has been added.`,
+                    type: 'success',
+                    read: false,
+                    createdAt: new Date().toISOString()
+                  });
+
+                  // Clear parameter
+                  localStorage.removeItem("pending_referrer_id");
+                }
                 
                 batch.set(userDocRef, newProfile);
                 batch.set(doc(db, "invite_codes", inviteCode), {
@@ -265,6 +318,7 @@ function AppContent({ user, profile, systemConfig }: any) {
             <Route path="/" element={user ? <Navigate to="/games" replace /> : <Navigate to="/auth" />} />
             <Route path="/games" element={user ? <GamesView profile={profile} onNavigate={onNavigate} /> : <Navigate to="/auth" />} />
             <Route path="/wallet" element={user ? <WalletView profile={profile} /> : <Navigate to="/auth" />} />
+            <Route path="/referral" element={user ? <ReferralView profile={profile} /> : <Navigate to="/auth" />} />
             <Route path="/profile" element={user ? <ProfileView profile={profile} /> : <Navigate to="/auth" />} />
             <Route path="/admin" element={(user && (profile?.role === 'admin' || profile?.email === 'zainzeb333@gmail.com')) ? <AdminView /> : <Navigate to="/games" />} />
             <Route path="/auth" element={!user ? <AuthView /> : <Navigate to="/games" />} />

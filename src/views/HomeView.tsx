@@ -6,7 +6,7 @@ import { handleFirestoreError, OperationType } from "../lib/firebase";
 import { db } from "../lib/firebase";
 import { playSound } from "../lib/sounds";
 import { AnimatePresence } from "motion/react";
-import InvestmentView from "./InvestmentView";
+import DailyClaimModal from "../components/DailyClaimModal";
 import ReferralView from "./ReferralView";
 import NewPlayerView from "./NewPlayerView";
 
@@ -26,7 +26,7 @@ export default function HomeView({ profile, onNavigate }: { profile: any, onNavi
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoStatus, setPromoStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: "" });
   const [systemConfig, setSystemConfig] = useState<any>(null);
-  const [showVIP, setShowVIP] = useState(false);
+  const [showDailyClaim, setShowDailyClaim] = useState(false);
   const [showReferral, setShowReferral] = useState(false);
   const [showNewPlayers, setShowNewPlayers] = useState(false);
 
@@ -204,18 +204,17 @@ export default function HomeView({ profile, onNavigate }: { profile: any, onNavi
     }
   };
 
-  const quickLinks = [
-    { name: "Invitation", icon: UserPlus, color: "from-green-400 to-green-600", action: () => setShowReferral(true) },
+   const quickLinks = [
+    { name: "Invitation", icon: UserPlus, color: "from-green-400 to-green-600", action: () => onNavigate('referral') },
     { name: "Newplayer", icon: Gift, color: "from-blue-400 to-blue-600", action: () => setShowNewPlayers(true) },
     { name: "Deposit", icon: Coins, color: "from-yellow-400 to-yellow-600", action: () => onNavigate('wallet') },
-    { name: "VIP", icon: Gem, color: "from-purple-400 to-purple-600", action: () => setShowVIP(true) },
+    { name: "Daily claim", icon: Gift, color: "from-purple-400 to-purple-600", action: () => setShowDailyClaim(true) },
   ];
 
   return (
     <div className="relative">
       <AnimatePresence mode="wait">
-        {showVIP && <InvestmentView profile={profile} onBack={() => setShowVIP(false)} />}
-        {showReferral && <ReferralView profile={profile} onBack={() => setShowReferral(false)} />}
+        {showDailyClaim && <DailyClaimModal profile={profile} onBack={() => setShowDailyClaim(false)} />}
         {showNewPlayers && <NewPlayerView onBack={() => setShowNewPlayers(false)} />}
       </AnimatePresence>
 

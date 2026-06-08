@@ -43,7 +43,7 @@ type Transaction = {
   transactionId?: string;
 };
 
-type Tab = 'dashboard' | 'users' | 'requests' | 'ledger' | 'broadcast' | 'settings' | 'games' | 'banners' | 'promos' | 'assets' | 'investments';
+type Tab = 'dashboard' | 'users' | 'requests' | 'ledger' | 'broadcast' | 'settings' | 'games' | 'banners' | 'promos' | 'assets';
 
 export default function AdminView() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -71,8 +71,6 @@ export default function AdminView() {
   const [promos, setPromos] = useState<any[]>([]);
   const [banners, setBanners] = useState<any[]>([]);
   const [assetsList, setAssetsList] = useState<any[]>([]);
-  const [investmentPlans, setInvestmentPlans] = useState<any[]>([]);
-  const [userInvestments, setUserInvestments] = useState<any[]>([]);
   const [uploadingGameId, setUploadingGameId] = useState<string | null>(null);
   const [uploadingBannerId, setUploadingBannerId] = useState<string | null>(null);
   const [uploadingAsset, setUploadingAsset] = useState(false);
@@ -180,18 +178,6 @@ export default function AdminView() {
       handleFirestoreError(err, OperationType.GET, "assets");
     });
 
-    const unsubInvestmentPlans = onSnapshot(query(collection(db, "investment_plans"), orderBy("createdAt", "desc")), (snap) => {
-      setInvestmentPlans(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }, (err) => {
-      handleFirestoreError(err, OperationType.GET, "investment_plans");
-    });
-
-    const unsubUserInvestments = onSnapshot(query(collection(db, "user_investments"), orderBy("startDate", "desc"), limit(50)), (snap) => {
-      setUserInvestments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }, (err) => {
-      handleFirestoreError(err, OperationType.GET, "user_investments");
-    });
-
     return () => {
       unsubPending();
       unsubLedger();
@@ -199,8 +185,6 @@ export default function AdminView() {
       unsubGames();
       unsubRecentUsers();
       unsubAssets();
-      unsubInvestmentPlans();
-      unsubUserInvestments();
     };
   }, []);
 
@@ -293,7 +277,6 @@ export default function AdminView() {
     { id: 'assets', label: 'Asset Library', icon: Upload },
     { id: 'settings', label: 'Platform Config', icon: Settings2 },
     { id: 'promos', label: 'Vouchers', icon: Trophy },
-    { id: 'investments', label: 'Investments', icon: TrendingUp },
   ];
 
   return (
@@ -320,153 +303,6 @@ export default function AdminView() {
 
       <main className="flex-1 p-4 pb-24 overflow-y-auto">
         <AnimatePresence mode="wait">
-          {activeTab === 'investments' && (
-            <motion.div key="investments" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
-              {/* Create/Edit Plan */}
-              <div className="bg-white border border-neutral-100 p-6 rounded-3xl space-y-4 shadow-sm">
-                <div className="space-y-1">
-                  <h4 className="font-black uppercase italic text-neutral-900">Investment Architect</h4>
-                  <p className="text-[9px] font-black text-neutral-400 tracking-widest uppercase">Configure high-yield investment models</p>
-                </div>
-
-                <div className="space-y-4 pt-4 border-t border-neutral-100">
-                   <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5 col-span-2">
-                        <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Plan Title</label>
-                        <input id="plan-title" type="text" placeholder="Quantum Growth Tier 1" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-bold text-xs text-neutral-900" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Earning Type</label>
-                        <select id="plan-type" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs uppercase text-neutral-900">
-                          <option value="daily">Daily Profit</option>
-                          <option value="weekly">Weekly Profit</option>
-                          <option value="monthly">Monthly Profit</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Profit Rate (%)</label>
-                        <input id="plan-rate" type="number" placeholder="5" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs text-neutral-900" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Min Investment (RS)</label>
-                        <input id="plan-min" type="number" placeholder="1000" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs text-neutral-900" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Duration (Days)</label>
-                        <input id="plan-duration" type="number" placeholder="30" className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 font-black text-xs text-neutral-900" />
-                      </div>
-                   </div>
-                   
-                   <div className="space-y-1.5">
-                      <label className="text-[9px] font-black uppercase text-neutral-400 ml-1">Plan Image (Cloudinary)</label>
-                      <div className="flex gap-2">
-                         <input id="plan-img-url" type="text" placeholder="https://..." className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2 text-[10px] font-bold text-neutral-900" />
-                         <input type="file" id="plan-img-file" className="hidden" onChange={async (e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                               try {
-                                  const url = await uploadToCloudinary(file);
-                                  (document.getElementById('plan-img-url') as HTMLInputElement).value = url;
-                               } catch (err) { alert("Upload failed"); }
-                            }
-                         }} />
-                         <label htmlFor="plan-img-file" className="bg-neutral-900 text-white px-4 py-2 rounded-xl text-[8px] font-black uppercase flex items-center justify-center cursor-pointer">Upload</label>
-                      </div>
-                   </div>
-
-                   <button 
-                     onClick={async () => {
-                        const title = (document.getElementById('plan-title') as HTMLInputElement).value;
-                        const type = (document.getElementById('plan-type') as HTMLSelectElement).value;
-                        const rate = parseFloat((document.getElementById('plan-rate') as HTMLInputElement).value);
-                        const min = parseFloat((document.getElementById('plan-min') as HTMLInputElement).value);
-                        const duration = parseFloat((document.getElementById('plan-duration') as HTMLInputElement).value);
-                        const imageUrl = (document.getElementById('plan-img-url') as HTMLInputElement).value;
-                        
-                        if (!title || isNaN(rate) || isNaN(min)) return;
-                        
-                        await addDoc(collection(db, "investment_plans"), {
-                          title,
-                          rewardType: type,
-                          rewardRate: rate,
-                          minAmount: min,
-                          durationDays: duration || 30,
-                          imageUrl: imageUrl || "https://images.unsplash.com/photo-1611974717535-7cf2bd635c0a?q=80&w=400&auto=format&fit=crop",
-                          active: true,
-                          createdAt: new Date().toISOString()
-                        });
-                        alert("Investment Plan Deployed!");
-                     }}
-                     className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
-                   >
-                     Launch Investment Plan
-                   </button>
-                </div>
-              </div>
-
-              {/* Active Plans List */}
-              <div className="space-y-3">
-                 <p className="text-[10px] font-black uppercase text-neutral-400 tracking-widest pl-1">Marketplace Models</p>
-                 <div className="grid gap-3">
-                    {investmentPlans.map(p => (
-                       <div key={p.id} className="bg-white border border-neutral-100 p-4 rounded-3xl flex items-center justify-between shadow-sm group">
-                          <div className="flex items-center gap-4">
-                             <div className="w-14 h-14 bg-neutral-50 rounded-2xl overflow-hidden border border-neutral-100">
-                                <img src={p.imageUrl} className="w-full h-full object-cover" alt="Plan" />
-                             </div>
-                             <div>
-                                <p className="text-sm font-black uppercase italic text-neutral-900 tracking-tighter">{p.title}</p>
-                                <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">
-                                   {p.rewardRate}% {p.rewardType} • Min: RS {p.minAmount}
-                                </p>
-                             </div>
-                          </div>
-                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                             <button 
-                               onClick={async () => {
-                                  if (confirm("Deactivate this plan?")) {
-                                     await updateDoc(doc(db, "investment_plans", p.id), { active: false });
-                                  }
-                               }}
-                               className="p-2 text-red-400 hover:text-red-600 hover:bg-neutral-50 rounded-xl"
-                             >
-                                <Trash2 size={16} />
-                             </button>
-                          </div>
-                       </div>
-                    ))}
-                    {investmentPlans.length === 0 && (
-                       <div className="py-10 text-center bg-neutral-50 rounded-3xl border border-dashed border-neutral-200">
-                          <TrendingUp className="mx-auto text-neutral-200 mb-2" size={32} />
-                          <p className="text-neutral-400 font-black uppercase text-[8px]">No investment plans active</p>
-                       </div>
-                    )}
-                 </div>
-              </div>
-
-              {/* User Investments Audit */}
-              <div className="space-y-3">
-                 <div className="flex items-center justify-between px-1">
-                    <p className="text-[10px] font-black uppercase text-neutral-400 tracking-widest">Active Stakes Audit</p>
-                    <span className="text-[8px] font-black text-blue-500 uppercase">{userInvestments.length} Active Positions</span>
-                 </div>
-                 <div className="space-y-2">
-                    {userInvestments.map(inv => (
-                       <div key={inv.id} className="bg-white border border-neutral-100 p-4 rounded-2xl flex items-center justify-between shadow-sm">
-                          <div>
-                             <p className="text-[10px] font-black text-neutral-900 uppercase">User: {inv.userId.substring(0, 8)}...</p>
-                             <p className="text-[8px] font-bold text-neutral-400 uppercase tracking-widest">Stake: RS {inv.amount} • Earned: RS {inv.totalEarned || 0}</p>
-                          </div>
-                          <div className="text-right">
-                             <p className="text-[9px] font-black text-blue-600 uppercase">Next: {new Date(inv.nextPayoutDate).toLocaleDateString()}</p>
-                             <p className={`text-[7px] font-black uppercase ${inv.status === 'active' ? 'text-green-500' : 'text-neutral-300'}`}>{inv.status}</p>
-                          </div>
-                       </div>
-                    ))}
-                 </div>
-              </div>
-            </motion.div>
-          )}
 
           {activeTab === 'dashboard' && (
             <motion.div key="dash" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
@@ -1032,7 +868,8 @@ export default function AdminView() {
                           { id: 'dragon_tiger', name: 'Dragon Tiger', category: 'Cards', minBet: 10, winRate: 45, multiplier: 2, image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
                           { id: 'goal_kick', name: 'Goal Kick', category: 'Skill', minBet: 10, winRate: 45, multiplier: 1.9, image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
                           { id: 'sushi_strike', name: 'Sushi', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.8, image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
-                          { id: 'snake_league', name: 'Snake', category: 'Skill', minBet: 10, winRate: 45, multiplier: 2.5, targetScore: 15, difficulty: 'low', image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" }
+                          { id: 'snake_league', name: 'Snake', category: 'Skill', minBet: 10, winRate: 45, multiplier: 2.5, targetScore: 15, difficulty: 'low', image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" },
+                          { id: 'spin_wheel', name: 'Spin Wheel', category: 'Slot', minBet: 10, winRate: 45, multiplier: 2, sliceMultipliers: "0,1.5,0.2,3.0,0,2.0,0.5,10.0", sliceLabels: "LOSE,1.5x,0.2x,3x,LOSE,2x,0.5x,JACKPOT", image: "https://images.unsplash.com/photo-1606167668584-78701c57f13d?q=80&w=400&auto=format&fit=crop" }
                         ];
                         for (const g of initialGames) {
                           const docRef = doc(db, "games", g.id);
@@ -1090,7 +927,8 @@ export default function AdminView() {
                         { id: 'dragon_tiger', name: 'Dragon Tiger', category: 'Cards', minBet: 10, winRate: 45, multiplier: 2, image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
                         { id: 'goal_kick', name: 'Goal Kick', category: 'Skill', minBet: 10, winRate: 45, multiplier: 1.9, image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
                         { id: 'sushi_strike', name: 'Sushi', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.8, image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
-                        { id: 'snake_league', name: 'Snake', category: 'Skill', minBet: 10, winRate: 45, multiplier: 2.5, targetScore: 15, difficulty: 'low', image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" }
+                        { id: 'snake_league', name: 'Snake', category: 'Skill', minBet: 10, winRate: 45, multiplier: 2.5, targetScore: 15, difficulty: 'low', image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" },
+                        { id: 'spin_wheel', name: 'Spin Wheel', category: 'Slot', minBet: 10, winRate: 45, multiplier: 2, sliceMultipliers: "0,1.5,0.2,3.0,0,2.0,0.5,10.0", sliceLabels: "LOSE,1.5x,0.2x,3x,LOSE,2x,0.5x,JACKPOT", image: "https://images.unsplash.com/photo-1606167668584-78701c57f13d?q=80&w=400&auto=format&fit=crop" }
                       ];
                       for (const g of initialGames) {
                         await setDoc(doc(db, "games", g.id), { ...g, active: true, createdAt: new Date().toISOString() }, { merge: true });
@@ -1245,6 +1083,30 @@ export default function AdminView() {
                             </div>
                           </>
                         )}
+                        {game.id === 'spin_wheel' && (
+                          <>
+                            <div className="space-y-1.5 col-span-2">
+                              <label className="text-[8px] font-black uppercase text-neutral-400">Wheel Slice Multipliers (Comma Separated, Exactly 8 Slices)</label>
+                              <input 
+                                type="text" 
+                                value={game.sliceMultipliers || "0,1.5,0.2,3.0,0,2.0,0.5,10.0"}
+                                onChange={(e) => updateGameConfig(game.id, { sliceMultipliers: e.target.value })}
+                                placeholder="0,1.5,0.2,3.0,0,2.0,0.5,10.0"
+                                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500 text-neutral-900" 
+                              />
+                            </div>
+                            <div className="space-y-1.5 col-span-2">
+                              <label className="text-[8px] font-black uppercase text-neutral-400">Wheel Slice Labels (Comma Separated, Matching Multipliers)</label>
+                              <input 
+                                type="text" 
+                                value={game.sliceLabels || "LOSE,1.5x,0.2x,3x,LOSE,2x,0.5x,JACKPOT"}
+                                onChange={(e) => updateGameConfig(game.id, { sliceLabels: e.target.value })}
+                                placeholder="LOSE,1.5x,0.2x,3x,LOSE,2x,0.5x,JACKPOT"
+                                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500 text-neutral-900" 
+                              />
+                            </div>
+                          </>
+                        )}
                         <div className="space-y-1.5 flex flex-col justify-end">
                            <label className="text-[8px] font-black uppercase text-neutral-400">Game Category</label>
                            <select 
@@ -1391,12 +1253,31 @@ export default function AdminView() {
                   <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
                     <div>
                       <p className="text-[10px] font-black uppercase text-neutral-400">Referral Reward</p>
-                      <p className="text-xl font-black italic text-neutral-900">RS {(globalConfig as any).referralReward || 50}</p>
+                      <input 
+                         type="number" 
+                         value={Number((globalConfig as any).referralReward) || 0}
+                         onChange={(e) => updateConfig('referralReward', parseInt(e.target.value) || 0)}
+                         className="text-xl font-black italic text-neutral-900 bg-transparent border-none outline-none w-24"
+                      />
                     </div>
                     <div className="flex gap-2">
-                       <button onClick={() => updateConfig('referralReward', Math.max(0, ((globalConfig as any).referralReward || 50) - 10))} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">-</button>
-                       <button onClick={() => updateConfig('referralReward', ((globalConfig as any).referralReward || 50) + 10)} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">+</button>
+                       <button onClick={() => updateConfig('referralReward', Math.max(0, (Number((globalConfig as any).referralReward) || 50) - 10))} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">-</button>
+                       <button onClick={() => updateConfig('referralReward', (Number((globalConfig as any).referralReward) || 50) + 10)} className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-900 shadow-sm">+</button>
                     </div>
+                  </div>
+
+                  <div className="bg-neutral-50 rounded-2xl border border-neutral-100 p-4 space-y-3">
+                    <p className="text-[10px] font-black uppercase text-neutral-400">Referral Invitation Text</p>
+                    <div className="flex gap-2">
+                      <textarea 
+                        rows={3}
+                        placeholder="Type the message your users will share..." 
+                        value={(globalConfig as any).referralText || ''}
+                        onChange={(e) => updateConfig('referralText', e.target.value)}
+                        className="flex-1 bg-white border border-neutral-200 rounded-2xl px-4 py-3 text-xs font-bold outline-none focus:border-orange-500 text-black resize-none"
+                      />
+                    </div>
+                    <p className="text-[8px] font-bold text-neutral-300 uppercase italic">* Custom invite copy-text generated inside the Partner Program page for easy clipboard copying & instant WhatsApp share invites.</p>
                   </div>
 
                   <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">

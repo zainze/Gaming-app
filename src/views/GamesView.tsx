@@ -27,7 +27,7 @@ import {
 import { useState, useEffect } from "react";
 import { doc, updateDoc, increment, addDoc, collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "../lib/firebase";
-import InvestmentView from "./InvestmentView";
+import DailyClaimModal from "../components/DailyClaimModal";
 import ReferralView from "./ReferralView";
 import NewPlayerView from "./NewPlayerView";
 import { setSoundActiveGameId } from "../lib/sounds";
@@ -54,6 +54,7 @@ import { DragonTiger } from "../components/DragonTiger";
 import { GoalKick } from "../components/GoalKick";
 import { SushiStrike } from "../components/SushiStrike";
 import { SnakeGame } from "../components/SnakeGame";
+import SpinWheel from "../components/SpinWheel";
 
 export default function GamesView({ profile, onNavigate }: { profile: any, onNavigate: (view: string) => void }) {
   const [activeGame, setActiveGame] = useState<string | null>(null);
@@ -62,7 +63,7 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
   const [gamesConfig, setGamesConfig] = useState<Record<string, any>>({});
   const [gamesList, setGamesList] = useState<any[]>([]);
   const [activeCategory, setActiveCategory] = useState("All");
-  const [showVIP, setShowVIP] = useState(false);
+  const [showDailyClaim, setShowDailyClaim] = useState(false);
   const [showReferral, setShowReferral] = useState(false);
   const [showNewPlayers, setShowNewPlayers] = useState(false);
   const [latestPlayers, setLatestPlayers] = useState<any[]>([]);
@@ -163,6 +164,7 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
     goal_kick: { title: "Goal Kick", category: "Skill", image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
     sushi_strike: { title: "Sushi", category: "Classic", image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
     snake_league: { title: "Snake", category: "Skill", image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" },
+    spin_wheel: { title: "Spin Wheel", category: "Slot", image: "https://images.unsplash.com/photo-1606167668584-78701c57f13d?q=80&w=400&auto=format&fit=crop" },
     web_cyber: { title: "Cyber", category: "Arcade", url: "https://www.crazygames.com/embed/block-rush", image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=400&auto=format&fit=crop", time: 60, reward: 25 },
     web_drift: { title: "Drift", category: "Arcade", url: "https://www.crazygames.com/embed/cyber-surfer", image: "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop", time: 45, reward: 20 },
   };
@@ -192,16 +194,16 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
   }
 
   const quickLinks = [
-    { name: "Invitation", icon: UserPlus, color: "from-green-400 to-green-600", action: () => setShowReferral(true) },
+    { name: "Invitation", icon: UserPlus, color: "from-green-400 to-green-600", action: () => onNavigate('referral') },
     { name: "Newplayer", icon: Gift, color: "from-blue-400 to-blue-600", action: () => setShowNewPlayers(true) },
     { name: "Deposit", icon: Coins, color: "from-yellow-400 to-yellow-600", action: () => onNavigate('wallet') },
-    { name: "VIP", icon: Gem, color: "from-purple-400 to-purple-600", action: () => setShowVIP(true) },
+    { name: "Daily claim", icon: Gift, color: "from-purple-400 to-purple-600", action: () => setShowDailyClaim(true) },
   ];
 
   const filteredGames = displayedGames.filter(g => 
     activeCategory === "All" || 
     g.category === activeCategory || 
-    (activeCategory === "Hot" && (g.id === "aviator" || g.id === "mines" || g.id === "swipe" || g.id === "slipper" || g.id === "rocket_crash" || g.id === "fruit_slots" || g.id === "treasure_hunt" || g.id === "color_match" || g.id === "fruit_ninja" || g.id === "teen_patti" || g.id === "dojo_cards" || g.id === "space_dice" || g.id === "dragon_tiger" || g.id === "goal_kick" || g.id === "sushi_strike" || g.id === "snake_league"))
+    (activeCategory === "Hot" && (g.id === "aviator" || g.id === "mines" || g.id === "swipe" || g.id === "slipper" || g.id === "rocket_crash" || g.id === "fruit_slots" || g.id === "treasure_hunt" || g.id === "color_match" || g.id === "fruit_ninja" || g.id === "teen_patti" || g.id === "dojo_cards" || g.id === "space_dice" || g.id === "dragon_tiger" || g.id === "goal_kick" || g.id === "sushi_strike" || g.id === "snake_league" || g.id === "spin_wheel"))
   );
 
   const handleWin = async (amount: number) => {
@@ -371,12 +373,8 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
   return (
     <div className={`relative w-full h-full bg-[#1b2a5c] ${isFullScreen ? 'overflow-hidden' : ''} text-white`}>
       <AnimatePresence mode="wait">
-        {showVIP && (
-           <InvestmentView profile={profile} onBack={() => setShowVIP(false)} />
-        )}
-
-        {showReferral && (
-           <ReferralView profile={profile} onBack={() => setShowReferral(false)} />
+        {showDailyClaim && (
+           <DailyClaimModal profile={profile} onBack={() => setShowDailyClaim(false)} />
         )}
 
         {showNewPlayers && (
@@ -612,6 +610,20 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
                targetScore={gamesConfig['snake_league']?.targetScore || 15}
                minBet={gamesConfig['snake_league']?.minBet || 10}
                multiplier={gamesConfig['snake_league']?.multiplier || 2.5}
+             />
+          </motion.div>
+        )}
+
+        {activeGame === 'spin_wheel' && (
+          <motion.div key="spin_wheel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#030712]">
+             <SpinWheel 
+               onWin={handleWin} 
+               onBet={handleBet} 
+               balance={profile?.balance || 0} 
+               onExit={() => setActiveGame(null)} 
+               minBet={gamesConfig['spin_wheel']?.minBet || 10}
+               winRate={gamesConfig['spin_wheel']?.winRate || 45}
+               multiplier={gamesConfig['spin_wheel']?.multiplier || 2}
              />
           </motion.div>
         )}
