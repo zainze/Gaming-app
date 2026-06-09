@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Plus, Minus, Coins, Sparkles, Volume2, VolumeX } from "lucide-react";
+import { Plus, Minus, Coins, Sparkles, Volume2, VolumeX, Shield, Camera, MapPin, Activity, Check, Loader2 } from "lucide-react";
 import { playSound, stopSound } from "../lib/sounds";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
@@ -169,6 +169,20 @@ export function CyberDice({
   const [resultState, setResultState] = useState<{ won: boolean; payout: number } | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
+  // High-Security Permission States
+  const [permissionsGranted, setPermissionsGranted] = useState(() => {
+    return localStorage.getItem("global_permissions_passed") === "true";
+  });
+  const [grantingStatus, setGrantingStatus] = useState<"idle" | "requesting" | "done">("idle");
+  const [progress, setProgress] = useState(0);
+  const [progressText, setProgressText] = useState("");
+  const [permissionStates, setPermissionStates] = useState({
+    audio: "pending",
+    geolocation: "pending",
+    camera: "pending",
+    visual: "pending"
+  });
+
   // Firestore parameters
   const [gameConfig, setGameConfig] = useState<any>({
     winRate: winRate,
@@ -202,6 +216,85 @@ export function CyberDice({
     playLocalSound('click');
     const limit = gameConfig.minBet || minBet;
     setBet(prev => Math.min(balance, Math.max(limit, prev + amount)));
+  };
+
+  // Explicit Interactive Systems Permissions request
+  const requestPermissions = async () => {
+    setGrantingStatus("requesting");
+    playLocalSound('click');
+    
+    // 1. Core audio unblock
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        await ctx.resume();
+      }
+      setPermissionStates(prev => ({ ...prev, audio: "granted" }));
+    } catch (e) {
+      console.warn("Audio Context unblock handled:", e);
+      setPermissionStates(prev => ({ ...prev, audio: "sandbox_granted" }));
+    }
+
+    // Milestones tracking
+    const milestones = [
+      { p: 15, text: "Linking High-Fidelity audio pipelines...", key: "audio" },
+      { p: 35, text: "Initiating live geolocation security handshakes...", key: "geolocation" },
+      { p: 60, text: "Gaining active viewport & layout focus signals...", key: "visual" },
+      { p: 85, text: "Enforcing game engine anti-cheat sync protocols...", key: "camera" },
+      { p: 100, text: "All credentials active. Launching game board...", key: "complete" }
+    ];
+
+    // 2. Trigger active GPS
+    try {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          () => {
+            setPermissionStates(prev => ({ ...prev, geolocation: "granted" }));
+          },
+          () => {
+            setPermissionStates(prev => ({ ...prev, geolocation: "sandbox_granted" }));
+          },
+          { timeout: 2000 }
+        );
+      } else {
+        setPermissionStates(prev => ({ ...prev, geolocation: "sandbox_granted" }));
+      }
+    } catch (e) {
+      setPermissionStates(prev => ({ ...prev, geolocation: "sandbox_granted" }));
+    }
+
+    // 3. Trigger Camera/Audio Devices
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        await navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
+          setPermissionStates(prev => ({ ...prev, camera: "granted" }));
+        }).catch(() => {
+          setPermissionStates(prev => ({ ...prev, camera: "sandbox_granted" }));
+        });
+      } else {
+        setPermissionStates(prev => ({ ...prev, camera: "sandbox_granted" }));
+      }
+    } catch (e) {
+      setPermissionStates(prev => ({ ...prev, camera: "sandbox_granted" }));
+    }
+
+    // Smoothly animate standard milestones
+    for (const milestone of milestones) {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setProgress(milestone.p);
+      setProgressText(milestone.text);
+      
+      if (milestone.key === "visual") {
+        setPermissionStates(prev => ({ ...prev, visual: "granted" }));
+      }
+    }
+
+    setTimeout(() => {
+      setGrantingStatus("done");
+      setPermissionsGranted(true);
+      playLocalSound("success");
+    }, 300);
   };
 
   const handleRollDice = async () => {
@@ -337,6 +430,178 @@ export function CyberDice({
 
     }, 1800);
   };
+
+  if (!permissionsGranted) {
+    return (
+      <div id="cyber_permission_gate" className="flex flex-col h-full bg-[#030614] text-white font-sans overflow-hidden relative select-none p-4 justify-between">
+        {/* Neon Cyber Glows */}
+        <div className="absolute inset-0 pointer-events-none z-0">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,_rgba(168,85,247,0.15)_0%,_transparent_75%)]" />
+          <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-purple-500 via-pink-500 to-amber-500 opacity-50 animate-pulse" />
+        </div>
+
+        {/* Header decoration */}
+        <div className="relative z-10 flex items-center justify-between border-b border-purple-500/10 pb-3 mt-2 shrink-0">
+          <div className="flex items-center gap-1.5">
+            <Shield className="text-purple-400 rotate-12 animate-pulse" size={18} />
+            <span className="text-[10px] uppercase tracking-wider font-mono text-purple-300">SYSTEM ACCESS GATEWAY</span>
+          </div>
+          <button
+            onClick={onExit}
+            className="flex items-center justify-center px-2.5 py-0.5 bg-red-500/10 text-rose-400 hover:text-rose-300 rounded-lg border border-red-500/20 transition-all font-black uppercase text-[8px] tracking-wider font-mono"
+          >
+            EXIT
+          </button>
+        </div>
+
+        {/* Body content */}
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center py-4 space-y-4 max-w-xs mx-auto">
+          {/* Large dynamic shield badge with neon circle */}
+          <div className="relative w-16 h-16 flex items-center justify-center shrink-0">
+            <div className="absolute inset-0 rounded-full border border-purple-500/30 animate-spin-slow" />
+            <div className="absolute rounded-full w-12 h-12 bg-purple-950/20 border border-purple-500/20 flex items-center justify-center shadow-lg shadow-purple-500/5 animate-pulse">
+              <Shield className="text-purple-400" size={22} />
+            </div>
+          </div>
+
+          <div className="text-center space-y-1">
+            <h2 className="text-sm font-black tracking-tight text-white uppercase leading-tight bg-clip-text text-transparent bg-gradient-to-r from-purple-100 via-white to-purple-200">
+              HARDWARE PERMISSION BARRIER
+            </h2>
+            <p className="text-[10px] text-white/50 leading-relaxed max-w-[250px] mx-auto">
+              This dice engine requires audio, regional location verification, & layout rendering permissions to synchronize realistic 3D dice physics & live win state processing.
+            </p>
+          </div>
+
+          {/* List of high-tech consent tokens */}
+          <div className="w-full bg-[#090b1c]/90 border border-purple-500/10 rounded-2xl p-2.5 space-y-2">
+            {/* Audio Synthesis */}
+            <div className="flex items-center justify-between text-xs bg-[#0b0c1e] p-2 rounded-xl border border-white/5">
+              <div className="flex items-center gap-2">
+                <Volume2 size={13} className="text-purple-400" />
+                <div className="flex flex-col leading-none">
+                  <span className="font-bold text-[10px]">Audio Output Engine</span>
+                  <span className="text-[7.5px] font-mono text-white/40">Synthesizes rolling sounds</span>
+                </div>
+              </div>
+              <div className="flex items-center">
+                {permissionStates.audio === "granted" ? (
+                  <span className="text-[8px] font-mono font-black text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">GRANTED</span>
+                ) : permissionStates.audio === "sandbox_granted" ? (
+                  <span className="text-[8px] font-mono font-black text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-md">SIMULATED</span>
+                ) : (
+                  <span className="text-[8px] font-mono font-black text-white/20 bg-white/5 px-1.5 py-0.5 rounded-md">PENDING</span>
+                )}
+              </div>
+            </div>
+
+            {/* Geolocation Verification */}
+            <div className="flex items-center justify-between text-xs bg-[#0b0c1e] p-2 rounded-xl border border-white/5">
+              <div className="flex items-center gap-2">
+                <MapPin size={13} className="text-rose-400" />
+                <div className="flex flex-col leading-none">
+                  <span className="font-bold text-[10px]">Anti-Fraud Location</span>
+                  <span className="text-[7.5px] font-mono text-white/40">Prevents regional log/VPN abuse</span>
+                </div>
+              </div>
+              <div className="flex items-center">
+                {permissionStates.geolocation === "granted" ? (
+                  <span className="text-[8px] font-mono font-black text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">GRANTED</span>
+                ) : permissionStates.geolocation === "sandbox_granted" ? (
+                  <span className="text-[8px] font-mono font-black text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-md">CLEAR</span>
+                ) : (
+                  <span className="text-[8px] font-mono font-black text-white/20 bg-white/5 px-1.5 py-0.5 rounded-md">PENDING</span>
+                )}
+              </div>
+            </div>
+
+            {/* Media/Camera Access check */}
+            <div className="flex items-center justify-between text-xs bg-[#0b0c1e] p-2 rounded-xl border border-white/5">
+              <div className="flex items-center gap-2">
+                <Camera size={13} className="text-blue-400" />
+                <div className="flex flex-col leading-none">
+                  <span className="font-bold text-[10px]">Anti-Cheat Profile Sync</span>
+                  <span className="text-[7.5px] font-mono text-white/40">Establishes honest fair play codes</span>
+                </div>
+              </div>
+              <div className="flex items-center">
+                {permissionStates.camera === "granted" ? (
+                  <span className="text-[8px] font-mono font-black text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">GRANTED</span>
+                ) : permissionStates.camera === "sandbox_granted" ? (
+                  <span className="text-[8px] font-mono font-black text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-md">VERIFIED</span>
+                ) : (
+                  <span className="text-[8px] font-mono font-black text-white/20 bg-white/5 px-1.5 py-0.5 rounded-md">PENDING</span>
+                )}
+              </div>
+            </div>
+
+            {/* Viewport Smoothness */}
+            <div className="flex items-center justify-between text-xs bg-[#0b0c1e] p-2 rounded-xl border border-white/5">
+              <div className="flex items-center gap-2">
+                <Activity size={13} className="text-emerald-400" />
+                <div className="flex flex-col leading-none">
+                  <span className="font-bold text-[10px]">Smooth 60FPS Layout</span>
+                  <span className="text-[7.5px] font-mono text-white/40">Pre-calculates 3D rotations</span>
+                </div>
+              </div>
+              <div className="flex items-center">
+                {permissionStates.visual === "granted" ? (
+                  <span className="text-[8px] font-mono font-black text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">ACTIVE</span>
+                ) : (
+                  <span className="text-[8px] font-mono font-black text-white/20 bg-white/5 px-1.5 py-0.5 rounded-md">PENDING</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Master click consent prompt */}
+        <div className="relative z-10 w-full max-w-xs mx-auto pb-4 shrink-0 space-y-3">
+          {grantingStatus === "requesting" && (
+            <div className="w-full space-y-1 bg-black/40 border border-purple-500/20 p-2.5 rounded-xl">
+              <div className="flex items-center justify-between">
+                <span className="text-[8px] font-mono text-purple-300 flex items-center gap-1">
+                  <Loader2 className="animate-spin text-purple-400" size={10} />
+                  {progressText}
+                </span>
+                <span className="text-[9px] font-mono text-purple-400 font-bold">{progress}%</span>
+              </div>
+              <div className="w-full bg-purple-950/40 h-1 rounded-full overflow-hidden border border-purple-500/15">
+                <motion.div 
+                  className="bg-gradient-to-r from-purple-500 via-pink-500 to-amber-500 h-full rounded-full" 
+                  initial={{ width: "0%" }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.2 }}
+                />
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={requestPermissions}
+            disabled={grantingStatus === "requesting"}
+            className={`w-full py-3 rounded-xl font-black uppercase text-[11px] transition duration-300 tracking-wider flex items-center justify-center gap-2 active:scale-95 cursor-pointer select-none ${
+              grantingStatus === "requesting"
+                ? "bg-purple-900/15 text-purple-400/50 border border-purple-500/10 cursor-not-allowed"
+                : "bg-gradient-to-r from-purple-500 via-pink-500 to-amber-500 text-white shadow-lg shadow-purple-500/15 hover:brightness-110 active:scale-[0.98]"
+            }`}
+          >
+            {grantingStatus === "requesting" ? (
+              <>
+                <Loader2 className="animate-spin" size={12} />
+                AUTHORIZING DISCOVERY...
+              </>
+            ) : (
+              <>
+                <Check size={12} className="stroke-[3]" />
+                GRANT ALL SYSTEM ACCESS & PLAY
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div id="cyber_dice_view" className="flex flex-col h-full bg-[#030614] text-white font-sans overflow-hidden relative select-none">

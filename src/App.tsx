@@ -27,6 +27,7 @@ import AdminView from "./views/AdminView";
 import AuthView from "./views/AuthView";
 import SplashScreen from "./components/SplashScreen";
 import ReferralView from "./views/ReferralView";
+import GlobalPermissionGate from "./components/GlobalPermissionGate";
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -34,6 +35,9 @@ export default function App() {
   const [systemConfig, setSystemConfig] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [splashVisible, setSplashVisible] = useState(true);
+  const [permissionsPassed, setPermissionsPassed] = useState<boolean>(() => {
+    return localStorage.getItem("global_permissions_passed") === "true";
+  });
 
   // Background Arcade Reward Processing
   useEffect(() => {
@@ -296,6 +300,16 @@ export default function App() {
 
   if (splashVisible) {
     return <SplashScreen logo={systemConfig?.appLogo} appName={systemConfig?.appName} />;
+  }
+
+  if (!permissionsPassed) {
+    return (
+      <GlobalPermissionGate 
+        onPassed={() => setPermissionsPassed(true)} 
+        appName={systemConfig?.appName} 
+        logo={systemConfig?.appLogo} 
+      />
+    );
   }
 
   return (
