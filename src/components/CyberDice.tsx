@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Plus, Minus, Coins, Sparkles, Volume2, VolumeX, Shield, Camera, MapPin, Activity, Check, Loader2 } from "lucide-react";
+import { Plus, Minus, Coins, Sparkles, Volume2, VolumeX } from "lucide-react";
 import { playSound, stopSound } from "../lib/sounds";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../lib/firebase";
