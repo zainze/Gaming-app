@@ -249,6 +249,8 @@ export const setSoundActiveGameId = (id: string | null) => {
 
 // Interceptor function that routes generic playsounds to active-themed equivalents!
 export const playSound = (soundName: keyof typeof sounds) => {
+  if (!activeGameId) return; // Mute all app-level SFX outside of games
+
   const settings = getSoundSettings();
   if (!settings.sfxEnabled) return;
 

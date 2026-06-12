@@ -109,7 +109,8 @@ export default function App() {
           { id: 'dragon_tiger', name: 'Dragon Tiger', category: 'Cards', minBet: 10, winRate: 45, multiplier: 2, image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
           { id: 'goal_kick', name: 'Goal Kick', category: 'Skill', minBet: 10, winRate: 45, multiplier: 1.9, image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
           { id: 'sushi_strike', name: 'Sushi', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.8, image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
-          { id: 'snake_league', name: 'Snake', category: 'Skill', minBet: 10, winRate: 45, multiplier: 2.5, targetScore: 15, difficulty: 'low', image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" },
+          { id: 'lucky_scratch', name: 'Scratch Pro', category: 'Classic', minBet: 10, winRate: 45, multiplier: 10, image: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?q=80&w=400&auto=format&fit=crop" },
+          { id: 'lucky_tower', name: 'Neon Tower', category: 'Skill', minBet: 10, winRate: 66, multiplier: 23.2, image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=400&auto=format&fit=crop" },
           { id: 'spin_wheel', name: 'Spin Wheel', category: 'Slot', minBet: 10, winRate: 45, multiplier: 2, sliceMultipliers: "0,1.5,0.2,3.0,0,2.0,0.5,10.0", sliceLabels: "LOSE,1.5x,0.2x,3x,LOSE,2x,0.5x,JACKPOT", image: "https://images.unsplash.com/photo-1606167668584-78701c57f13d?q=80&w=400&auto=format&fit=crop" },
           { id: 'cyber_dice', name: 'Cyber Dice', category: 'Blockchain', minBet: 10, winRate: 48, multiplier: 2, image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=400&auto=format&fit=crop" }
         ];

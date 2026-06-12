@@ -977,30 +977,6 @@ export default function AdminView() {
                             />
                           </div>
                         )}
-                        {game.id === 'snake_league' && (
-                          <>
-                            <div className="space-y-1.5">
-                              <label className="text-[8px] font-black uppercase text-neutral-400">Winning Target Score</label>
-                              <input 
-                                type="number" 
-                                value={game.targetScore || 15}
-                                onChange={(e) => updateGameConfig(game.id, { targetScore: Number(e.target.value) || 15 })}
-                                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500 text-neutral-900" 
-                              />
-                            </div>
-                            <div className="space-y-1.5 flex flex-col justify-end whitespace-nowrap">
-                              <label className="text-[8px] font-black uppercase text-neutral-400">Snake Speed Difficulty</label>
-                              <select 
-                                value={game.difficulty || 'low'}
-                                onChange={(e) => updateGameConfig(game.id, { difficulty: e.target.value })}
-                                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 font-black text-xs outline-none focus:border-orange-500 text-neutral-900 appearance-none"
-                              >
-                                <option value="low">Low (Easy Speed)</option>
-                                <option value="hard">Hard (Fast Speed + Wall Death)</option>
-                              </select>
-                            </div>
-                          </>
-                        )}
                         {game.id === 'spin_wheel' && (
                           <>
                             <div className="space-y-1.5 col-span-2">

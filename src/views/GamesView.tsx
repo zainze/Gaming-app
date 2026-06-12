@@ -49,7 +49,8 @@ import { DojoCards } from "../components/DojoCards";
 import { DragonTiger } from "../components/DragonTiger";
 import { GoalKick } from "../components/GoalKick";
 import { SushiStrike } from "../components/SushiStrike";
-import { SnakeGame } from "../components/SnakeGame";
+import { LuckyScratch } from "../components/LuckyScratch";
+import { LuckyTower } from "../components/LuckyTower";
 import SpinWheel from "../components/SpinWheel";
 import { CyberDice } from "../components/CyberDice";
 
@@ -112,13 +113,62 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
     const unsubGames = onSnapshot(collection(db, "games"), (snap) => {
       const config: Record<string, any> = {};
       const list: any[] = [];
+      
+      const defaultGames = [
+        { id: 'slipper', name: 'Slipper', category: 'Skill', minBet: 20, winRate: 33, winMultiplier: 3, penaltyAmount: 50, image: "https://images.unsplash.com/photo-1626775238053-4315516ebaec?q=80&w=400&auto=format&fit=crop" },
+        { id: 'coin', name: 'Coin', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://cdn-icons-png.flaticon.com/512/550/550614.png" },
+        { id: 'swipe', name: 'Swipe', category: 'Skill', minBet: 10, winRate: 40, multiplier: 3, image: "https://cdn-icons-png.flaticon.com/512/2641/2641421.png" },
+        { id: 'chests', name: 'Chests', category: 'Classic', minBet: 10, winRate: 33, multiplier: 3, image: "https://cdn-icons-png.flaticon.com/512/3233/3233483.png" },
+        { id: 'aviator', name: 'Aviator', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778147101/aviator_banner_z0j7v8.png" },
+        { id: 'rocket_crash', name: 'Rocket', category: 'Classic', minBet: 10, winRate: 50, multiplier: 2, image: "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?q=80&w=400&auto=format&fit=crop" },
+        { id: 'fruit_slots', name: 'Slots', category: 'Classic', minBet: 10, winRate: 40, multiplier: 5, image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
+        { id: 'treasure_hunt', name: 'Treasure', category: 'Classic', minBet: 10, winRate: 35, multiplier: 3, image: "https://images.unsplash.com/photo-1563212417-640306232938?q=80&w=400&auto=format&fit=crop" },
+        { id: 'color_match', name: 'Match', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.5, image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=400&auto=format&fit=crop" },
+        { id: 'fruit_ninja', name: 'Ninja', category: 'Classic', minBet: 10, winRate: 40, multiplier: 2, image: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?q=80&w=400&auto=format&fit=crop" },
+        { id: 'teen_patti', name: 'Teen Patti', category: 'Classic', minBet: 10, winRate: 45, multiplier: 2, image: "https://images.unsplash.com/photo-1541275322896-180a3a780b62?q=80&w=400&auto=format&fit=crop" },
+        { id: 'plinko', name: 'Plinko', category: 'Skill', minBet: 10, winRate: 45, multiplier: 5, image: "https://images.unsplash.com/photo-1553481187-be93c21490a9?q=80&w=400&auto=format&fit=crop" },
+        { id: 'mines', name: 'Mines', category: 'Skill', minBet: 10, winRate: 35, multiplier: 10, image: "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=400&auto=format&fit=crop" },
+        { id: 'dojo_cards', name: 'Dojo', category: 'Cards', minBet: 10, winRate: 48, multiplier: 2, image: "https://images.unsplash.com/photo-1552084117-56a987666449?q=80&w=400&auto=format&fit=crop" },
+        { id: 'dragon_tiger', name: 'Dragon Tiger', category: 'Cards', minBet: 10, winRate: 45, multiplier: 2, image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
+        { id: 'goal_kick', name: 'Goal Kick', category: 'Skill', minBet: 10, winRate: 45, multiplier: 1.9, image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
+        { id: 'sushi_strike', name: 'Sushi', category: 'Classic', minBet: 10, winRate: 33, multiplier: 2.8, image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
+        { id: 'lucky_scratch', name: 'Scratch Pro', category: 'Classic', minBet: 10, winRate: 45, multiplier: 10, image: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?q=80&w=400&auto=format&fit=crop" },
+        { id: 'lucky_tower', name: 'Neon Tower', category: 'Skill', minBet: 10, winRate: 66, multiplier: 23.2, image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=400&auto=format&fit=crop" },
+        { id: 'spin_wheel', name: 'Spin Wheel', category: 'Slot', minBet: 10, winRate: 45, multiplier: 2, sliceMultipliers: "0,1.5,0.2,3.0,0,2.0,0.5,10.0", sliceLabels: "LOSE,1.5x,0.2x,3x,LOSE,2x,0.5x,JACKPOT", image: "https://images.unsplash.com/photo-1606167668584-78701c57f13d?q=80&w=400&auto=format&fit=crop" },
+        { id: 'cyber_dice', name: 'Cyber Dice', category: 'Blockchain', minBet: 10, winRate: 48, multiplier: 2, image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=400&auto=format&fit=crop" }
+      ];
+
+      // Fill baseline defaults
+      defaultGames.forEach(dg => {
+        config[dg.id] = dg;
+      });
+
+      // Overlay database config
       snap.docs.forEach(d => {
         const data = d.data();
-        config[d.id] = data;
-        if (data.active !== false) {
-          list.push({ id: d.id, ...data });
+        config[d.id] = { ...(config[d.id] || {}), ...data };
+      });
+
+      const dbGamesMap = new Map(snap.docs.map(d => [d.id, d.data()]));
+      defaultGames.forEach(dg => {
+        const dbOverride = dbGamesMap.get(dg.id);
+        if (dbOverride) {
+          list.push({ ...dg, ...dbOverride, active: true });
+        } else {
+          list.push({ ...dg, active: true });
         }
       });
+
+      const defaultIds = new Set(defaultGames.map(dg => dg.id));
+      snap.docs.forEach(d => {
+        if (!defaultIds.has(d.id)) {
+          const data = d.data();
+          if (data.active !== false) {
+            list.push({ id: d.id, ...data });
+          }
+        }
+      });
+
       setGamesConfig(config);
       setGamesList(list);
     }, (err) => {
@@ -148,18 +198,19 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
     chests: { title: "Chests", category: "Slot", image: "https://cdn-icons-png.flaticon.com/512/3233/3233483.png" },
     aviator: { title: "Aviator", category: "Hot", image: "https://res.cloudinary.com/dpmjzqhdh/image/upload/v1778147101/aviator_banner_z0j7v8.png" },
     rocket_crash: { title: "Rocket", category: "Hot", image: "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?q=80&w=400&auto=format&fit=crop" },
-    fruit_slots: { title: "Slots", category: "Classic", image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
-    treasure_hunt: { title: "Treasure", category: "Classic", image: "https://images.unsplash.com/photo-1563212417-640306232938?q=80&w=400&auto=format&fit=crop" },
+    fruit_slots: { title: "Slots", category: "Slot", image: "https://images.unsplash.com/photo-1596838132731-dd36a19f04aa?q=80&w=400&auto=format&fit=crop" },
+    treasure_hunt: { title: "Treasure", category: "Slot", image: "https://images.unsplash.com/photo-1563212417-640306232938?q=80&w=400&auto=format&fit=crop" },
     color_match: { title: "Match", category: "Hot", image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=400&auto=format&fit=crop" },
-    fruit_ninja: { title: "Ninja", category: "Hot", image: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?q=80&w=400&auto=format&fit=crop" },
-    teen_patti: { title: "Teen Patti", category: "Hot", image: "https://images.unsplash.com/photo-1541275322896-180a3a780b62?q=80&w=400&auto=format&fit=crop" },
+    fruit_ninja: { title: "Ninja", category: "Arcade", image: "https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?q=80&w=400&auto=format&fit=crop" },
+    teen_patti: { title: "Teen Patti", category: "Cards", image: "https://images.unsplash.com/photo-1541275322896-180a3a780b62?q=80&w=400&auto=format&fit=crop" },
     plinko: { title: "Plinko", category: "Slot", image: "https://images.unsplash.com/photo-1553481187-be93c21490a9?q=80&w=400&auto=format&fit=crop" },
     mines: { title: "Mines", category: "Hot", image: "https://images.unsplash.com/photo-1549490349-8643362247b5?q=80&w=400&auto=format&fit=crop" },
     dojo_cards: { title: "Dojo", category: "Cards", image: "https://images.unsplash.com/photo-1552084117-56a987666449?q=80&w=400&auto=format&fit=crop" },
     dragon_tiger: { title: "Dragon Tiger", category: "Cards", image: "https://images.unsplash.com/photo-1540324155974-7523202daa3f?q=80&w=400&auto=format&fit=crop" },
-    goal_kick: { title: "Goal Kick", category: "Skill", image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
-    sushi_strike: { title: "Sushi", category: "Classic", image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
-    snake_league: { title: "Snake", category: "Skill", image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=400&auto=format&fit=crop" },
+    goal_kick: { title: "Goal Kick", category: "Sports", image: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=400&auto=format&fit=crop" },
+    sushi_strike: { title: "Sushi", category: "Slot", image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=400&auto=format&fit=crop" },
+    lucky_scratch: { title: "Scratch Pro", category: "Slot", image: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?q=80&w=400&auto=format&fit=crop" },
+    lucky_tower: { title: "Neon Tower", category: "Blockchain", image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=400&auto=format&fit=crop" },
     spin_wheel: { title: "Spin Wheel", category: "Slot", image: "https://images.unsplash.com/photo-1606167668584-78701c57f13d?q=80&w=400&auto=format&fit=crop" },
     cyber_dice: { title: "3D Cyber Dice", category: "Blockchain", image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=400&auto=format&fit=crop" },
     web_cyber: { title: "Cyber", category: "Arcade", url: "https://www.crazygames.com/embed/block-rush", image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=400&auto=format&fit=crop", time: 60, reward: 25 },
@@ -169,7 +220,7 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
   const displayedGames = [...gamesList, ...arcadeGames].map(g => ({
     ...g,
     title: defaultGamesMeta[g.id]?.title || g.title || g.name || g.id,
-    category: g.category || defaultGamesMeta[g.id]?.category || "Slot",
+    category: defaultGamesMeta[g.id]?.category || g.category || "Slot",
     image: g.image || defaultGamesMeta[g.id]?.image || "https://images.unsplash.com/photo-1614850523296-d8c1af93d400?q=80&w=400&auto=format&fit=crop",
     players: Math.floor(Math.random() * 500) + 100
   }));
@@ -200,7 +251,7 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
   const filteredGames = displayedGames.filter(g => 
     activeCategory === "All" || 
     g.category === activeCategory || 
-    (activeCategory === "Hot" && (g.id === "aviator" || g.id === "mines" || g.id === "swipe" || g.id === "slipper" || g.id === "rocket_crash" || g.id === "fruit_slots" || g.id === "treasure_hunt" || g.id === "color_match" || g.id === "fruit_ninja" || g.id === "teen_patti" || g.id === "dojo_cards" || g.id === "dragon_tiger" || g.id === "goal_kick" || g.id === "sushi_strike" || g.id === "snake_league" || g.id === "spin_wheel" || g.id === "cyber_dice"))
+    (activeCategory === "Hot" && (g.id === "aviator" || g.id === "mines" || g.id === "swipe" || g.id === "slipper" || g.id === "rocket_crash" || g.id === "fruit_slots" || g.id === "treasure_hunt" || g.id === "color_match" || g.id === "fruit_ninja" || g.id === "teen_patti" || g.id === "dojo_cards" || g.id === "dragon_tiger" || g.id === "goal_kick" || g.id === "sushi_strike" || g.id === "lucky_scratch" || g.id === "lucky_tower" || g.id === "spin_wheel" || g.id === "cyber_dice"))
   );
 
   const handleWin = async (amount: number) => {
@@ -576,17 +627,27 @@ export default function GamesView({ profile, onNavigate }: { profile: any, onNav
           </motion.div>
         )}
 
-        {activeGame === 'snake_league' && (
-          <motion.div key="snake_league" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#05110a]">
-             <SnakeGame 
+        {activeGame === 'lucky_scratch' && (
+          <motion.div key="lucky_scratch" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#080918]">
+             <LuckyScratch 
                onWin={handleWin} 
                onBet={handleBet} 
                balance={profile?.balance || 0} 
                onExit={() => setActiveGame(null)} 
-               difficulty={gamesConfig['snake_league']?.difficulty || 'low'}
-               targetScore={gamesConfig['snake_league']?.targetScore || 15}
-               minBet={gamesConfig['snake_league']?.minBet || 10}
-               multiplier={gamesConfig['snake_league']?.multiplier || 2.5}
+               winRate={gamesConfig['lucky_scratch']?.winRate || 45}
+               minBet={gamesConfig['lucky_scratch']?.minBet || 10}
+             />
+          </motion.div>
+        )}
+
+        {activeGame === 'lucky_tower' && (
+          <motion.div key="lucky_tower" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-[#05060f]">
+             <LuckyTower 
+               onWin={handleWin} 
+               onBet={handleBet} 
+               balance={profile?.balance || 0} 
+               onExit={() => setActiveGame(null)} 
+               minBet={gamesConfig['lucky_tower']?.minBet || 10}
              />
           </motion.div>
         )}
